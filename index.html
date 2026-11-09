@@ -449,7 +449,15 @@ section.card[style*="border-left"]{border-left-width:0!important;box-shadow:inse
 .day.c-run{box-shadow:inset 3px 0 0 var(--cat-run), var(--shadow)}
 .day.c-rest{box-shadow:inset 3px 0 0 var(--cat-rest), var(--shadow)}
 .day.c-mix{background:linear-gradient(to bottom,var(--cat-ball) 0 50%,var(--cat-gym) 50% 100%) left center / 3px 100% no-repeat,var(--card);border:1px solid var(--line);box-shadow:var(--shadow)}
-.day .t{font-weight:500;line-height:var(--space-line)}
+.day.res-w{box-shadow:inset 3px 0 0 #22C55E, var(--shadow)}
+.day.res-l{box-shadow:inset 3px 0 0 #EF4444, var(--shadow)}
+.day .tline{display:flex;align-items:baseline;justify-content:space-between;gap:8px;min-width:0}
+.day .t{font-weight:500;line-height:var(--space-line);min-width:0}
+.score{display:inline-flex;align-items:baseline;gap:6px;flex:none}
+.score b{font-size:16px;font-weight:600;color:var(--ink);letter-spacing:-.02em}
+.score .mins{font-size:11px;font-weight:400;color:var(--ink3)}
+.score .res{margin-top:0}
+.day.done .score,.day.done .score b{text-decoration:none;color:var(--ink)}
 .day .s{font-size:12px;color:var(--ink3);margin-top:2px;font-family:var(--sans)}
 .dk .day .s{color:var(--ink3)}
 .act-stats{font-family:var(--sans);font-size:13px;font-weight:500;font-variant-numeric:tabular-nums;color:var(--ink);margin-top:4px}
@@ -602,6 +610,7 @@ input[type=date],input[type=time]{min-height:44px;-webkit-appearance:none;appear
 .pagelinks button{min-height:32px;padding:4px 0;font-size:13px;font-weight:500;color:var(--accent)}
 a.ball-next{display:block;color:inherit;text-decoration:none}
 button.sess-t{display:block;width:100%;text-align:left}
+.tline .sess-t{width:auto;flex:1;min-width:0}
 .wg-legend{display:flex;flex-wrap:wrap;gap:8px 14px;margin-top:12px;font-size:12px;font-weight:500;color:var(--ink)}
 .wg-legend span{display:inline-flex;align-items:center;gap:6px}
 .wg-legend i{width:12px;height:12px;border-radius:4px;display:inline-block}
@@ -1025,16 +1034,65 @@ function lineChart(points,opts){ // points [{x:date,y:secPerKm}] faster is up
 function head(eb,title,lede,cat){const plan=UI.tab!=="plan"?'<button type="button" class="btn ghost" data-tab="plan">Plan</button>':'';return '<div class="head'+(cat?' cat-'+cat:'')+'"><div class="ch"><div><div class="eb acc">'+eb+'</div><h1>'+esc(title)+'</h1>'+(lede?'<div class="lede">'+esc(lede)+'</div>':'')+'</div>'+plan+'</div></div>';}
 function catCls(cat){return cat==="gym"||cat==="ball"||cat==="run"||cat==="rest"?" c-"+cat:"";}
 function catMark(cat,text){return '<span class="cl-'+cat+'">'+text+'</span>';}
+function pageType(){return UI.tab==="ball"||UI.tab==="gym"||UI.tab==="run"?UI.tab:"";}
+function stripTypePrefix(title, cat){
+  const name=CAT_NAME[cat]||"";
+  const t=String(title||"").trim();
+  if(!name)return t;
+  const stripped=t.replace(new RegExp("^"+name.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"\\s*[-–:]\\s*","i"),"").trim();
+  return stripped||t;
+}
+function sameTypeName(title, cat){return String(title||"").trim().toLowerCase()===(CAT_NAME[cat]||"").toLowerCase();}
+function seasonGame(date){
+  const games=((S.basketball||{}).season||{}).nextGames||[];
+  return games.find(g=>{const d=g.start?melDate(g.start):String(g.date||"").slice(0,10);return d===date;})||null;
+}
+function ballHeadline(date){
+  const g=seasonGame(date); if(!g)return "";
+  return [g.round,g.opponent?"vs "+g.opponent:""].filter(Boolean).join(" ");
+}
+function gameOn(date){
+  return Object.values(S.runs).filter(r=>r.date===date&&catOf(r)==="ball").sort((a,b)=>String(b.start||"").localeCompare(String(a.start||"")))[0]||null;
+}
+function outcomeOf(r){const o=r&&r.result&&String(r.result.outcome||"").trim().toUpperCase();return o==="W"||o==="L"||o==="D"?o:"";}
+function cleanTitle(raw, cat, date){
+  let t=String(raw||"").trim();
+  if(pageType()===cat||pageType()==="")t=stripTypePrefix(t, cat);
+  if(cat==="ball"&&sameTypeName(t,"ball")){const alt=ballHeadline(date);if(alt)return alt;}
+  return t;
+}
+function scoreHtml(r){
+  if(!r||catOf(r)!=="ball")return "";
+  const pts=r.stats&&r.stats.points;
+  if(pts==null||pts==="")return "";
+  const min=r.stats&&r.stats.minutes;
+  const o=outcomeOf(r);
+  const pill=o?'<span class="res '+o.toLowerCase()+'">'+o+'</span>':"";
+  const mins=min!=null&&min!==""?'<span class="mins">'+esc(String(min))+' min</span>':"";
+  return '<span class="score">'+pill+'<b>'+esc(String(pts))+' pts</b>'+mins+'</span>';
+}
 function dayRow(d,dark){
   const st=(d.kind==="rest"&&!(+d.km))?"rest":status(d), z=sessZone(d), dd=pISO(d.date), km=kmOn(d.date), cat=catOf(d);
-  const name=CAT_NAME[cat]||"Other";
   const parts=gridParts(d).acts.filter(a=>a!=="rest");
   const mixed=parts.length>1;
-  const nameHtml=mixed?parts.map(a=>catMark(a,esc(CAT_NAME[a]||a))).join(" · "):catMark(cat,esc(name));
-  const base=cat==="run"&&d.km?nameHtml+" · "+d.km+" km":nameHtml;
-  const tags=(/soccer/i.test(d.extra||"")?' <span class="chip">Soccer option</span>':'')+(cat==="gym"&&/steam/i.test((d.detail||"")+(d.extra||""))?' <span class="chip">Steam</span>':'');
-  const s=st==="done"?'<span class="ok">Completed</span>'+(km?' · '+km.toFixed(1)+' km':'')+' · '+nameHtml:st==="miss"?'<span class="miss">Missed</span> · '+base:st==="part"?'<span class="part">Partial</span> · '+km.toFixed(1)+' of '+d.km+' km':base;
-  return '<button class="day z-'+z+(mixed?" c-mix":catCls(cat))+(st==="done"?' done':'')+(d.date===TODAY?' today':'')+'" data-day="'+d.date+'"><span class="tile"><span class="a">'+DOW[dd.getDay()].toUpperCase()+'</span><span class="b">'+dd.getDate()+'</span><span class="a">'+MON[dd.getMonth()].toUpperCase()+'</span></span><span style="min-width:0"><div class="t">'+esc(d.title)+'</div><div class="s">'+s+tags+dayChips(d.date)+verdictChip(d.date)+'</div></span>'+(d.date>=TODAY&&!canMove(d.date,d.date+"x")?'<span class="drag" data-drag aria-label="Drag to move this session" title="Drag to move">⋮⋮</span>':'<span class="r">›</span>')+'</button>';
+  const page=pageType();
+  const tagParts=page?parts.filter(a=>a!==page):(mixed?parts:[cat]);
+  const nameHtml=tagParts.filter(a=>a&&a!=="rest").map(a=>catMark(a,esc(CAT_NAME[a]||a))).join(" · ");
+  const game=(cat==="ball"||parts.includes("ball"))?gameOn(d.date):null;
+  const title=cleanTitle(d.title, cat, d.date);
+  const score=scoreHtml(game);
+  const o=outcomeOf(game);
+  const tags=(/soccer/i.test(d.extra||"")?' <span class="chip">Soccer option</span>':'')+(cat==="gym"&&/steam/i.test((d.detail||"")+(d.extra||""))&&page!=="gym"?' <span class="chip">Steam</span>':'');
+  const bits=[];
+  if(st==="miss")bits.push('<span class="miss">Missed</span>');
+  if(st==="part")bits.push('<span class="part">Partial</span> · '+km.toFixed(1)+' of '+d.km+' km');
+  else if(cat==="run"&&(+d.km||km))bits.push((Math.round((km||+d.km)*10)/10)+" km");
+  if(nameHtml)bits.push(nameHtml);
+  const loggedRun=cat==="ball"?game:Object.values(S.runs).find(r=>r.date===d.date&&catOf(r)===cat);
+  if(loggedRun){const logged=stripTypePrefix(loggedRun.title||"","ball"===cat?"ball":cat);if(logged&&!sameTypeName(logged,cat)&&logged.toLowerCase()!==String(title).toLowerCase())bits.push(esc(logged));}
+  if(score)bits.push(score);
+  const s=bits.filter(Boolean).join(" · ");
+  return '<button class="day z-'+z+(mixed?" c-mix":catCls(cat))+(o==="W"?" res-w":o==="L"?" res-l":"")+(st==="done"?' done':'')+(d.date===TODAY?' today':'')+'" data-day="'+d.date+'"><span class="tile"><span class="a">'+DOW[dd.getDay()].toUpperCase()+'</span><span class="b">'+dd.getDate()+'</span><span class="a">'+MON[dd.getMonth()].toUpperCase()+'</span></span><span style="min-width:0"><div class="t">'+esc(title)+'</div>'+(s?'<div class="s">'+s+tags+dayChips(d.date)+verdictChip(d.date)+'</div>':'')+'</span>'+(d.date>=TODAY&&!canMove(d.date,d.date+"x")?'<span class="drag" data-drag aria-label="Drag to move this session" title="Drag to move">⋮⋮</span>':'<span class="r">›</span>')+'</button>';
 }
 function moveKey(name){return String(name||"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,48)||"move";}
 function splitClauses(s){const out=[];let cur="",depth=0;for(const ch of s){if(ch==="(")depth++;else if(ch===")")depth=Math.max(0,depth-1);if(ch===","&&depth===0){out.push(cur);cur="";}else cur+=ch;}if(cur.trim())out.push(cur);return out;}
@@ -1215,18 +1273,22 @@ function bindGym(root){
 function sessionCard(d,w,label){
   const z=sessZone(d), zone=hasVdot()&&z!=="race"?zoneByKey(z==="x"?"st":z):null, cat=catOf(d);
   const read=hasVdot()?coachRead(d):null;
-  const bits=[CAT_NAME[cat]||"Session"];
+  const bits=[];
+  if(pageType()!==cat)bits.push(CAT_NAME[cat]||"Session");
   if(cat==="run"&&d.km)bits.push(d.km+" km");
   if(zone&&d.km)bits.push(zone.txt+(zone.hr?" · "+zone.hr:""));
   if(w)bits.push("W"+w.n+" "+(w.phase||""));
   const gk=gymKey(d);
   const parsed=cat==="gym"?parseGymTemplate(d.detail):null;
+  const game=cat==="ball"?gameOn(d.date):null;
+  const score=scoreHtml(game);
   const shell=cat==="gym"?'<section class="card pad gymsess">':'<section class="dk pad z-'+z+'">';
   const how=cat==="gym"?(parsed?gymTrackerHtml(d,parsed):(d.detail?'<div class="how"><b>How to do it.</b> '+fill(d.detail)+'</div>':'')):(d.detail?'<div class="how"><b>'+(cat==="run"?"How to run it.":"How to do it.")+'</b> '+fill(d.detail)+'</div>':'');
   const logBtn=(cat!=="gym"&&gk&&d.date<=TODAY?'<button class="btn ghost" data-liftstart="G'+gk+'">Log gym</button>':'')+(cat==="gym"&&!parsed&&gk&&d.date<=TODAY?'<button class="btn ghost" data-liftstart="G'+gk+'">Log gym</button>':'')+(cat==="ball"&&d.date<=TODAY?'<button class="btn ghost" data-logball="'+d.date+'">Log basketball</button>':'')+(cat==="run"&&d.date<=TODAY?'<button class="btn ghost" data-logrun="'+d.date+'">Log run</button>':'');
-  return shell+'<div class="ch"><span class="eb">'+esc(label)+' · '+fD(d.date,true)+'</span><span class="chip'+catCls(cat)+'">'+esc(CAT_NAME[cat]||d.kind)+'</span></div>'+
-    '<button type="button" class="sess-t" data-day="'+d.date+'">'+esc(d.title)+'</button>'+
-    '<div class="sess-m">'+esc(bits.filter(Boolean).join(" · "))+'</div>'+
+  const chip=pageType()===cat?"":'<span class="chip'+catCls(cat)+'">'+esc(CAT_NAME[cat]||d.kind)+'</span>';
+  return shell+'<div class="ch"><span class="eb">'+esc(label)+' · '+fD(d.date,true)+'</span>'+chip+'</div>'+
+    '<div class="tline"><button type="button" class="sess-t" data-day="'+d.date+'">'+esc(cleanTitle(d.title,cat,d.date))+'</button>'+score+'</div>'+
+    (bits.length?'<div class="sess-m">'+esc(bits.filter(Boolean).join(" · "))+'</div>':'')+
     how+
     (d.extra?'<div class="bul"><div><span><b>'+esc(d.extra.split(":")[0])+'.</b> '+esc(d.extra.split(":").slice(1).join(":").trim())+'</span></div></div>':'')+
     (d.pm?'<div class="bul"><div><span><b>Double.</b> Second run very easy, at least 6 hours later.</span></div></div>':'')+
@@ -1313,11 +1375,18 @@ function gymSetSummary(r){
   const done=keys.filter(k=>Array.isArray(sets[k])&&sets[k].length&&sets[k].every(s=>s&&s.done)).length;
   return done+"/"+keys.length+" movements";
 }
+function otherStatLine(stats){
+  if(!stats||typeof stats!=="object")return "";
+  const skip={points:1,minutes:1};
+  const copy={}; Object.keys(stats).forEach(k=>{if(!skip[k])copy[k]=stats[k];});
+  return statLine(copy);
+}
 function activityExtra(r,clamp){
   const cat=catOf(r);
   if(cat==="ball"){
-    const line=statLine(r&&r.stats), note=r&&r.notes!=null?String(r.notes).trim():"";
-    let h=resultLine(r);
+    const score=scoreHtml(r), note=r&&r.notes!=null?String(r.notes).trim():"";
+    let h=score?"":resultLine(r);
+    const line=score?otherStatLine(r.stats):statLine(r&&r.stats);
     if(line)h+='<div class="act-stats ball">'+esc(line)+'</div>';
     if(note)h+='<div class="act-note'+(clamp?" clamp":"")+'">'+esc(note)+'</div>';
     h+=recapBlock(r,clamp);
@@ -1380,7 +1449,14 @@ function bindGameStats(root){
 }
 function activityButton(r){
   const dd=pISO(r.date), z=isRun(r)&&(+r.km)>0?zoneOfPace(r.sec/r.km):"x", a=activityMeta(r), cat=catOf(r);
-  return '<button type="button" class="day z-'+z+catCls(cat)+(r.date===TODAY?" today":"")+'" data-day="'+r.date+'" data-run="'+esc(runKey(r))+'"><span class="tile"><span class="a">'+DOW[dd.getDay()].toUpperCase()+'</span><span class="b">'+dd.getDate()+'</span><span class="a">'+MON[dd.getMonth()].toUpperCase()+'</span></span><span style="min-width:0"><div class="t">'+esc(a.title)+'</div><div class="s">'+esc(a.sport+(a.detail?" · "+a.detail:""))+'</div><div class="act-box">'+activityExtra(r,true)+'</div></span><span class="r">›</span></button>';
+  const title=cleanTitle(a.title, cat, r.date);
+  const score=scoreHtml(r), o=outcomeOf(r);
+  const page=pageType();
+  const sport=(page&&page===cat)?"":a.sport;
+  const detail=(cat==="ball"&&score)?"":a.detail;
+  const sub=[sport,detail].filter(Boolean).join(" · ");
+  const done=cat==="ball"&&!!score;
+  return '<button type="button" class="day z-'+z+catCls(cat)+(o==="W"?" res-w":o==="L"?" res-l":"")+(done?" done":"")+(r.date===TODAY?" today":"")+'" data-day="'+r.date+'" data-run="'+esc(runKey(r))+'"><span class="tile"><span class="a">'+DOW[dd.getDay()].toUpperCase()+'</span><span class="b">'+dd.getDate()+'</span><span class="a">'+MON[dd.getMonth()].toUpperCase()+'</span></span><span style="min-width:0"><div class="tline"><div class="t">'+esc(title)+'</div>'+score+'</div>'+(sub?'<div class="s">'+esc(sub)+'</div>':'')+'<div class="act-box">'+activityExtra(r,true)+'</div></span><span class="r">›</span></button>';
 }
 function loggedActivities(){return Object.values(S.runs).slice().sort((a,b)=>String(b.start||b.date).localeCompare(String(a.start||a.date)));}
 function loggedSection(rows,title){
@@ -1818,7 +1894,7 @@ function vRuns(){
   h+='<section class="card pad" style="margin-top:10px"><div class="ch"><h2>Recorded</h2><span class="sub mono">'+all.length+' runs</span></div>';
   if(!all.length)h+='<div class="empty">No runs in the app yet.</div>';
   else h+='<div class="days" style="margin-top:12px">'+all.slice(0,150).map(r=>{const it=idx[r.date];const z=isRun(r)?zoneOfPace(r.sec/r.km):"x";const dd=pISO(r.date);
-    return '<button class="day z-'+z+'" data-day="'+r.date+'"><span class="tile"><span class="a">'+DOW[dd.getDay()].toUpperCase()+'</span><span class="b">'+dd.getDate()+'</span><span class="a">'+MON[dd.getMonth()].toUpperCase()+'</span></span><span style="min-width:0"><div class="t">'+esc(r.title||r.type||"Activity")+'</div><div class="s">'+(isRun(r)?(+r.km).toFixed(2)+' km · '+fP(r.sec/r.km)+'/km':esc(r.type||"Cross-train"))+' · '+fDur(r.sec)+(r.avgHr?' · '+Math.round(r.avgHr)+' bpm':'')+(it&&isRun(r)?' · plan '+it.d.km+' km':'')+'</div></span><span class="r">›</span></button>';}).join("")+'</div>';
+    return '<button class="day z-'+z+'" data-day="'+r.date+'"><span class="tile"><span class="a">'+DOW[dd.getDay()].toUpperCase()+'</span><span class="b">'+dd.getDate()+'</span><span class="a">'+MON[dd.getMonth()].toUpperCase()+'</span></span><span style="min-width:0"><div class="t">'+esc(cleanTitle(r.title||r.type||"Activity","run",r.date))+'</div><div class="s">'+(isRun(r)?(+r.km).toFixed(2)+' km · '+fP(r.sec/r.km)+'/km':esc(r.type||"Cross-train"))+' · '+fDur(r.sec)+(r.avgHr?' · '+Math.round(r.avgHr)+' bpm':'')+(it&&isRun(r)?' · plan '+it.d.km+' km':'')+'</div></span><span class="r">›</span></button>';}).join("")+'</div>';
   h+='</section>'+shoeCard()+'<details class="card pad older" style="margin-top:14px"><summary><span class="eb">Import a file manually</span><div class="sub" style="margin-top:4px">Only needed if something didn\'t come through from Strava</div></summary><div style="margin-top:12px"><label class="drop" id="drop" for="fIn"><b style="color:var(--accent)">Import from Garmin or Strava</b><div style="margin-top:4px">Garmin Connect activities CSV, Strava activities.csv, or .tcx / .gpx files</div></label><input id="fIn" type="file" multiple accept=".csv,.tcx,.gpx" hidden><div class="sub" style="margin-top:10px">Garmin Connect on a computer: Activities, All activities, Export CSV. Gym, bike and swim sessions import too and count as cross-training.</div></div></details>'; return h;
 }
 
@@ -1938,7 +2014,7 @@ function loadItems(date){
 SPORT_COL.heat="var(--accent)"; SPORT_LBL.heat="Heat";
 function daySports(date){const ks=[...new Set(loadItems(date).map(a=>a.k).filter(k=>k!=="run"))].sort((a,b)=>SPORTS.indexOf(a)-SPORTS.indexOf(b));const l=S.log[date];if(l&&+l.heatMin>0)ks.push("heat");return ks;}
 function fHM(sec){const m=Math.round((sec||0)/60);return m>=60?Math.floor(m/60)+"h "+p2(m%60):m+"m";}
-function dayChips(date){const its=loadItems(date).filter(a=>a.k!=="run");const l=S.log[date]||{};const parts=its.map(a=>{const name=a.k==="other"&&a.title?a.title:(SPORT_LBL[a.k]||a.title||"Activity");return '<span class="chipx"><i style="background:'+SPORT_COL[a.k]+'"></i>'+esc(name)+' '+fHM(a.sec)+'</span>';});if(+l.heatMin>0)parts.push('<span class="chipx"><i style="background:'+SPORT_COL.heat+'"></i>'+esc(l.heatType||"Heat")+' '+l.heatMin+'m</span>');return parts.length?'<span class="chiprow">'+parts.join("")+'</span>':"";}
+function dayChips(date){const page=pageType();const its=loadItems(date).filter(a=>a.k!=="run"&&!(page&&a.k===page));const l=S.log[date]||{};const parts=its.map(a=>{const name=a.k==="other"&&a.title?a.title:(SPORT_LBL[a.k]||a.title||"Activity");return '<span class="chipx"><i style="background:'+SPORT_COL[a.k]+'"></i>'+esc(name)+' '+fHM(a.sec)+'</span>';});if(+l.heatMin>0&&page!=="gym")parts.push('<span class="chipx"><i style="background:'+SPORT_COL.heat+'"></i>'+esc(l.heatType||"Heat")+' '+l.heatMin+'m</span>');return parts.length?'<span class="chiprow">'+parts.join("")+'</span>':"";}
 function weekTotals(dates){const t={};let heat=0;dates.forEach(d=>{loadItems(d).forEach(a=>{const s=(t[a.k]=t[a.k]||{n:0,sec:0,km:0,tss:0});s.n++;s.sec+=a.sec||0;s.km+=a.km||0;s.tss+=a.tss||0;});heat+=+((S.log[d]||{}).heatMin)||0;});return {t,heat};}
 function weekChips(dates){const {t,heat}=weekTotals(dates);
   const c=SPORTS.filter(k=>t[k]).map(k=>'<span class="wchip"><i style="background:'+SPORT_COL[k]+'"></i><b>'+SPORT_LBL[k]+'</b>'+(k==="run"?t[k].km.toFixed(1)+' km':t[k].n+' · '+fHM(t[k].sec))+'</span>');
@@ -2239,7 +2315,7 @@ function openDay(date, opts){
   if(it)x+=sessionCard(it.d,it.w,"Session").replace(/<button class="btn" data-log[^>]*>Log session<\/button>/,"");
   x+=moveChips(date);
   const shown=actsForKind(date, kind);
-  if(shown.length)x+='<section class="card pad" style="margin-top:12px"><div class="eb">Recorded</div>'+shown.map(r=>'<div class="rec-act" data-run="'+esc(runKey(r))+'"><div style="display:flex;justify-content:space-between;gap:10px;margin-top:8px"><span>'+esc(r.title||r.type||"Activity")+'</span><span class="mono sub">'+(kind==="run"&&isRun(r)?(+r.km).toFixed(2)+' km · '+fP(r.sec/r.km)+'/km · '+fDur(+r.sec||0):(kind==="ball"?"":fDur(r.sec)))+'</span></div><div class="act-box">'+activityExtra(r,false)+'</div>'+(kind==="ball"?gameStatsEditor(r):"")+'</div>').join("")+'</section>';
+  if(shown.length)x+='<section class="card pad" style="margin-top:12px"><div class="eb">Recorded</div>'+shown.map(r=>{const c=catOf(r);const title=cleanTitle(r.title||r.type||"Activity",c,r.date);return '<div class="rec-act" data-run="'+esc(runKey(r))+'"><div class="tline" style="margin-top:8px"><span class="t">'+esc(title)+'</span>'+(c==="ball"?scoreHtml(r):'<span class="mono sub">'+(kind==="run"&&isRun(r)?(+r.km).toFixed(2)+' km · '+fP(r.sec/r.km)+'/km · '+fDur(+r.sec||0):fDur(r.sec))+'</span>')+'</div><div class="act-box">'+activityExtra(r,false)+'</div>'+(kind==="ball"?gameStatsEditor(r):"")+'</div>';}).join("")+'</section>';
   if(kind==="run")x+=sessionCheckHtml(date);
   {
     const runNow=Object.values(S.runs).find(r=>r.date===date&&isRun(r)&&+r.km>0);
