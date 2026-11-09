@@ -699,7 +699,7 @@ function catOf(x){
   if(/steam/i.test(title))return "other";
   return "other";
 }
-function gymKey(d){if(!d||catOf(d)!=="gym")return null;const m=/Gym\s*([ABC])/i.exec(String(d.title||""));return m?m[1].toUpperCase():null;}
+function gymKey(d){if(!d||catOf(d)!=="gym")return null;const t=String(d.title||"");if(/full\s*body|\bgym\s*a\b/i.test(t))return "A";if(/\blower\b|\bgym\s*b\b/i.test(t))return "B";if(/\bupper\b|\bgym\s*c\b/i.test(t))return "C";return null;}
 const CAT_NAME={gym:"Gym",ball:"Basketball",run:"Run",rest:"Rest",other:"Other"};
 function plannedDose(d){
   const km=+d.km||0, out={}; if(!km)return out; const add=(k,x)=>{if(x>0)out[k]=(out[k]||0)+x;};
@@ -807,7 +807,7 @@ function gridParts(d){
   if(!d)return {mode:"one",acts:["rest"]};
   const title=String(d.title||"").trim(), kind=d.kind||"";
   const ball=/basketball/i.test(title);
-  const gym=kind==="strength"||(kind==="cross"&&(/^gym\b/i.test(title)||/\bgym\s*[abc]\b/i.test(title)));
+  const gym=kind==="strength"||(kind==="cross"&&/\bgym\b/i.test(title));
   const run=!!GRID_RUN[kind];
   if(/\bor\b/i.test(title)&&ball&&gym){
     const bi=title.search(/basketball/i), gi=title.search(/\bgym\b/i);
@@ -1138,11 +1138,11 @@ function vPlan(){
 function dayPlanCard(){
   const today=DOW[new Date().getDay()];
   const rows=[
-    ["Mon","Gym C or basketball","Tuna on rice with salad","Steak (250 g) with potatoes and salad. Cook an extra steak for Tuesday's lunch."],
+    ["Mon","Gym - Upper or basketball","Tuna on rice with salad","Steak (250 g) with potatoes and salad. Cook an extra steak for Tuesday's lunch."],
     ["Tue","Basketball at night","Leftover steak wrap with salad","Air-fried chicken schnitzel with rice and salad"],
-    ["Wed","Gym A, then steam","Takeaway sushi: salmon or chicken rolls or sashimi plus edamame","Lean or chicken sausages with mash and veg"],
+    ["Wed","Gym - Full Body, then steam","Takeaway sushi: salmon or chicken rolls or sashimi plus edamame","Lean or chicken sausages with mash and veg"],
     ["Thu","Quality run or soccer","Leftover schnitzel wrap","Steak stir-fry with rice and veg"],
-    ["Fri","AM pickup basketball, then Gym B and steam","Tuna wrap with salad","Egg-and-sausage fried rice with frozen veg"],
+    ["Fri","AM pickup basketball, then Gym - Lower and steam","Tuna wrap with salad","Egg-and-sausage fried rice with frozen veg"],
     ["Sat","Long run","After the run: eggs and short-cut bacon on toast with fruit","Treat meal (a pub parma counts), with 2–4 beers across the weekend"],
     ["Sun","Rest","Omelette with 4 eggs, tomato, mushroom and spring onion","Steak or a chicken schnitzel with salad (no rice or potatoes, since it's a rest day)"]
   ];
@@ -2015,16 +2015,16 @@ const EX=[
  ["pogo","Pogo hops","p",["calves"],[],0,"pogos hops"],
  ["bound","Bounding","p",["glutes","quads"],["calves","hamstrings"],0,"bounds"],
  ["boxjump","Box jump","p",["quads","glutes"],["calves"],0,"jump"],
- ["kbswing","Kettlebell swing","w",["glutes","hamstrings"],["back","core"],0,"kb swing"],
+ ["kbswing","Kettlebell swing to chest height","w",["glutes","hamstrings"],["back","core"],0,"kb swing kettlebell chest"],
  ["bench","Bench press","w",["chest"],["triceps","shoulders"],0,"bp bench"],
- ["dbbench","Dumbbell bench press","w",["chest"],["triceps","shoulders"],0,"db bench"],
- ["incline","Incline dumbbell press","w",["chest","shoulders"],["triceps"],0,"incline"],
+ ["dbbench","Dumbbell bench press, neutral grip","w",["chest"],["triceps","shoulders"],0,"db bench neutral"],
+ ["incline","Incline dumbbell press, neutral grip","w",["chest","shoulders"],["triceps"],0,"incline neutral"],
  ["fly","Chest fly","w",["chest"],["shoulders"],0,"pec deck flys"],
  ["pushup","Push-up","b",["chest"],["triceps","shoulders","core"],0.65,"push up pushups"],
  ["dip","Dip","b",["triceps","chest"],["shoulders"],0.95,"dips"],
  ["ohp","Overhead press","w",["shoulders"],["triceps","core"],0,"ohp military press"],
- ["dbpress","Dumbbell shoulder press","w",["shoulders"],["triceps"],0,"db shoulder press"],
- ["lateral","Lateral raise","w",["shoulders"],[],0,"laterals side raise"],
+ ["dbpress","Half-kneeling landmine press","w",["shoulders"],["triceps"],0,"landmine half kneeling shoulder press"],
+ ["lateral","Scaption raise","w",["shoulders"],[],0,"scaption lateral raise"],
  ["facepull","Face pull","w",["shoulders","back"],[],0,"face pulls rear delt"],
  ["pullup","Pull-up","b",["back"],["biceps","forearms"],1,"pull up pullups"],
  ["chinup","Chin-up","b",["back","biceps"],["forearms"],1,"chin up"],
@@ -2041,16 +2041,17 @@ const EX=[
  ["legraise","Hanging leg raise","b",["core"],[],0.2,"leg raises"],
  ["abwheel","Ab wheel","b",["core"],["shoulders"],0.3,"rollout"],
  ["crunch","Cable crunch","w",["core"],[],0,"crunches"],
- ["mchest","Machine chest press","w",["chest"],["triceps","shoulders"],0,"machine chest press"],
+ ["mchest","Machine chest press, neutral grip","w",["chest"],["triceps","shoulders"],0,"machine chest press neutral"],
  ["revlunge","Dumbbell reverse lunge","w",["quads","glutes"],["hamstrings"],0.6,"reverse lunge"],
- ["apull","Assisted pull-up","w",["back"],["biceps"],0,"assisted pull-up pullup machine"],
+ ["prehab","Shoulder prehab, 8 min","t",["shoulders"],[],0,"shoulder prehab"],
+ ["apull","Assisted pull-up, neutral grip","w",["back"],["biceps"],0,"assisted pull-up neutral grip"],
 ].map(a=>({id:a[0],name:a[1],t:a[2],p:a[3],s:a[4],bw:a[5],k:(a[1]+" "+a[6]).toLowerCase()}));
 const EXI=Object.fromEntries(EX.map(e=>[e.id,e]));
 const TEMPLATES={};
 const GYM_PLAN={
- A:{name:"Gym A: Full body",ex:[["legpress",3,12],["mchest",4,10],["pulldown",4,10],["cablerow",3,12],["dbpress",3,10],["curl",2,12],["plank",3,40]]},
- B:{name:"Gym B: Lower + pull",ex:[["goblet",3,10],["rdl",3,10],["revlunge",2,8],["legpress",3,10],["legcurl",3,12],["calf",3,12],["apull",3,8]]},
- C:{name:"Gym C: Upper",ex:[["dbbench",4,10],["dbrow",4,10],["incline",3,10],["pulldown",3,12],["lateral",3,15],["pushdown",3,12],["hammer",2,12]]}
+ A:{name:"Gym - Full Body",ex:[["prehab",1,480],["legpress",3,12],["mchest",4,10],["pulldown",4,10],["cablerow",3,12],["dbpress",3,10],["curl",2,12],["plank",3,40]]},
+ B:{name:"Gym - Lower",ex:[["prehab",1,480],["goblet",3,10],["rdl",3,10],["revlunge",2,8],["legpress",3,10],["legcurl",3,12],["calf",3,12],["apull",3,8]]},
+ C:{name:"Gym - Upper",ex:[["prehab",1,480],["dbbench",4,10],["dbrow",4,10],["incline",3,10],["pulldown",3,12],["lateral",3,15],["pushdown",3,12],["hammer",2,12]]}
 };
 function regEx(x){if(x&&x.cdef&&!EXI[x.id]){const e={t:"w",p:[],s:[],bw:0,...x.cdef,id:x.id};e.k=String(e.name||"").toLowerCase();EX.push(e);EXI[x.id]=e;}}
 function lifts(){return Object.entries(S.lifts||{}).filter(([,v])=>v&&!v.deleted).map(([id,v])=>{(v.ex||[]).forEach(regEx);return {id,...v};}).sort((a,b)=>String(a.date+a.start).localeCompare(String(b.date+b.start)));}
@@ -2183,7 +2184,7 @@ function exFromLast(id,sets,reps){const e=EXI[id];const last=lastFor(id);
 function newSession(kind){const now=new Date();const st=p2(now.getHours())+":"+p2(now.getMinutes());
   let L={date:TODAY,start:st,name:"Gym session",ex:[],t0:Date.now()};
   const g=/^G([ABC])$/.exec(kind||"");
-  if(g){const t=GYM_PLAN[g[1]];L.name=t.name;L.tpl="G"+g[1];L.ex=t.ex.map(([id,s,r])=>exFromLast(id,s,r));L.note="Steam room after, 10 to 20 min, then water. Steam is only on gym days.";return L;}
+  if(g){const t=GYM_PLAN[g[1]];L.name=t.name;L.tpl="G"+g[1];L.ex=t.ex.map(([id,s,r])=>exFromLast(id,s,r));L.note="Start with 8 min of shoulder prehab. If a movement turns sharp, stop it. Steam room after, 10 to 20 min, then water. Steam is only on gym days.";return L;}
   if(TEMPLATES[kind]){L.name=TEMPLATES[kind].name;L.tpl=kind;L.ex=TEMPLATES[kind].ex.map(([id,s,r])=>exFromLast(id,s,r));}
   else if(kind==="last"||String(kind).startsWith("copy:")){const l=kind==="last"?lifts()[lifts().length-1]:(S.lifts||{})[kind.slice(5)];if(l){L.name=l.name||"Gym session";L.tpl=l.tpl||"";L.ex=(l.ex||[]).map(x=>({id:x.id,sets:(x.sets||[]).filter(st=>st.done!==false).map(st=>({w:+st.w||0,r:+st.r||0,done:false}))}));}}
   return L;}
