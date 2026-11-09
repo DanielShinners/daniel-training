@@ -436,6 +436,34 @@ input[type=date],input[type=time]{min-height:44px;-webkit-appearance:none;appear
 .weekhead:first-child{border-top:0}
 .weekhead .w{font-family:var(--sans);font-size:12px;font-weight:500;color:var(--ink3);width:36px;flex:none}
 .weekhead.cur .w{color:var(--accent)}
+.wgrid{--wg-ball:#F97316;--wg-run:#D8F34A;--wg-run-ink:#17200A;--wg-gym:#FF6B81;--wg-ink:#1C1206;--wg-rest:#E4E6EB;--wg-rest-ink:#5C6270}
+.wg-scroll{overflow-x:auto}
+.wg-table{display:grid;gap:4px;min-width:320px}
+.wg-head,.wg-row{display:grid;grid-template-columns:34px repeat(7,minmax(0,1fr));gap:3px;align-items:center}
+.wg-head span{text-align:center;font-size:10px;font-weight:500;color:var(--ink3)}
+.wg-wk{font-size:12px;font-weight:500;color:var(--ink2)}
+.wg-row.cur .wg-wk{font-weight:600;color:var(--ink)}
+.wgrid .wg-cell{position:relative;height:34px;border:0;border-radius:8px;padding:0;width:100%;cursor:pointer;background:transparent}
+.wgrid .wg-fill{display:block;height:100%;border-radius:8px;overflow:hidden}
+.wgrid .wg-and{display:flex}
+.wgrid .wg-and i{flex:1;display:block}
+.wgrid .wg-or{background:linear-gradient(90deg,var(--a) 50%,var(--b) 50%)}
+.wgrid .g-ball{background:var(--wg-ball);color:var(--wg-ink)}
+.wgrid .g-run{background:var(--wg-run);color:var(--wg-run-ink)}
+.wgrid .g-gym{background:var(--wg-gym);color:var(--wg-ink)}
+.wgrid .g-rest{background:var(--wg-rest);color:var(--wg-rest-ink)}
+.wgrid .wg-n{position:absolute;inset:0;display:grid;place-items:center;font-size:11px;font-weight:500;pointer-events:none}
+.wgrid .t-ball .wg-n{color:var(--wg-ink)}
+.wgrid .t-run .wg-n{color:var(--wg-run-ink)}
+.wgrid .t-gym .wg-n{color:var(--wg-ink)}
+.wgrid .t-rest .wg-n{color:var(--wg-rest-ink)}
+.wgrid .t-mix .wg-n{color:#1C1E24;text-shadow:0 0 3px #fff,0 0 3px #fff}
+.wgrid .wg-cell.today{box-shadow:0 0 0 2px var(--ink);border-radius:8px}
+.wg-legend{display:flex;flex-wrap:wrap;gap:8px 14px;margin-top:12px;font-size:12px;font-weight:500;color:var(--ink2)}
+.wg-legend span{display:inline-flex;align-items:center;gap:6px}
+.wg-legend i{width:12px;height:12px;border-radius:4px;display:inline-block}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .wgrid{--wg-rest:#2A2E3A;--wg-rest-ink:rgba(243,244,248,.72)}}
+:root[data-theme="dark"] .wgrid{--wg-rest:#2A2E3A;--wg-rest-ink:rgba(243,244,248,.72)}
 .minibar{height:5px;background:var(--sunken);border-radius:999px;margin-top:8px;overflow:hidden}
 .minibar div,.holo{height:100%}
 /* Chat */
@@ -460,6 +488,28 @@ ol.opts li::before{counter-increment:opt;content:counter(opt);font-weight:500;co
 .shop-ul{margin:12px 0 0;padding:0;list-style:none;display:grid;gap:8px}
 .shop-ul li{font-size:14.5px;line-height:1.4;padding-left:14px;position:relative}
 .shop-ul li::before{content:"";position:absolute;left:0;top:.55em;width:6px;height:6px;border-radius:99px;background:var(--accent)}
+.dayplan{width:100%;border-collapse:collapse;margin-top:12px;font-size:14.5px;line-height:1.45}
+.dayplan thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.dayplan,.dayplan tbody,.dayplan tr,.dayplan th,.dayplan td{display:block}
+.dayplan tr{padding:12px 0 2px;border-top:1px solid var(--line)}
+.dayplan tr:first-child{border-top:0;padding-top:4px}
+.dayplan th{font-size:16px;font-weight:500;padding:0 0 6px}
+.dayplan td{padding:0 0 8px}
+.dayplan td::before{content:attr(data-k);display:block;font-size:12px;font-weight:500;color:var(--ink3);margin-bottom:1px}
+.dayplan tr.today{background:var(--accentSoft);border:0;border-radius:18px;padding:12px 12px 4px;margin:8px 0}
+.dayplan tr.today th{color:var(--accent)}
+@media (min-width:760px){
+  .dayplan{display:table}
+  .dayplan thead{position:static;width:auto;height:auto;overflow:visible;clip:auto}
+  .dayplan thead{display:table-header-group}
+  .dayplan tbody{display:table-row-group}
+  .dayplan tr{display:table-row;border-top:0;padding:0;margin:0}
+  .dayplan th,.dayplan td{display:table-cell;padding:10px 12px 10px 0;border-top:1px solid var(--line);vertical-align:top}
+  .dayplan thead th{border-top:0;font-size:11px;font-weight:500;color:var(--ink3);padding-bottom:6px}
+  .dayplan tbody th{width:64px;font-size:14.5px}
+  .dayplan td::before{content:none}
+  .dayplan tr.today th,.dayplan tr.today td{background:var(--accentSoft);border-top-color:transparent}
+}
 .old-n{padding:12px 0;border-top:1px solid var(--line)}.old-n:first-of-type{border-top:0;margin-top:8px}.old-n b{font-weight:500;display:block;margin:2px 0}
 .msg .when{display:block;font-family:var(--sans);font-size:10px;font-weight:500;letter-spacing:.04em;text-transform:uppercase;opacity:.6;margin-top:6px}
 .composer{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:10px;align-items:end}
@@ -541,7 +591,7 @@ function hideSignin(){$("#signin").hidden=true;$("#app").hidden=false;$("#topbar
 
 const S={chat:[],weeks:{},pastweeks:{},runs:{},log:{},lifts:{},notes:[],weights:{},adjust:{},settings:{},db:null,loaded:false};
 function hasVdot(){const v=S.settings&&S.settings.vdot;return v!=null&&v!==""&&isFinite(+v)&&+v>0;}
-const UI={tab:"today",sel:null,openWeek:null,recipe:4};
+const UI={tab:"today",sel:null,openWeek:null,recipe:4,showPast:false};
 try{const t=localStorage.getItem("dt-tab"); if(t) UI.tab=t;}catch(e){}
 
 /* utils */
@@ -694,13 +744,78 @@ function weekBars(w,dark){
 }
 function dayPos(w){const i=w.days.findIndex(d=>d.date===(UI.sel||TODAY));return i<0?0:Math.floor(i/7)*7;}
 
-function doseChart(){
-  const ws=weekList(); if(!ws.length)return "";
+function melbourneToday(){
+  try{return new Intl.DateTimeFormat("en-CA",{timeZone:"Australia/Melbourne",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());}
+  catch(e){return TODAY;}
+}
+function weekEnd(w){const days=w.days||[];return days.length?days[days.length-1].date:addD(w.start,6);}
+function pastPlanWeeks(){
+  const t=melbourneToday(), cur=weekOf(t);
+  if(cur)return weekList().filter(w=>w.start<cur.start);
+  return weekList().filter(w=>weekEnd(w)<t);
+}
+function visiblePlanWeeks(){
+  if(UI.showPast)return weekList();
+  const hide=new Set(pastPlanWeeks().map(w=>w.start));
+  return weekList().filter(w=>!hide.has(w.start));
+}
+const GRID_RUN={easy:1,recovery:1,long:1,threshold:1,quality:1,race:1};
+function gridParts(d){
+  if(!d)return {mode:"one",acts:["rest"]};
+  const title=String(d.title||"").trim(), kind=d.kind||"";
+  const ball=/basketball/i.test(title);
+  const gym=kind==="strength"||(kind==="cross"&&(/^gym\b/i.test(title)||/\bgym\s*[abc]\b/i.test(title)));
+  const run=!!GRID_RUN[kind];
+  if(/\bor\b/i.test(title)&&ball&&gym){
+    const bi=title.search(/basketball/i), gi=title.search(/\bgym\b/i);
+    return {mode:"or",acts:bi>=0&&gi>=0&&bi<gi?["ball","gym"]:["gym","ball"]};
+  }
+  const marks=[];
+  if(ball)marks.push({i:title.search(/basketball/i),k:"ball"});
+  if(gym){const gi=title.search(/\bgym\b/i);marks.push({i:gi<0?0:gi,k:"gym"});}
+  if(run){const ri=title.search(/\b(run|km|easy|tempo|strides|reps)\b/i);marks.push({i:ri<0?500:ri,k:"run"});}
+  marks.sort((a,b)=>a.i-b.i);
+  const acts=[]; marks.forEach(m=>{if(!acts.includes(m.k))acts.push(m.k);});
+  if(!acts.length)acts.push("rest");
+  return {mode:acts.length>1?"and":"one",acts};
+}
+function weekGrid(weeks){
+  const mel=melbourneToday(), cur=weekOf(mel);
+  const dows=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+  const names={ball:"Basketball",run:"Run",gym:"Gym",rest:"Rest"};
+  const cols={ball:"var(--wg-ball)",run:"var(--wg-run)",gym:"var(--wg-gym)",rest:"var(--wg-rest)"};
+  const hasPast=pastPlanWeeks().length||pastWeeks().length;
+  let h='<section class="card pad" id="weekgrid"><div class="ch"><div><div class="eb">Plan</div><h2>Week grid</h2></div>'+(hasPast?'<button type="button" class="btn ghost" data-showpast="1">'+(UI.showPast?"Hide past weeks":"Show past weeks")+'</button>':'')+'</div>';
+  h+='<div class="wgrid"><div class="wg-scroll"><div class="wg-table"><div class="wg-head"><span></span>'+dows.map(d=>'<span>'+d.slice(0,1)+'</span>').join("")+'</div>';
+  weeks.forEach(w=>{
+    const by={};(w.days||[]).forEach(d=>{if(d.dow)by[d.dow]=d;});
+    h+='<div class="wg-row'+(cur&&cur.start===w.start?' cur':'')+'"><span class="wg-wk">W'+w.n+'</span>';
+    dows.forEach(dow=>{
+      const d=by[dow];
+      const parts=gridParts(d);
+      const mix=parts.acts.length>1;
+      const tone=mix?"mix":parts.acts[0];
+      const label=(parts.mode==="or"?parts.acts.map(a=>names[a]).join(" or "):parts.acts.map(a=>names[a]).join(", "));
+      let fill;
+      if(parts.mode==="or")fill='<span class="wg-fill wg-or" style="--a:'+cols[parts.acts[0]]+';--b:'+cols[parts.acts[1]]+'"></span>';
+      else if(parts.mode==="and")fill='<span class="wg-fill wg-and">'+parts.acts.map(a=>'<i class="g-'+a+'"></i>').join("")+'</span>';
+      else fill='<span class="wg-fill g-'+parts.acts[0]+'"></span>';
+      const num=d&&d.date?String(pISO(d.date).getDate()):"";
+      const today=d&&d.date===mel;
+      h+='<button type="button" class="wg-cell t-'+tone+(today?" today":"")+'"'+(d?' data-day="'+d.date+'"':"")+' aria-label="'+esc((d?fD(d.date,true)+", ":"")+label)+'">'+fill+'<span class="wg-n">'+num+'</span></button>';
+    });
+    h+='</div>';
+  });
+  h+='</div></div><div class="wg-legend"><span><i class="g-ball"></i>Basketball</span><span><i class="g-run"></i>Run</span><span><i class="g-gym"></i>Gym</span><span><i class="g-rest"></i>Rest</span></div></div></section>';
+  return h;
+}
+function doseChart(list){
+  const ws=list||weekList(); if(!ws.length)return "";
   const W=640,H=230,L=30,R=8,T=14,B=24, order=["rec","st","mp","lt2","vo2","sp"];
   const data=ws.map(w=>{const o={};(w.days||[]).forEach(d=>{const p=plannedDose(d);for(const k in p)o[k]=(o[k]||0)+p[k];});return o;});
   const max=Math.ceil(Math.max(...ws.map(wPlan))/25)*25+10;
   const bw=(W-L-R)/ws.length, y=v=>T+(H-T-B)*(1-v/max);
-  const cur=weekOf(TODAY); let g='<defs><pattern id="hatch" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="2.2" height="5" fill="var(--dark)" opacity=".55"/></pattern></defs>';
+  const cur=weekOf(melbourneToday()); let g='<defs><pattern id="hatch" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="2.2" height="5" fill="var(--dark)" opacity=".55"/></pattern></defs>';
   for(let t=25;t<max;t+=25)g+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+y(t)+'" y2="'+y(t)+'" stroke="var(--dline)"/><text x="'+(L-6)+'" y="'+(y(t)+3)+'" text-anchor="end">'+t+'</text>';
   ws.forEach((w,i)=>{const x=L+i*bw+1.5,wd=bw-3;let acc=0;
     order.forEach(k=>{const v=data[i][k]||0;if(!v)return;g+='<rect x="'+x+'" y="'+y(acc+v)+'" width="'+wd+'" height="'+(y(acc)-y(acc+v))+'" fill="var(--z-'+k+')"/>';acc+=v;});
@@ -954,14 +1069,15 @@ function pastSection(){
   }).join("")+'</div>';
 }
 function vPlan(){
-  const ws=weekList(); const past=pastSection();
-  if(!ws.length)return head("Plan","The block")+past+'<div class="card pad"><div class="empty">The plan appears here once loaded.</div></div>';
-  const cur=weekOf(TODAY); if(UI.openWeek==null)UI.openWeek=cur?cur.n:ws[0].n;
-  const total=ws.reduce((a,w)=>a+wPlan(w),0), done=ws.reduce((a,w)=>a+wAct(w),0), peak=Math.max(...ws.map(wPlan));
+  const all=weekList(); const ws=visiblePlanWeeks(); const past=UI.showPast?pastSection():"";
+  if(!all.length)return head("Plan","The block")+weekGrid(ws)+past+'<div class="card pad"><div class="empty">The plan appears here once loaded.</div></div>';
+  const cur=weekOf(melbourneToday()); if(UI.openWeek==null)UI.openWeek=cur?cur.n:(ws[0]?ws[0].n:-1);
+  const total=ws.reduce((a,w)=>a+wPlan(w),0), done=ws.reduce((a,w)=>a+wAct(w),0), peak=ws.length?Math.max(...ws.map(wPlan)):0;
   const span=planBounds();
   let h=head("The block · "+span.n+" weeks","Gym, basketball and running",fD(span.start)+" to "+fD(span.end)+". Completed kilometres are laid over the plan.");
+  h+=weekGrid(ws);
   h+=past;
-  h+='<section class="dk pad"><div class="ch"><div><div class="eb">'+fD(span.start)+' to '+fD(span.end)+' · Week '+(cur?cur.n:0)+' of '+span.n+'</div><h2>Training dose</h2><div class="lede">Weekly planned kilometres · later weeks hatched</div></div><div class="metrics" style="grid-template-columns:repeat(3,auto);margin:0;gap:18px"><div class="m"><div class="k">Recorded</div><div class="v">'+done.toFixed(1)+'<small>km</small></div></div><div class="m"><div class="k">Planned</div><div class="v">'+Math.round(total)+'<small>km</small></div></div><div class="m"><div class="k">Peak</div><div class="v">'+Math.round(peak)+'<small>km</small></div></div></div></div>'+doseChart()+'</section>';
+  h+='<section class="dk pad"><div class="ch"><div><div class="eb">'+fD(span.start)+' to '+fD(span.end)+' · Week '+(cur?cur.n:0)+' of '+span.n+'</div><h2>Training dose</h2><div class="lede">Weekly planned kilometres · later weeks hatched</div></div><div class="metrics" style="grid-template-columns:repeat(3,auto);margin:0;gap:18px"><div class="m"><div class="k">Recorded</div><div class="v">'+done.toFixed(1)+'<small>km</small></div></div><div class="m"><div class="k">Planned</div><div class="v">'+Math.round(total)+'<small>km</small></div></div><div class="m"><div class="k">Peak</div><div class="v">'+Math.round(peak)+'<small>km</small></div></div></div></div>'+doseChart(ws)+'</section>';
   h+='<section class="card pad" style="margin-top:14px">';
   ws.forEach(w=>{const open=UI.openWeek===w.n,p=wPlan(w),a=wAct(w);
     h+='<button class="weekhead'+(cur&&cur.n===w.n?' cur':'')+'" data-week="'+w.n+'" aria-expanded="'+open+'"><span class="w">W'+w.n+'</span><span style="flex:1;min-width:0"><span style="display:block;font-weight:500">'+esc(w.phase)+'</span><span class="sub" style="display:block">'+fD(w.start)+' · '+catLine(w.days||[])+(a?' · '+a.toFixed(0)+' km done':'')+'</span>'+(a&&p?'<span class="minibar" style="display:block"><span class="holo" style="display:block;height:100%;width:'+Math.min(100,a/p*100)+'%"></span></span>':'')+'</span><span class="sub">'+(open?'Hide':'Show')+'</span></button>';
@@ -971,6 +1087,23 @@ function vPlan(){
   return h;
 }
 
+function dayPlanCard(){
+  const today=DOW[new Date().getDay()];
+  const rows=[
+    ["Mon","Gym C or basketball","Tuna on rice with salad","Steak (250 g) with potatoes and salad. Cook an extra steak for Tuesday's lunch."],
+    ["Tue","Basketball at night","Leftover steak wrap with salad","Air-fried chicken schnitzel with rice and salad"],
+    ["Wed","Gym A, then steam","Takeaway sushi: salmon or chicken rolls or sashimi plus edamame","Lean or chicken sausages with mash and veg"],
+    ["Thu","Quality run or soccer","Leftover schnitzel wrap","Steak stir-fry with rice and veg"],
+    ["Fri","AM pickup basketball, then Gym B and steam","Tuna wrap with salad","Egg-and-sausage fried rice with frozen veg"],
+    ["Sat","Long run","After the run: eggs and short-cut bacon on toast with fruit","Treat meal (a pub parma counts), with 2–4 beers across the weekend"],
+    ["Sun","Rest","Omelette with 4 eggs, tomato, mushroom and spring onion","Steak or a chicken schnitzel with salad (no rice or potatoes, since it's a rest day)"]
+  ];
+  const body=rows.map(r=>{
+    const on=r[0]===today;
+    return '<tr'+(on?' class="today" aria-current="date"':'')+'><th scope="row">'+esc(r[0])+'</th><td data-k="Training">'+esc(r[1])+'</td><td data-k="Lunch">'+esc(r[2])+'</td><td data-k="Dinner">'+esc(r[3])+'</td></tr>';
+  }).join("");
+  return '<section class="card pad" id="dayplan"><h2>Day by day</h2><p class="sub">Every morning is coffee only.</p><table class="dayplan"><thead><tr><th>Day</th><th>Training</th><th>Lunch</th><th>Dinner</th></tr></thead><tbody>'+body+'</tbody></table><div class="prose"><p>The afternoon snack is Greek yoghurt with berries or 2 boiled eggs, plus a banana or mango before a session. Swap days freely. Leftovers from dinner make the next day\'s lunch.</p></div></section>';
+}
 function vMeals(){
   const template=[
     "Morning: coffee only. On gym or morning-training days, optionally add a Greek yoghurt or a shake (whey, creatine, banana, milk) mid-morning.",
@@ -1017,6 +1150,7 @@ function vMeals(){
   h+='<tr><th scope="row">Fat</th>'+cell("70–80 g","70–80 g")+'</tr>';
   h+='<tr><th scope="row">Fluids</th>'+cell("3 L+, plus Hyro after steam, games and long runs","2.5–3 L")+'</tr>';
   h+='</tbody></table><div class="sub" style="margin-top:10px">Training days are gym, quality runs, long runs, basketball and soccer.</div></section>';
+  h+=dayPlanCard();
   h+='<section class="card pad" id="meal-template"><h2>Day template</h2><div class="prose">'+template.map(t=>'<p>'+esc(t)+'</p>').join("")+'</div><div class="sub" style="margin-top:10px">This comes to about 180 g without the optional mid-morning add-on.</div></section>';
   h+='<section class="card pad"><h2>Coffee</h2><div class="prose"><p>A long black is about 0 kcal. A strong full-cream latte is roughly 8–10 g protein and 150–200 kcal (estimates). Skim or lite milk, or a protein latte, cuts that.</p><p>Last coffee around 2 pm. A coffee before a run or game is fine.</p></div></section>';
   h+='<section class="card pad" id="meal-lunch"><h2>Lunch options</h2><ol class="opts">'+lunch.map(t=>'<li>'+esc(t)+'</li>').join("")+'</ol></section>';
@@ -2023,6 +2157,7 @@ function bind(r){
   r.querySelectorAll("[data-gymopen]").forEach(b=>b.onclick=()=>openLift(b.dataset.gymopen));
   r.querySelectorAll("[data-gymtab]").forEach(b=>b.onclick=()=>{UI.tab="gym";render();scrollTo(0,0);});
   r.querySelectorAll("[data-week]").forEach(b=>b.onclick=()=>{const n=+b.dataset.week;UI.openWeek=UI.openWeek===n?-1:n;render();});
+  r.querySelectorAll("[data-showpast]").forEach(b=>b.onclick=()=>{UI.showPast=!UI.showPast;render();});
   r.querySelectorAll("[data-day]").forEach(b=>b.onclick=()=>openDay(b.dataset.day));
   r.querySelectorAll("[data-log]").forEach(b=>b.onclick=()=>openDay(b.dataset.log));
   const cf=$("#chatF",r);
