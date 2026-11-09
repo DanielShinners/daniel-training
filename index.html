@@ -488,25 +488,20 @@ input[type=date],input[type=time]{min-height:44px;-webkit-appearance:none;appear
 .wg-table{display:grid;gap:4px;min-width:320px}
 .wg-head,.wg-row{display:grid;grid-template-columns:34px repeat(7,minmax(0,1fr));gap:3px;align-items:center}
 .wg-head span{text-align:center;font-size:10px;font-weight:500;color:var(--ink3)}
-.wg-wk{font-size:12px;font-weight:500;color:var(--ink2)}
+.wg-wk{font-size:12px;font-weight:500;color:var(--ink)}
 .wg-row.cur .wg-wk{font-weight:600;color:var(--ink)}
 .wgrid .wg-cell{position:relative;height:34px;border:0;border-radius:8px;padding:0;width:100%;cursor:pointer;background:transparent}
 .wgrid .wg-fill{display:block;height:100%;border-radius:8px;overflow:hidden}
 .wgrid .wg-and{display:flex}
 .wgrid .wg-and i{flex:1;display:block}
 .wgrid .wg-or{background:linear-gradient(90deg,var(--a) 50%,var(--b) 50%)}
-.wgrid .g-ball{background:var(--wg-ball);color:var(--wg-ink)}
-.wgrid .g-run{background:var(--wg-run);color:var(--wg-run-ink)}
-.wgrid .g-gym{background:var(--wg-gym);color:var(--cat-gym-ink)}
-.wgrid .g-rest{background:var(--wg-rest);color:var(--wg-rest-ink)}
-.wgrid .wg-n{position:absolute;inset:0;display:grid;place-items:center;font-size:11px;font-weight:500;pointer-events:none}
-.wgrid .t-ball .wg-n{color:var(--wg-ink)}
-.wgrid .t-run .wg-n{color:var(--wg-run-ink)}
-.wgrid .t-gym .wg-n{color:var(--cat-gym-ink)}
-.wgrid .t-rest .wg-n{color:var(--wg-rest-ink)}
-.wgrid .t-mix .wg-n{color:#fff;text-shadow:0 0 2px #1C1206,0 0 2px #1C1206,0 1px 1px #1C1206}
+.wgrid .g-ball{background:var(--wg-ball)}
+.wgrid .g-run{background:var(--wg-run)}
+.wgrid .g-gym{background:var(--wg-gym)}
+.wgrid .g-rest{background:var(--wg-rest)}
+.wgrid .wg-n{position:absolute;inset:0;display:grid;place-items:center;font-size:11px;font-weight:500;pointer-events:none;color:var(--ink);text-shadow:none}
 .wgrid .wg-cell.today{box-shadow:0 0 0 2px var(--ink);border-radius:8px}
-.wg-legend{display:flex;flex-wrap:wrap;gap:8px 14px;margin-top:12px;font-size:12px;font-weight:500;color:var(--ink2)}
+.wg-legend{display:flex;flex-wrap:wrap;gap:8px 14px;margin-top:12px;font-size:12px;font-weight:500;color:var(--ink)}
 .wg-legend span{display:inline-flex;align-items:center;gap:6px}
 .wg-legend i{width:12px;height:12px;border-radius:4px;display:inline-block}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .wgrid{--wg-rest:#2A2E3A;--wg-rest-ink:rgba(243,244,248,.72)}}
