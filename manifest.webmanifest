@@ -1,6 +1,6 @@
 {
-  "name": "Daniel Training",
-  "short_name": "Training",
+  "name": "Squiz",
+  "short_name": "Squiz",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
