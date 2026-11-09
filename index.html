@@ -748,9 +748,37 @@ function vSetup(){
 function bindSetup(r){const f=$("#setupF",r);if(!f)return;f.onsubmit=async e=>{e.preventDefault();const fd=new FormData(f);const o={};for(const [k,val] of fd.entries()){if(["runDays","gymDays","offDays"].includes(k))(o[k]=o[k]||[]).push(val);else o[k]=String(val).trim();}
   o.done=true;o.updated=new Date().toISOString();const b=f.querySelector("button");b.disabled=true;
   try{await S.db.doc("settings/main").set({...S.settings,setup:o});await S.db.doc("chat/"+new Date().toISOString().replace(/\D/g,"").slice(0,14)+"-u").set({ts:new Date().toISOString().slice(0,19),role:"user",text:"Setup done. Please build my plan.",handled:false});toast("Saved. Your coach is building your plan.");UI.tab="today";render();}catch(err){toast("Could not save: "+err.message);b.disabled=false;}};}
+function activityMeta(r){
+  const sport=r.type||(isRun(r)?"Run":"Activity");
+  const parts=[];
+  if(isRun(r)&&(+r.km)>0){parts.push((+r.km).toFixed(2)+" km"); if(+r.sec>0)parts.push(fP(r.sec/r.km)+"/km");}
+  const dur=fDur(+r.sec||+r.el||0);
+  if(dur&&dur!=="0:00")parts.push(dur);
+  if(r.avgHr)parts.push(Math.round(r.avgHr)+" bpm");
+  return {sport, title:r.title||sport, detail:parts.join(" · ")};
+}
+function activityButton(r){
+  const dd=pISO(r.date), z=isRun(r)&&(+r.km)>0?zoneOfPace(r.sec/r.km):"x", a=activityMeta(r);
+  return '<button type="button" class="day z-'+z+(r.date===TODAY?" today":"")+'" data-day="'+r.date+'"><span class="tile"><span class="a">'+DOW[dd.getDay()].toUpperCase()+'</span><span class="b">'+dd.getDate()+'</span><span class="a">'+MON[dd.getMonth()].toUpperCase()+'</span></span><span style="min-width:0"><div class="t">'+esc(a.title)+'</div><div class="s">'+esc(a.sport+(a.detail?" · "+a.detail:""))+'</div></span><span class="r">›</span></button>';
+}
+function loggedActivities(){return Object.values(S.runs).slice().sort((a,b)=>String(b.start||b.date).localeCompare(String(a.start||a.date)));}
+function loggedSection(rows,title){
+  if(!rows.length)return "";
+  return '<section class="card pad"><div class="ch"><h2>'+title+'</h2><span class="sub">'+rows.length+'</span></div><div class="days" style="margin-top:12px">'+rows.map(activityButton).join("")+'</div></section>';
+}
 function vToday(){
   if(S.loaded&&!(S.settings.setup&&S.settings.setup.done))return vSetup();
-  const ws=weekList(); if(!ws.length)return head("Today","Today",S.loaded?"Thanks "+esc((S.settings.setup||{}).name||"")+". Your coach is building your plan. You can log gym sessions and sports in the meantime.":"")+'<div class="card pad"><div class="empty">'+(S.loaded?"Plan coming soon.<div style=\"display:flex;gap:8px;justify-content:center;margin-top:12px\"><button class=\"btn\" type=\"button\" data-log=\""+TODAY+"\">Log a session</button><button class=\"btn ghost\" type=\"button\" data-setup=\"1\">Edit setup</button></div>":"Loading your plan")+'</div></div>';
+  const ws=weekList(); if(!ws.length){
+    const name=esc((S.settings.setup||{}).name||"");
+    let h=head("Today","Today",S.loaded?"Thanks "+name+". Your coach is building your plan. You can log gym sessions and sports in the meantime.":"");
+    if(!S.loaded)return h+'<div class="card pad"><div class="empty">Loading your plan</div></div>';
+    const all=loggedActivities(), today=all.filter(r=>r.date===TODAY), older=all.filter(r=>r.date!==TODAY);
+    h+='<div class="stack">';
+    if(today.length)h+='<section class="dk pad"><div class="ch"><span class="eb">Logged · '+fD(TODAY,true)+'</span></div>'+today.map(r=>{const a=activityMeta(r);return '<div class="sess-t">'+esc(a.title)+'</div><div class="sess-m">'+esc(a.sport+(a.detail?" · "+a.detail:""))+'</div>';}).join("")+'<button class="linkrow" type="button" data-day="'+TODAY+'"><span>Session details</span><span aria-hidden="true">›</span></button></section>';
+    h+=loggedSection(older,"Earlier");
+    h+='<div class="card pad"><div class="empty">Plan coming soon.<div style="display:flex;gap:8px;justify-content:center;margin-top:12px"><button class="btn" type="button" data-log="'+TODAY+'">Log a session</button><button class="btn ghost" type="button" data-setup="1">Edit setup</button></div></div></div></div>';
+    return h;
+  }
   const idx=dayIndex(); let date=UI.sel&&idx[UI.sel]?UI.sel:TODAY; let w=weekOf(date);
   if(!w){w=date<ws[0].start?ws[0]:ws[ws.length-1];date=w.days[0].date;}
   const d=idx[date]?idx[date].d:w.days[0];
@@ -776,6 +804,8 @@ function vToday(){
     '<div class="m"><div class="k">Elevation</div><div class="v">'+Math.round(dts.reduce((q,dd)=>q+Object.values(S.runs).filter(r=>r.date===dd&&isRun(r)).reduce((a,r)=>a+(+r.elev||+r.ascent||0),0),0))+'<small>m</small></div></div>'+
     '</div><button class="linkrow" type="button" data-wkopen="'+days7[0].date+'"><span>Week detail</span><span aria-hidden="true">›</span></button></section>';}
   h+='<section><div class="days">'+days7.map(x=>dayRow(x)).join("")+'</div></section>';
+  const shown=new Set((w.days||[]).map(x=>x.date));
+  h+=loggedSection(loggedActivities().filter(r=>!shown.has(r.date)),"Logged");
   h+=paceCard(true);
   if(S.notes[0])h+='<section class="card pad"><div class="eb acc">From Claude · '+esc(S.notes[0].date?fD(S.notes[0].date):"")+'</div><h2>'+esc(S.notes[0].title||"")+'</h2><div class="prose"><p>'+esc((S.notes[0].body||"").split("\n")[0])+'</p></div><button class="btn ghost" style="margin-top:12px" data-tab="coach">All updates</button></section>';
   h+='</div></div>';
@@ -949,7 +979,7 @@ function loadItems(date){
 SPORT_COL.heat="var(--accent)"; SPORT_LBL.heat="Heat";
 function daySports(date){const ks=[...new Set(loadItems(date).map(a=>a.k).filter(k=>k!=="run"))].sort((a,b)=>SPORTS.indexOf(a)-SPORTS.indexOf(b));const l=S.log[date];if(l&&+l.heatMin>0)ks.push("heat");return ks;}
 function fHM(sec){const m=Math.round((sec||0)/60);return m>=60?Math.floor(m/60)+"h "+p2(m%60):m+"m";}
-function dayChips(date){const its=loadItems(date).filter(a=>a.k!=="run");const l=S.log[date]||{};const parts=its.map(a=>'<span class="chipx"><i style="background:'+SPORT_COL[a.k]+'"></i>'+SPORT_LBL[a.k]+' '+fHM(a.sec)+'</span>');if(+l.heatMin>0)parts.push('<span class="chipx"><i style="background:'+SPORT_COL.heat+'"></i>'+esc(l.heatType||"Heat")+' '+l.heatMin+'m</span>');return parts.length?'<span class="chiprow">'+parts.join("")+'</span>':"";}
+function dayChips(date){const its=loadItems(date).filter(a=>a.k!=="run");const l=S.log[date]||{};const parts=its.map(a=>{const name=a.k==="other"&&a.title?a.title:(SPORT_LBL[a.k]||a.title||"Activity");return '<span class="chipx"><i style="background:'+SPORT_COL[a.k]+'"></i>'+esc(name)+' '+fHM(a.sec)+'</span>';});if(+l.heatMin>0)parts.push('<span class="chipx"><i style="background:'+SPORT_COL.heat+'"></i>'+esc(l.heatType||"Heat")+' '+l.heatMin+'m</span>');return parts.length?'<span class="chiprow">'+parts.join("")+'</span>':"";}
 function weekTotals(dates){const t={};let heat=0;dates.forEach(d=>{loadItems(d).forEach(a=>{const s=(t[a.k]=t[a.k]||{n:0,sec:0,km:0,tss:0});s.n++;s.sec+=a.sec||0;s.km+=a.km||0;s.tss+=a.tss||0;});heat+=+((S.log[d]||{}).heatMin)||0;});return {t,heat};}
 function weekChips(dates){const {t,heat}=weekTotals(dates);
   const c=SPORTS.filter(k=>t[k]).map(k=>'<span class="wchip"><i style="background:'+SPORT_COL[k]+'"></i><b>'+SPORT_LBL[k]+'</b>'+(k==="run"?t[k].km.toFixed(1)+' km':t[k].n+' · '+fHM(t[k].sec))+'</span>');
