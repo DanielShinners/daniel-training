@@ -1051,6 +1051,18 @@ function ballHeadline(date){
   const g=seasonGame(date); if(!g)return "";
   return [g.round,g.opponent?"vs "+g.opponent:""].filter(Boolean).join(" ");
 }
+function tipClock(isoStr){
+  const d=new Date(isoStr); if(!isoStr||isNaN(+d))return "";
+  const parts=new Intl.DateTimeFormat("en-AU",{timeZone:"Australia/Melbourne",hour:"numeric",minute:"2-digit",hour12:true}).formatToParts(d);
+  const g=t=>((parts.find(p=>p.type===t)||{}).value||"");
+  return (g("hour")+":"+g("minute")+g("dayPeriod")).replace(/\s/g,"").toLowerCase();
+}
+function fixtureWhen(date){
+  const g=seasonGame(date); if(!g)return "";
+  const time=g.start?tipClock(g.start):"";
+  const court=g.court!=null?String(g.court).trim():"";
+  return [time,court].filter(Boolean).join(" · ");
+}
 function gameOn(date){
   return Object.values(S.runs).filter(r=>r.date===date&&catOf(r)==="ball").sort((a,b)=>String(b.start||"").localeCompare(String(a.start||"")))[0]||null;
 }
@@ -1091,6 +1103,7 @@ function dayRow(d,dark){
   const loggedRun=cat==="ball"?game:Object.values(S.runs).find(r=>r.date===d.date&&catOf(r)===cat);
   if(loggedRun){const logged=stripTypePrefix(loggedRun.title||"","ball"===cat?"ball":cat);if(logged&&!sameTypeName(logged,cat)&&logged.toLowerCase()!==String(title).toLowerCase())bits.push(esc(logged));}
   if(score)bits.push(score);
+  else if(cat==="ball"||parts.includes("ball")){const tip=fixtureWhen(d.date); if(tip)bits.push(esc(tip));}
   const s=bits.filter(Boolean).join(" · ");
   return '<button class="day z-'+z+(mixed?" c-mix":catCls(cat))+(o==="W"?" res-w":o==="L"?" res-l":"")+(st==="done"?' done':'')+(d.date===TODAY?' today':'')+'" data-day="'+d.date+'"><span class="tile"><span class="a">'+DOW[dd.getDay()].toUpperCase()+'</span><span class="b">'+dd.getDate()+'</span><span class="a">'+MON[dd.getMonth()].toUpperCase()+'</span></span><span style="min-width:0"><div class="t">'+esc(title)+'</div>'+(s?'<div class="s">'+s+tags+dayChips(d.date)+verdictChip(d.date)+'</div>':'')+'</span>'+(d.date>=TODAY&&!canMove(d.date,d.date+"x")?'<span class="drag" data-drag aria-label="Drag to move this session" title="Drag to move">⋮⋮</span>':'<span class="r">›</span>')+'</button>';
 }
@@ -1274,7 +1287,6 @@ function sessionCard(d,w,label){
   const z=sessZone(d), zone=hasVdot()&&z!=="race"?zoneByKey(z==="x"?"st":z):null, cat=catOf(d);
   const read=hasVdot()?coachRead(d):null;
   const bits=[];
-  if(pageType()!==cat)bits.push(CAT_NAME[cat]||"Session");
   if(cat==="run"&&d.km)bits.push(d.km+" km");
   if(zone&&d.km)bits.push(zone.txt+(zone.hr?" · "+zone.hr:""));
   if(w)bits.push("W"+w.n+" "+(w.phase||""));
@@ -1282,6 +1294,7 @@ function sessionCard(d,w,label){
   const parsed=cat==="gym"?parseGymTemplate(d.detail):null;
   const game=cat==="ball"?gameOn(d.date):null;
   const score=scoreHtml(game);
+  if(cat==="ball"&&!score){const tip=fixtureWhen(d.date); if(tip)bits.push(tip);}
   const shell=cat==="gym"?'<section class="card pad gymsess">':'<section class="dk pad z-'+z+'">';
   const how=cat==="gym"?(parsed?gymTrackerHtml(d,parsed):(d.detail?'<div class="how"><b>How to do it.</b> '+fill(d.detail)+'</div>':'')):(d.detail?'<div class="how"><b>'+(cat==="run"?"How to run it.":"How to do it.")+'</b> '+fill(d.detail)+'</div>':'');
   const logBtn=(cat!=="gym"&&gk&&d.date<=TODAY?'<button class="btn ghost" data-liftstart="G'+gk+'">Log gym</button>':'')+(cat==="gym"&&!parsed&&gk&&d.date<=TODAY?'<button class="btn ghost" data-liftstart="G'+gk+'">Log gym</button>':'')+(cat==="ball"&&d.date<=TODAY?'<button class="btn ghost" data-logball="'+d.date+'">Log basketball</button>':'')+(cat==="run"&&d.date<=TODAY?'<button class="btn ghost" data-logrun="'+d.date+'">Log run</button>':'');
@@ -1715,7 +1728,18 @@ function melWhen(isoStr){
   const clock=(g("hour")+":"+g("minute")+g("dayPeriod")).replace(/\s/g,"").toLowerCase();
   return (g("weekday")+" "+g("day")+" "+g("month")+" "+clock).trim();
 }
-function gameLine(g){if(!g)return "";const when=g.start?melWhen(g.start):g.date?fD(String(g.date).slice(0,10),true):"";return [g.round,when,g.court,g.opponent].filter(Boolean).join(" · ");}
+function melDayLabel(isoStr){
+  const d=new Date(isoStr); if(isNaN(+d))return "";
+  const parts=new Intl.DateTimeFormat("en-AU",{timeZone:"Australia/Melbourne",weekday:"short",day:"numeric",month:"short"}).formatToParts(d);
+  const g=t=>((parts.find(p=>p.type===t)||{}).value||"");
+  return (g("weekday")+" "+g("day")+" "+g("month")).trim();
+}
+function gameLine(g){
+  if(!g)return "";
+  const date=g.start?melDayLabel(g.start):g.date?fD(String(g.date).slice(0,10),true):"";
+  const time=g.start?tipClock(g.start):"";
+  return [g.round,date,time,g.court,g.opponent].filter(Boolean).join(" · ");
+}
 function ballSeasonCard(){
   const s=S.basketball&&S.basketball.season; if(!s||typeof s!=="object")return "";
   const lad=s.ladder||{}, games=(s.nextGames||[]).filter(Boolean), links=s.links||{};
