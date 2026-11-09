@@ -426,6 +426,15 @@ section.card[style*="border-left"]{border-left-width:0!important;box-shadow:inse
 .act-stats.ball{color:var(--cat-ball)}
 .act-note{font-size:12px;color:var(--ink3);margin-top:4px;line-height:1.35;white-space:pre-wrap}
 .act-note.clamp{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.res{display:inline-flex;align-self:flex-start;margin-top:6px;font-family:var(--sans);font-size:12px;font-weight:500;line-height:1.3;padding:3px 8px;border-radius:999px;background:var(--sunken);color:var(--ink2)}
+.res.w{color:var(--accent);background:var(--accentSoft)}
+.res.l,.res.d{color:var(--ink2);background:var(--sunken)}
+.ball-ladder{margin-top:var(--space-rhythm);font-size:15px}
+.ball-ladder b{color:var(--accent);font-weight:500}
+.ball-next{margin-top:4px;font-weight:500}
+.ball-later{display:grid;gap:4px;margin-top:var(--space-gap);color:var(--ink2);font-size:13px}
+.ball-links{display:flex;flex-wrap:wrap;gap:var(--space-gap);margin-top:var(--space-gap)}
+.ball-links a{text-decoration:none}
 .day.done .t{text-decoration:line-through;text-decoration-color:var(--ink3);color:var(--ink2)}
 .dk .day.done .t{color:var(--on2);text-decoration-color:var(--on3)}
 .day .r{font-family:var(--sans);font-size:16px;color:var(--ink3);text-align:right}
@@ -635,7 +644,7 @@ function passwordPrompt(){
 function showSignin(){$("#signin").hidden=false;$("#app").hidden=true;$("#topbar").hidden=true;$("#nav").hidden=true;}
 function hideSignin(){$("#signin").hidden=true;$("#app").hidden=false;$("#topbar").hidden=false;$("#nav").hidden=false;}
 
-const S={chat:[],weeks:{},pastweeks:{},runs:{},log:{},lifts:{},notes:[],weights:{},adjust:{},settings:{},db:null,loaded:false};
+const S={chat:[],weeks:{},pastweeks:{},runs:{},log:{},lifts:{},notes:[],weights:{},adjust:{},basketball:{},settings:{},db:null,loaded:false};
 function hasVdot(){const v=S.settings&&S.settings.vdot;return v!=null&&v!==""&&isFinite(+v)&&+v>0;}
 const UI={tab:"today",sel:null,openWeek:null,recipe:4,showPast:false};
 try{const t=localStorage.getItem("dt-tab"); if(t) UI.tab=t;}catch(e){}
@@ -987,9 +996,21 @@ function statLine(stats){
   });
   return parts.join(" · ");
 }
+function resultLine(r){
+  const x=r&&r.result; if(!x||typeof x!=="object")return "";
+  const o=String(x.outcome||"").trim().toUpperCase();
+  const has=x.for!=null&&x.for!==""&&x.against!=null&&x.against!=="";
+  const opp=x.opponent!=null?String(x.opponent).trim():"";
+  if(!o&&!has&&!opp)return "";
+  let t=o;
+  if(has)t+=(t?" ":"")+x.for+"-"+x.against;
+  if(opp)t+=(t?" ":"")+"vs "+opp;
+  const cls=o==="W"?" w":o==="L"?" l":o==="D"?" d":"";
+  return '<div class="res'+cls+'">'+esc(t)+'</div>';
+}
 function activityExtra(r,clamp){
   const line=statLine(r&&r.stats), note=r&&r.notes!=null?String(r.notes).trim():"";
-  let h="";
+  let h=resultLine(r);
   if(line)h+='<div class="act-stats'+(catOf(r)==="ball"?" ball":"")+'">'+esc(line)+'</div>';
   if(note)h+='<div class="act-note'+(clamp?" clamp":"")+'">'+esc(note)+'</div>';
   return h;
@@ -1245,8 +1266,38 @@ function vFitness(){
   return h;
 }
 
+function ord(n){n=Math.round(+n);const j=n%10,k=n%100;return n+(j===1&&k!==11?"st":j===2&&k!==12?"nd":j===3&&k!==13?"rd":"th");}
+function melDate(isoStr){try{return new Intl.DateTimeFormat("en-CA",{timeZone:"Australia/Melbourne",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date(isoStr));}catch(e){return String(isoStr||"").slice(0,10);}}
+function melWhen(isoStr){
+  const d=new Date(isoStr); if(isNaN(+d))return "";
+  const parts=new Intl.DateTimeFormat("en-AU",{timeZone:"Australia/Melbourne",weekday:"short",day:"numeric",month:"short",hour:"numeric",minute:"2-digit",hour12:true}).formatToParts(d);
+  const g=t=>((parts.find(p=>p.type===t)||{}).value||"");
+  const clock=(g("hour")+":"+g("minute")+g("dayPeriod")).replace(/\s/g,"").toLowerCase();
+  return (g("weekday")+" "+g("day")+" "+g("month")+" "+clock).trim();
+}
+function gameLine(g){if(!g)return "";const when=g.start?melWhen(g.start):g.date?fD(String(g.date).slice(0,10),true):"";return [g.round,when,g.court,g.opponent].filter(Boolean).join(" · ");}
+function ballSeasonCard(){
+  const s=S.basketball&&S.basketball.season; if(!s||typeof s!=="object")return "";
+  const lad=s.ladder||{}, games=(s.nextGames||[]).filter(Boolean), links=s.links||{};
+  if(!s.team&&lad.position==null&&!games.length&&!links.fixture)return "";
+  const record=[lad.wins!=null?lad.wins+"W":"",lad.losses!=null?lad.losses+"L":"",lad.draws?lad.draws+"D":""].filter(Boolean).join(" ");
+  const ladder=lad.position!=null?ord(lad.position)+(lad.teams?" of "+lad.teams:"")+(record?" · "+record:""):record;
+  const next=games[0], later=games.slice(1,3);
+  const link=(href,label)=>href?'<a class="btn ghost" href="'+esc(href)+'" target="_blank" rel="noopener">'+label+'</a>':"";
+  let h='<section class="card pad" id="ballseason"><div class="eb">'+esc(s.team||"Basketball")+'</div><h2>'+esc(s.grade||"Season")+'</h2>';
+  if(s.competition)h+='<div class="lede">'+esc(s.competition)+'</div>';
+  if(s.venue)h+='<div class="sub" style="margin-top:4px">'+esc(s.venue)+'</div>';
+  if(ladder)h+='<div class="ball-ladder"><b>'+esc(String(ladder).split(" · ")[0])+'</b>'+(ladder.includes(" · ")?" · "+esc(ladder.split(" · ").slice(1).join(" · ")):"")+'</div>';
+  if(next)h+='<div class="eb" style="margin-top:12px">Next</div><div class="ball-next">'+esc(gameLine(next))+'</div>';
+  if(later.length)h+='<div class="ball-later">'+later.map(g=>'<div>'+esc(gameLine(g))+'</div>').join("")+'</div>';
+  const buttons=[link(links.fixture,"Fixture"),link(links.ladder,"Ladder"),link(links.team,"Team"),link(links.calendarPdf,"Season PDF")].join("");
+  if(buttons)h+='<div class="ball-links">'+buttons+'</div>';
+  if(s.checkedAt)h+='<div class="sub" style="margin-top:8px">Updated '+fD(melDate(s.checkedAt))+'</div>';
+  return h+'</section>';
+}
 function vBall(){
   let h=head("Basketball","Games","Tuesday is the usual night. Monday is optional. Steam is not for basketball days.","ball");
+  h+=ballSeasonCard();
   h+=ballOverview();
   const days=[]; weekList().forEach(w=>(w.days||[]).forEach(d=>{if(catOf(d)==="ball")days.push(d);}));
   const upcoming=days.filter(d=>d.date>=addD(TODAY,-1)).slice(0,8);
@@ -2392,6 +2443,7 @@ function startData(){
   db.collection("chat").onSnapshot(s=>{S.chat=s.docs.filter(d=>d.exists).map(d=>({id:d.id,...d.data()})).sort((a,b)=>String(a.ts||"").localeCompare(String(b.ts||"")));sched();},()=>{});
   db.collection("weights").onSnapshot(s=>{S.weights={};s.docs.forEach(d=>{if(d.exists)S.weights[d.id]=d.data();});sched();},()=>{});
   db.collection("adjust").onSnapshot(s=>{S.adjust={};s.docs.forEach(d=>{if(d.exists)S.adjust[d.id]=d.data();});sched();},()=>{});
+  db.collection("basketball").onSnapshot(s=>{S.basketball={};s.docs.forEach(d=>{if(d.exists)S.basketball[d.id]=d.data();});sched();},()=>{});
   db.doc("settings/main").onSnapshot(d=>{if(d.exists)S.settings=d.data()||{};sched();},()=>{});
   document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")db.refresh();});
 }
