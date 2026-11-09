@@ -131,8 +131,15 @@ h2{font-size:22px;font-weight:400;letter-spacing:-.03em;line-height:1.15;margin:
 .rb-spd{font-size:10px;color:var(--on3);min-height:12px}
 .rb-bar{width:100%;border-radius:10px 10px 4px 4px;background:var(--cat-run);color:var(--cat-run-ink);display:flex;align-items:flex-start;justify-content:center;padding-top:4px;min-height:16px}
 .rb-bar b{font-size:11px;font-weight:500}
+.rb-bar.ball{background:var(--cat-ball);color:var(--cat-ink)}
+.rb-bar.gym{background:var(--cat-gym);color:var(--cat-gym-ink)}
+.rb-bar.plan{background:repeating-linear-gradient(-45deg,rgba(255,255,255,.34) 0 5px,rgba(255,255,255,.1) 5px 10px);color:rgba(255,255,255,.78);box-shadow:inset 0 0 0 1px rgba(255,255,255,.35)}
 .rb-date{font-size:10px;color:var(--on2);text-align:center;line-height:1.2}
+.rb.plan .rb-date{opacity:.75}
 .rb-swatch{background:var(--cat-run)!important}
+.rb-swatch.ball{background:var(--cat-ball)!important}
+.rb-swatch.gym{background:var(--cat-gym)!important}
+.rb-swatch.plan{background:repeating-linear-gradient(-45deg,rgba(255,255,255,.7) 0 3px,rgba(255,255,255,.25) 3px 6px)!important;box-shadow:inset 0 0 0 1px rgba(255,255,255,.45)}
 #topbar:not([hidden]) ~ #app{padding-bottom:calc(156px + env(safe-area-inset-bottom,0px))}
 #topbar:not([hidden]) ~ #fab{bottom:calc(88px + env(safe-area-inset-bottom,0px))}
 #topbar:not([hidden]) ~ #toastRoot .toast{bottom:calc(92px + env(safe-area-inset-bottom,0px))}
@@ -1228,6 +1235,7 @@ function vFitness(){
 
 function vBall(){
   let h=head("Basketball","Games","Tuesday is the usual night. Monday is optional. Steam is not for basketball days.","ball");
+  h+=ballOverview();
   const days=[]; weekList().forEach(w=>(w.days||[]).forEach(d=>{if(catOf(d)==="ball")days.push(d);}));
   const upcoming=days.filter(d=>d.date>=addD(TODAY,-1)).slice(0,8);
   const logged=Object.values(S.runs).filter(r=>catOf(r)==="ball").sort((a,b)=>String(b.start||b.date).localeCompare(String(a.start||a.date)));
@@ -1237,23 +1245,108 @@ function vBall(){
 }
 function runMovingSec(r){const s=+r.sec||+r.moving_time||+r.movingTime||0;if(s>0)return s;const e=+r.el||+r.elapsed_time||0;return e>0?e:0;}
 function loggedRuns(){return Object.values(S.runs).filter(r=>isRun(r)&&+r.km>0).sort((a,b)=>String(a.date).localeCompare(String(b.date))||String(a.start||"").localeCompare(String(b.start||"")));}
+function planDays(pred){const out=[];weekList().forEach(w=>(w.days||[]).forEach(d=>{if(pred(d))out.push(d);}));return out.sort((a,b)=>a.date.localeCompare(b.date));}
+function dashScrollMark(date,anchor){return date===anchor?" is-next":"";}
+function dashAnchor(dates){const t=melbourneToday();return dates.find(d=>d>=t)||dates[dates.length-1]||"";}
+function dashCard(id,eb,title,lede,stats,bars,legend){
+  if(!bars)return '<section class="dk pad" id="'+id+'"><div class="eb">'+eb+'</div><h2>'+title+'</h2><div class="lede">'+lede+'</div></section>';
+  return '<section class="dk pad" id="'+id+'"><div class="ch"><div><div class="eb">'+eb+'</div><h2>'+title+'</h2><div class="lede">'+lede+'</div></div><div class="metrics" style="grid-template-columns:repeat(3,auto);margin:0;gap:16px">'+stats+'</div></div><div class="rb-scroll">'+bars+'</div>'+legend+'</section>';
+}
+function statTrio(a,b,c){const m=(k,v,s)=>'<div class="m"><div class="k">'+k+'</div><div class="v">'+v+(s?'<small>'+s+'</small>':'')+'</div></div>';return m(a[0],a[1],a[2])+m(b[0],b[1],b[2])+m(c[0],c[1],c[2]);}
 function runsOverview(){
   const runs=loggedRuns();
-  if(!runs.length)return '<section class="dk pad" id="runboard"><div class="eb">Every run</div><h2>Distance and pace</h2><div class="lede">Bars appear here once a run is logged.</div></section>';
+  const planned=planDays(d=>!!RUN_KINDS[d.kind]&&+d.km>0);
+  const doneDates=new Set(runs.map(r=>r.date));
+  const items=[];
+  runs.forEach(r=>items.push({plan:false,date:r.date,km:+r.km,r}));
+  planned.forEach(d=>{if(!doneDates.has(d.date))items.push({plan:true,date:d.date,km:+d.km,title:d.title});});
+  items.sort((a,b)=>a.date.localeCompare(b.date));
   const km=runs.reduce((a,r)=>a+(+r.km||0),0);
   const paced=runs.filter(r=>runMovingSec(r)>0);
   const sec=paced.reduce((a,r)=>a+runMovingSec(r),0);
   const pkm=paced.reduce((a,r)=>a+(+r.km||0),0);
   const avg=pkm?sec/pkm:0, kmh=sec?pkm/(sec/3600):0;
-  const max=Math.max(...runs.map(r=>+r.km),1)*1.18;
-  const bars=runs.map(r=>{
-    const dsec=runMovingSec(r), dist=+r.km;
+  const planKm=planned.reduce((a,d)=>a+(+d.km||0),0);
+  if(!items.length)return dashCard("runboard","Every run","Distance and pace","Bars appear here once a run is logged or the plan loads.");
+  const max=Math.max(...items.map(it=>it.km),1)*1.18;
+  const anchor=dashAnchor(items.map(it=>it.date));
+  const bars=items.map(it=>{
+    const h=Math.max(18,it.km/max*132);
+    if(it.plan)return '<button type="button" class="rb plan'+dashScrollMark(it.date,anchor)+'" data-day="'+it.date+'" aria-label="'+esc("Planned "+(it.title||"run")+" "+fD(it.date)+" "+it.km+" km")+'"><span class="rb-pace"></span><span class="rb-spd"></span><span class="rb-bar plan" style="height:'+h.toFixed(0)+'px"><b>'+it.km.toFixed(1)+'</b></span><span class="rb-date">'+esc(fD(it.date))+'</span></button>';
+    const dsec=runMovingSec(it.r), dist=it.km;
     const pace=dsec?fP(dsec/dist):"";
     const spd=dsec?(dist/(dsec/3600)).toFixed(1):"";
-    const h=Math.max(18,dist/max*132);
-    return '<button type="button" class="rb" data-day="'+r.date+'" aria-label="'+esc((r.title||"Run")+" "+fD(r.date)+(pace?" "+pace+"/km":""))+'"><span class="rb-pace">'+(pace?pace:"")+'</span><span class="rb-spd">'+(spd?spd+" km/h":"")+'</span><span class="rb-bar" style="height:'+h.toFixed(0)+'px"><b>'+dist.toFixed(1)+'</b></span><span class="rb-date">'+esc(fD(r.date))+'</span></button>';
+    return '<button type="button" class="rb'+dashScrollMark(it.date,anchor)+'" data-day="'+it.date+'" aria-label="'+esc((it.r.title||"Run")+" "+fD(it.date)+(pace?" "+pace+"/km":""))+'"><span class="rb-pace">'+(pace||"")+'</span><span class="rb-spd">'+(spd?spd+" km/h":"")+'</span><span class="rb-bar" style="height:'+h.toFixed(0)+'px"><b>'+dist.toFixed(1)+'</b></span><span class="rb-date">'+esc(fD(it.date))+'</span></button>';
   }).join("");
-  return '<section class="dk pad" id="runboard"><div class="ch"><div><div class="eb">Every run</div><h2>Distance and pace</h2><div class="lede">Bar height is kilometres. Pace uses moving time.</div></div><div class="metrics" style="grid-template-columns:repeat(3,auto);margin:0;gap:16px"><div class="m"><div class="k">Total</div><div class="v">'+km.toFixed(1)+'<small>km</small></div></div><div class="m"><div class="k">Runs</div><div class="v">'+runs.length+'</div></div><div class="m"><div class="k">Avg pace</div><div class="v">'+(avg?fP(avg):"—")+'<small>/km</small></div></div></div></div><div class="rb-scroll">'+bars+'</div><div class="legend"><span><i class="rb-swatch"></i>Distance</span><span>'+(kmh?"Average speed "+kmh.toFixed(1)+" km/h. ":"")+'Pace sits above each bar.</span></div></section>';
+  const lede="Bar height is kilometres. Pace uses moving time. Planned runs are hatched."+(planKm?" "+(Math.round(planKm*10)/10)+" km on the plan.":"");
+  const legend='<div class="legend"><span><i class="rb-swatch"></i>Done</span><span><i class="rb-swatch plan"></i>Planned</span><span>'+(kmh?"Average speed "+kmh.toFixed(1)+" km/h.":"")+'</span></div>';
+  return dashCard("runboard","Every run","Distance and pace",lede,statTrio(["Total",km.toFixed(1),"km"],["Runs",runs.length,""],["Avg pace",avg?fP(avg):"—","/km"]),bars,legend);
+}
+function ballMinutes(r){const s=runMovingSec(r);return s>0?Math.round(s/60):0;}
+function ballOverview(){
+  const logged=Object.values(S.runs).filter(r=>catOf(r)==="ball").sort((a,b)=>String(a.date).localeCompare(String(b.date))||String(a.start||"").localeCompare(String(b.start||"")));
+  const planned=planDays(d=>gridParts(d).acts.includes("ball"));
+  const doneDates=new Set(logged.map(r=>r.date));
+  const items=[];
+  logged.forEach(r=>items.push({plan:false,date:r.date,min:ballMinutes(r),title:r.title||"Basketball"}));
+  planned.forEach(d=>{if(!doneDates.has(d.date))items.push({plan:true,date:d.date,title:d.title||"Basketball"});});
+  items.sort((a,b)=>a.date.localeCompare(b.date));
+  const mins=logged.reduce((a,r)=>a+ballMinutes(r),0);
+  const left=planned.filter(d=>!doneDates.has(d.date)).length;
+  if(!items.length)return dashCard("ballboard","Games","Time on court","Bars appear here once a game is logged or the plan loads.");
+  const known=items.filter(it=>!it.plan&&it.min>0);
+  const max=Math.max(1,...known.map(it=>it.min));
+  const anchor=dashAnchor(items.map(it=>it.date));
+  const bars=items.map(it=>{
+    const h=it.plan||!it.min?44:Math.max(18,it.min/max*132);
+    const label=it.plan?"—":(it.min?String(it.min):"—");
+    return '<button type="button" class="rb'+(it.plan?" plan":"")+dashScrollMark(it.date,anchor)+'" data-day="'+it.date+'" aria-label="'+esc((it.plan?"Planned ":"")+it.title+" "+fD(it.date)+(it.min?" "+it.min+" min":""))+'"><span class="rb-pace"></span><span class="rb-spd"></span><span class="rb-bar ball'+(it.plan?" plan":"")+'" style="height:'+h.toFixed(0)+'px"><b>'+label+'</b></span><span class="rb-date">'+esc(fD(it.date))+'</span></button>';
+  }).join("");
+  const legend='<div class="legend"><span><i class="rb-swatch ball"></i>Done</span><span><i class="rb-swatch plan"></i>Planned</span></div>';
+  return dashCard("ballboard","Games","Time on court","Bar height is minutes from the logged duration. Planned games have no duration stored, so they are a flat bar.",statTrio(["Done",logged.length,""],["Left",left,""],["Minutes",mins||"—",mins?"min":""]),bars,legend);
+}
+function gymMeasure(l){
+  const st=sessStats(l);
+  if(st.t>0)return {metric:"kg",value:st.t,label:Math.round(st.t)>=1000?(st.t/1000).toFixed(1)+"t":String(Math.round(st.t))};
+  if(st.sets>0)return {metric:"sets",value:st.sets,label:String(st.sets)};
+  if(+l.min>0)return {metric:"min",value:+l.min,label:String(+l.min)};
+  return {metric:"flat",value:0,label:"—"};
+}
+function gymLoggedSessions(){
+  const out=lifts().map(l=>{const m=gymMeasure(l);return {date:l.date,title:l.name||"Gym",...m};});
+  const have=new Set(out.map(x=>x.date));
+  Object.values(S.runs).filter(r=>catOf(r)==="gym"&&!have.has(r.date)).forEach(r=>{
+    const min=runMovingSec(r)?Math.round(runMovingSec(r)/60):0;
+    out.push({date:r.date,title:r.title||"Gym",metric:min?"min":"flat",value:min,label:min?String(min):"—"});
+  });
+  Object.values(S.log||{}).forEach(l=>{if(l&&l.gymDone&&l.date&&!out.some(x=>x.date===l.date))out.push({date:l.date,title:"Gym",metric:"flat",value:0,label:"—"});});
+  return out.sort((a,b)=>a.date.localeCompare(b.date));
+}
+function gymOverview(){
+  const logged=gymLoggedSessions();
+  const planned=planDays(d=>gridParts(d).acts.includes("gym"));
+  const doneDates=new Set(logged.map(x=>x.date));
+  const items=[];
+  logged.forEach(x=>items.push({plan:false,...x}));
+  planned.forEach(d=>{if(!doneDates.has(d.date))items.push({plan:true,date:d.date,title:d.title||"Gym",metric:"flat",value:0,label:"—"});});
+  items.sort((a,b)=>a.date.localeCompare(b.date));
+  const left=planned.filter(d=>!doneDates.has(d.date)).length;
+  const ranked=["kg","sets","min"].find(k=>logged.some(x=>x.metric===k))||"flat";
+  const names={kg:"volume, sets × reps × kg",sets:"sets",min:"minutes",flat:"a flat bar, because no gym session is logged yet"};
+  if(!items.length)return dashCard("gymboard","Sessions","Gym work","Bars appear here once a gym session is logged or the plan loads.");
+  const known=items.filter(it=>!it.plan&&it.metric===ranked&&it.value>0);
+  const max=Math.max(1,...known.map(it=>it.value));
+  const total=ranked==="flat"?0:logged.reduce((a,x)=>a+(x.metric===ranked?x.value:0),0);
+  const totalLabel=ranked==="kg"?(total>=1000?(total/1000).toFixed(1):String(Math.round(total))):ranked==="flat"?"—":String(Math.round(total));
+  const totalUnit=ranked==="kg"?(total>=1000?"t":"kg"):ranked==="sets"?"sets":ranked==="min"?"min":"";
+  const anchor=dashAnchor(items.map(it=>it.date));
+  const bars=items.map(it=>{
+    const h=it.plan||it.metric!==ranked||!it.value?44:Math.max(18,it.value/max*132);
+    return '<button type="button" class="rb'+(it.plan?" plan":"")+dashScrollMark(it.date,anchor)+'" data-day="'+it.date+'" aria-label="'+esc((it.plan?"Planned ":"")+(it.title||"Gym")+" "+fD(it.date))+'"><span class="rb-pace"></span><span class="rb-spd"></span><span class="rb-bar gym'+(it.plan?" plan":"")+'" style="height:'+h.toFixed(0)+'px"><b>'+(it.plan?"—":it.label)+'</b></span><span class="rb-date">'+esc(fD(it.date))+'</span></button>';
+  }).join("");
+  const lede=ranked==="flat"?"No gym volume is logged, so each planned session is a flat bar. A logged session uses volume, sets × reps × kg, when that is stored.":"Bar height is "+names[ranked]+". Planned sessions with nothing logged are a flat bar.";
+  const legend='<div class="legend"><span><i class="rb-swatch gym"></i>Done</span><span><i class="rb-swatch plan"></i>Planned</span></div>';
+  return dashCard("gymboard","Sessions","Gym work",lede,statTrio(["Done",logged.length,""],["Left",left,""],["Total",totalLabel,totalUnit]),bars,legend);
 }
 function vRuns(){
   let h=head("Run","Runs","Easy, tempo, reps and the 10 km time trial. Add a past run with + if it is missing.","run");
@@ -2034,6 +2127,7 @@ function vGym(){
   const draft=gymDraft();
   const it=dayIndex()[TODAY]; const todayKey=it?gymKey(it.d):null;
   let h=head("Gym","Sessions","Machines and dumbbells. Log every set. Steam only after gym, not after basketball.","gym");
+  h+=gymOverview();
   const gymDays=[]; weekList().forEach(w=>(w.days||[]).forEach(d=>{if(catOf(d)==="gym"&&d.date>=TODAY&&d.date<=addD(TODAY,13))gymDays.push(d);}));
   if(gymDays.length)h+='<section class="card pad"><div class="eb">Coming up</div><div class="days" style="margin-top:8px">'+gymDays.slice(0,4).map(dayRow).join("")+'</div></section>';
   h+='<section class="dk pad gymstart" style="margin-top:10px">';
@@ -2231,6 +2325,7 @@ function bind(r){
   r.querySelectorAll("[data-gymtab]").forEach(b=>b.onclick=()=>{UI.tab="gym";render();scrollTo(0,0);});
   r.querySelectorAll("[data-week]").forEach(b=>b.onclick=()=>{const n=+b.dataset.week;UI.openWeek=UI.openWeek===n?-1:n;render();});
   r.querySelectorAll("[data-showpast]").forEach(b=>b.onclick=()=>{UI.showPast=!UI.showPast;render();});
+  r.querySelectorAll(".rb-scroll").forEach(sc=>{const el=sc.querySelector(".rb.is-next");if(el)sc.scrollLeft=Math.max(0,el.offsetLeft-sc.clientWidth/2+el.offsetWidth/2);});
   r.querySelectorAll("[data-day]").forEach(b=>b.onclick=()=>openDay(b.dataset.day));
   r.querySelectorAll("[data-log]").forEach(b=>b.onclick=()=>openDay(b.dataset.log));
   const cf=$("#chatF",r);
