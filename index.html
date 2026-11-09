@@ -583,18 +583,19 @@ input[type=date],input[type=time]{min-height:44px;-webkit-appearance:none;appear
 .wgrid .g-run{background:var(--wg-run)}
 .wgrid .g-gym{background:var(--wg-gym)}
 .wgrid .g-rest{background:var(--wg-rest)}
-.wgrid .wg-n{position:absolute;inset:0;display:grid;place-items:center;font-size:11px;font-weight:500;pointer-events:none;color:var(--ink);text-shadow:none}
+.wgrid .wg-n{position:absolute;inset:0;display:grid;place-items:center;font-size:11px;font-weight:500;pointer-events:none;color:#000;text-shadow:none}
+.wgrid .wg-cell.t-rest .wg-n{color:var(--wg-rest-ink)}
 .wgrid .wg-cell.today{box-shadow:0 0 0 2px var(--ink);border-radius:8px}
 .wgrid .wg-cell.done .wg-fill{opacity:.38}
 .wgrid .wg-and i{position:relative}
 .wgrid .wg-and i.done{opacity:.38}
-.wgrid .wg-and i.done::after{content:"✓";position:absolute;top:1px;right:1px;font-size:9px;font-weight:700;color:var(--ink);opacity:1}
+.wgrid .wg-and i.done::after{content:"✓";position:absolute;top:1px;right:1px;font-size:9px;font-weight:700;color:#000;opacity:1;text-shadow:0 0 2px #fff}
 .wgrid .wg-or{position:relative;background:none}
 .wgrid .wg-or::before,.wgrid .wg-or::after{content:"";position:absolute;top:0;bottom:0;width:50%}
 .wgrid .wg-or::before{left:0;background:var(--a)}
 .wgrid .wg-or::after{right:0;background:var(--b)}
 .wgrid .wg-or.da::before,.wgrid .wg-or.db::after{opacity:.38}
-.wg-tick{position:absolute;top:1px;right:2px;z-index:1;font-size:10px;font-weight:700;line-height:1;color:var(--ink);pointer-events:none}
+.wg-tick{position:absolute;top:1px;right:2px;z-index:1;font-size:10px;font-weight:700;line-height:1;color:#000;pointer-events:none;text-shadow:0 0 2px #fff}
 .wg-tick.left{right:auto;left:2px}
 .wg-tick.right{right:2px}
 .pagelinks{display:flex;gap:12px;margin:0 0 8px}
