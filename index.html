@@ -28,6 +28,7 @@
   --mbase:#E6E8EE; --mline:#C5C9D3; --dark:#1A1D27; --dark2:#2A2E3A; --dline:rgba(255,255,255,.14); --on:#F4F6FA; --on2:rgba(244,246,250,.7); --on3:rgba(244,246,250,.42);
   --z-rec:#8E9AAB; --z-st:#1296A3; --z-mp:#E0A31A; --z-lt2:#F06A2F; --z-vo2:#E25060; --z-sp:#7A5AF0; --z-x:#C4C7D0;
   --good:#178A56; --warn:#B45309; --bad:#D64545;
+  --cat-ball:#F97316; --cat-run:#D8F34A; --cat-run-ink:#17200A; --cat-gym:#FF6B81; --cat-ink:#1C1206; --cat-rest:#E4E6EB; --cat-rest-ink:#5C6270;
   --holo:linear-gradient(100deg,#8AF6FF 0%,#D8F34A 36%,#F7F7FF 58%,#D0B4FF 80%,#8AF6FF 100%);
   --shadow:0 1px 0 rgba(255,255,255,.75) inset, 0 10px 28px -20px rgba(22,30,48,.35);
   --sans:"Outfit","Avenir Next","Segoe UI",Helvetica,Arial,sans-serif;
@@ -99,6 +100,39 @@ h2{font-size:22px;font-weight:400;letter-spacing:-.03em;line-height:1.15;margin:
 .nav button span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .nav svg{width:18px;height:18px;display:block;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .nav button[aria-current="page"]{background:var(--accent);color:#fff}
+.nav button[data-tab="gym"] svg{stroke:var(--cat-gym)}
+.nav button[data-tab="ball"] svg{stroke:var(--cat-ball)}
+.nav button[data-tab="run"] svg{stroke:var(--cat-run-ink);background:var(--cat-run);border-radius:5px}
+.nav button[data-tab="gym"][aria-current="page"]{background:var(--cat-gym);color:var(--cat-ink)}
+.nav button[data-tab="ball"][aria-current="page"]{background:var(--cat-ball);color:var(--cat-ink)}
+.nav button[data-tab="run"][aria-current="page"]{background:var(--cat-run);color:var(--cat-run-ink)}
+.nav button[aria-current="page"] svg{stroke:currentColor;background:transparent}
+.head.cat-gym h1{box-shadow:inset 0 -4px 0 var(--cat-gym);padding-bottom:2px}
+.head.cat-ball h1{box-shadow:inset 0 -4px 0 var(--cat-ball);padding-bottom:2px}
+.head.cat-run h1{box-shadow:inset 0 -4px 0 var(--cat-run);padding-bottom:2px}
+.chip.c-gym,.btn.c-gym{background:var(--cat-gym);color:var(--cat-ink)}
+.chip.c-ball,.btn.c-ball{background:var(--cat-ball);color:var(--cat-ink)}
+.chip.c-run,.btn.c-run{background:var(--cat-run);color:var(--cat-run-ink)}
+.chip.c-rest{background:var(--cat-rest);color:var(--cat-rest-ink)}
+.cl-gym{box-shadow:inset 0 -2px 0 var(--cat-gym)}
+.cl-ball{box-shadow:inset 0 -2px 0 var(--cat-ball)}
+.cl-run{box-shadow:inset 0 -2px 0 var(--cat-run)}
+.cl-rest{box-shadow:inset 0 -2px 0 var(--cat-rest)}
+.m.c-gym .k,.m.c-ball .k,.m.c-run .k{display:inline-block;border-radius:999px;padding:2px 8px}
+.m.c-gym .k{background:var(--cat-gym);color:var(--cat-ink)}
+.m.c-ball .k{background:var(--cat-ball);color:var(--cat-ink)}
+.m.c-run .k{background:var(--cat-run);color:var(--cat-run-ink)}
+.qa-sp button[data-cc="gym"][aria-pressed=true]{background:var(--cat-gym)!important;border-color:var(--cat-gym)!important;color:var(--cat-ink)!important}
+.qa-sp button[data-cc="ball"][aria-pressed=true]{background:var(--cat-ball)!important;border-color:var(--cat-ball)!important;color:var(--cat-ink)!important}
+.qa-sp button[data-cc="run"][aria-pressed=true]{background:var(--cat-run)!important;border-color:var(--cat-run)!important;color:var(--cat-run-ink)!important}
+.rb-scroll{display:flex;gap:8px;overflow-x:auto;align-items:flex-end;margin-top:12px;padding-bottom:4px}
+.rb{flex:0 0 76px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:2px;background:none;border:0;color:inherit;padding:0;cursor:pointer;min-height:210px}
+.rb-pace{font-size:11px;font-weight:500;color:var(--on)}
+.rb-spd{font-size:10px;color:var(--on3);min-height:12px}
+.rb-bar{width:100%;border-radius:10px 10px 4px 4px;background:var(--cat-run);color:var(--cat-run-ink);display:flex;align-items:flex-start;justify-content:center;padding-top:4px;min-height:16px}
+.rb-bar b{font-size:11px;font-weight:500}
+.rb-date{font-size:10px;color:var(--on2);text-align:center;line-height:1.2}
+.rb-swatch{background:var(--cat-run)!important}
 #topbar:not([hidden]) ~ #app{padding-bottom:calc(156px + env(safe-area-inset-bottom,0px))}
 #topbar:not([hidden]) ~ #fab{bottom:calc(88px + env(safe-area-inset-bottom,0px))}
 #topbar:not([hidden]) ~ #toastRoot .toast{bottom:calc(92px + env(safe-area-inset-bottom,0px))}
@@ -273,13 +307,13 @@ section.card[style*="border-left"]{border-left-width:0!important;box-shadow:inse
 .dk .gbig small{color:var(--on3)}
 .wkt{display:flex;align-items:flex-end;gap:4px;height:70px;margin-top:8px}
 .wkt span{flex:1;height:100%;display:flex;align-items:flex-end}
-.wkt i{display:block;width:100%;border-radius:6px 6px 2px 2px;background:var(--line2)}
-.wkt i.cur{background:var(--lime)}
+.wkt i{display:block;width:100%;border-radius:6px 6px 2px 2px;background:color-mix(in srgb, var(--cat-gym) 40%, var(--line2))}
+.wkt i.cur{background:var(--cat-gym)}
 .wkt-lab{display:flex;justify-content:space-between;font-family:var(--sans);font-size:11px;color:var(--ink3);margin-top:4px}
 .gymstart .tplgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:14px}
 .tpl{display:flex;flex-direction:column;gap:2px;text-align:left;padding:12px 14px;border-radius:18px;background:rgba(255,255,255,.14);color:#fff}
 .tpl b{font-weight:500}.tpl span{font-size:12px;color:rgba(255,255,255,.7)}
-.tpl.main{grid-column:1/-1;background:var(--lime);color:var(--lime-ink)}.tpl.main span{color:color-mix(in srgb, var(--lime-ink) 70%, transparent)}
+.tpl.main{grid-column:1/-1;background:var(--cat-gym);color:var(--cat-ink)}.tpl.main span{color:color-mix(in srgb, var(--cat-ink) 72%, transparent)}
 .glist{display:grid;gap:0;margin-top:8px}
 .grow{display:grid;grid-template-columns:80px minmax(0,1fr) auto auto;gap:10px;align-items:center;padding:11px 0;border-top:1px solid var(--line);text-align:left;color:inherit}
 .grow:first-child{border-top:0}
@@ -372,6 +406,20 @@ section.card[style*="border-left"]{border-left-width:0!important;box-shadow:inse
 .tile .b{font-size:18px;font-weight:400;letter-spacing:-.03em}
 .day.today .tile{background:var(--lime);color:var(--lime-ink)}
 .day.today .tile .a{color:color-mix(in srgb, var(--lime-ink) 68%, transparent)}
+.day.c-gym{box-shadow:inset 3px 0 0 var(--cat-gym), var(--shadow)}
+.day.c-ball{box-shadow:inset 3px 0 0 var(--cat-ball), var(--shadow)}
+.day.c-run{box-shadow:inset 3px 0 0 var(--cat-run), var(--shadow)}
+.day.c-rest{box-shadow:inset 3px 0 0 var(--cat-rest), var(--shadow)}
+.day.c-mix{box-shadow:inset 3px 0 0 var(--cat-ball), var(--shadow);border-left:0}
+.day.c-mix{background:linear-gradient(var(--card),var(--card)) padding-box,linear-gradient(var(--cat-ball),var(--cat-gym)) border-box;border:1px solid transparent;border-left-width:3px}
+.day.c-gym.today .tile{background:var(--cat-gym);color:var(--cat-ink)}
+.day.c-gym.today .tile .a{color:color-mix(in srgb, var(--cat-ink) 68%, transparent)}
+.day.c-ball.today .tile{background:var(--cat-ball);color:var(--cat-ink)}
+.day.c-ball.today .tile .a{color:color-mix(in srgb, var(--cat-ink) 68%, transparent)}
+.day.c-run.today .tile{background:var(--cat-run);color:var(--cat-run-ink)}
+.day.c-run.today .tile .a{color:color-mix(in srgb, var(--cat-run-ink) 68%, transparent)}
+.day.c-rest.today .tile{background:var(--cat-rest);color:var(--cat-rest-ink)}
+.day.c-rest.today .tile .a{color:var(--cat-rest-ink)}
 .day .t{font-weight:500;line-height:1.25}
 .day .s{font-size:12px;color:var(--ink3);margin-top:2px;font-family:var(--sans)}
 .dk .day .s{color:var(--on3)}
@@ -436,7 +484,7 @@ input[type=date],input[type=time]{min-height:44px;-webkit-appearance:none;appear
 .weekhead:first-child{border-top:0}
 .weekhead .w{font-family:var(--sans);font-size:12px;font-weight:500;color:var(--ink3);width:36px;flex:none}
 .weekhead.cur .w{color:var(--accent)}
-.wgrid{--wg-ball:#F97316;--wg-run:#D8F34A;--wg-run-ink:#17200A;--wg-gym:#FF6B81;--wg-ink:#1C1206;--wg-rest:#E4E6EB;--wg-rest-ink:#5C6270}
+.wgrid{--wg-ball:var(--cat-ball);--wg-run:var(--cat-run);--wg-run-ink:var(--cat-run-ink);--wg-gym:var(--cat-gym);--wg-ink:var(--cat-ink);--wg-rest:var(--cat-rest);--wg-rest-ink:var(--cat-rest-ink)}
 .wg-scroll{overflow-x:auto}
 .wg-table{display:grid;gap:4px;min-width:320px}
 .wg-head,.wg-row{display:grid;grid-template-columns:34px repeat(7,minmax(0,1fr));gap:3px;align-items:center}
@@ -811,22 +859,22 @@ function weekGrid(weeks){
 }
 function doseChart(list){
   const ws=list||weekList(); if(!ws.length)return "";
-  const W=640,H=230,L=30,R=8,T=14,B=24, order=["rec","st","mp","lt2","vo2","sp"];
-  const data=ws.map(w=>{const o={};(w.days||[]).forEach(d=>{const p=plannedDose(d);for(const k in p)o[k]=(o[k]||0)+p[k];});return o;});
-  const max=Math.ceil(Math.max(...ws.map(wPlan))/25)*25+10;
+  const W=640,H=230,L=30,R=8,T=14,B=24;
+  const order=[["gym","var(--cat-gym)"],["ball","var(--cat-ball)"],["run","var(--cat-run)"]];
+  const data=ws.map(w=>{const o={gym:0,ball:0,run:0};(w.days||[]).forEach(d=>{gridParts(d).acts.forEach(c=>{if(o[c]!=null)o[c]++;});});return o;});
+  const max=Math.max(4,...data.map(o=>o.gym+o.ball+o.run))+1;
   const bw=(W-L-R)/ws.length, y=v=>T+(H-T-B)*(1-v/max);
   const cur=weekOf(melbourneToday()); let g='<defs><pattern id="hatch" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="2.2" height="5" fill="var(--dark)" opacity=".55"/></pattern></defs>';
-  for(let t=25;t<max;t+=25)g+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+y(t)+'" y2="'+y(t)+'" stroke="var(--dline)"/><text x="'+(L-6)+'" y="'+(y(t)+3)+'" text-anchor="end">'+t+'</text>';
+  for(let t=2;t<max;t+=2)g+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+y(t)+'" y2="'+y(t)+'" stroke="var(--dline)"/><text x="'+(L-6)+'" y="'+(y(t)+3)+'" text-anchor="end">'+t+'</text>';
   ws.forEach((w,i)=>{const x=L+i*bw+1.5,wd=bw-3;let acc=0;
-    order.forEach(k=>{const v=data[i][k]||0;if(!v)return;g+='<rect x="'+x+'" y="'+y(acc+v)+'" width="'+wd+'" height="'+(y(acc)-y(acc+v))+'" fill="var(--z-'+k+')"/>';acc+=v;});
+    order.forEach(([k,col])=>{const v=data[i][k]||0;if(!v)return;g+='<rect x="'+x+'" y="'+y(acc+v)+'" width="'+wd+'" height="'+(y(acc)-y(acc+v))+'" rx="3" fill="'+col+'"/>';acc+=v;});
     const future=cur?w.n>cur.n:w.start>TODAY;
-    if(future&&acc)g+='<rect x="'+x+'" y="'+y(acc)+'" width="'+wd+'" height="'+(y(0)-y(acc))+'" fill="url(#hatch)"/>';
-    const a=wAct(w); if(a)g+='<line x1="'+x+'" x2="'+(x+wd)+'" y1="'+y(a)+'" y2="'+y(a)+'" stroke="var(--on)" stroke-width="2"/>';
-    if(w.n%4===1||w.n===25)g+='<text x="'+(x+wd/2)+'" y="'+(H-8)+'" text-anchor="middle">W'+w.n+'</text>';
+    if(future&&acc)g+='<rect x="'+x+'" y="'+y(acc)+'" width="'+wd+'" height="'+(y(0)-y(acc))+'" rx="3" fill="url(#hatch)"/>';
+    if(w.n%2===1||w.n===ws[ws.length-1].n)g+='<text x="'+(x+wd/2)+'" y="'+(H-8)+'" text-anchor="middle">W'+w.n+'</text>';
     if(cur&&cur.n===w.n){g+='<line x1="'+(x+wd/2)+'" x2="'+(x+wd/2)+'" y1="'+T+'" y2="'+(H-B)+'" stroke="var(--accent)" stroke-dasharray="3 3"/><text x="'+(x+wd/2+4)+'" y="'+(T+6)+'" style="fill:var(--accent)">TODAY</text>';}
   });
-  return '<svg class="bars" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Weekly planned kilometres by zone">'+g+'</svg>'+
-    '<div class="legend">'+[["rec","Recovery"],["st","Easy"],["lt2","Tempo"],["vo2","Reps"],["sp","Strides"]].map(z=>'<span class="z-'+z[0]+'"><i></i>'+z[1]+'</span>').join("")+'<span><i style="background:var(--on)"></i>Completed</span></div>';
+  return '<svg class="bars" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Days each week by gym, basketball and running">'+g+'</svg>'+
+    '<div class="legend"><span><i style="background:var(--cat-gym)"></i>Gym</span><span><i style="background:var(--cat-ball)"></i>Basketball</span><span><i style="background:var(--cat-run)"></i>Running</span></div>';
 }
 
 function recipe(weeks){
@@ -852,14 +900,19 @@ function lineChart(points,opts){ // points [{x:date,y:secPerKm}] faster is up
 }
 
 /* Views */
-function head(eb,title,lede){return '<div class="head"><div class="eb acc">'+eb+'</div><h1>'+esc(title)+'</h1>'+(lede?'<div class="lede">'+esc(lede)+'</div>':'')+'</div>';}
+function head(eb,title,lede,cat){return '<div class="head'+(cat?' cat-'+cat:'')+'"><div class="eb acc">'+eb+'</div><h1>'+esc(title)+'</h1>'+(lede?'<div class="lede">'+esc(lede)+'</div>':'')+'</div>';}
+function catCls(cat){return cat==="gym"||cat==="ball"||cat==="run"||cat==="rest"?" c-"+cat:"";}
+function catMark(cat,text){return '<span class="cl-'+cat+'">'+text+'</span>';}
 function dayRow(d,dark){
   const st=(d.kind==="rest"&&!(+d.km))?"rest":status(d), z=sessZone(d), dd=pISO(d.date), km=kmOn(d.date), cat=catOf(d);
   const name=CAT_NAME[cat]||"Other";
-  const base=cat==="run"&&d.km?name+" · "+d.km+" km":name;
+  const parts=gridParts(d).acts.filter(a=>a!=="rest");
+  const mixed=parts.length>1;
+  const nameHtml=mixed?parts.map(a=>catMark(a,esc(CAT_NAME[a]||a))).join(" · "):catMark(cat,esc(name));
+  const base=cat==="run"&&d.km?nameHtml+" · "+d.km+" km":nameHtml;
   const tags=(/soccer/i.test(d.extra||"")?' <span class="chip">Soccer option</span>':'')+(cat==="gym"&&/steam/i.test((d.detail||"")+(d.extra||""))?' <span class="chip">Steam</span>':'');
-  const s=st==="done"?'<span class="ok">Completed</span>'+(km?' · '+km.toFixed(1)+' km':'')+' · '+name:st==="miss"?'<span class="miss">Missed</span> · '+base:st==="part"?'<span class="part">Partial</span> · '+km.toFixed(1)+' of '+d.km+' km':base;
-  return '<button class="day z-'+z+(st==="done"?' done':'')+(d.date===TODAY?' today':'')+'" data-day="'+d.date+'"><span class="tile"><span class="a">'+DOW[dd.getDay()].toUpperCase()+'</span><span class="b">'+dd.getDate()+'</span><span class="a">'+MON[dd.getMonth()].toUpperCase()+'</span></span><span style="min-width:0"><div class="t">'+esc(d.title)+'</div><div class="s">'+s+tags+dayChips(d.date)+verdictChip(d.date)+'</div></span>'+(d.date>=TODAY&&!canMove(d.date,d.date+"x")?'<span class="drag" data-drag aria-label="Drag to move this session" title="Drag to move">⋮⋮</span>':'<span class="r">›</span>')+'</button>';
+  const s=st==="done"?'<span class="ok">Completed</span>'+(km?' · '+km.toFixed(1)+' km':'')+' · '+nameHtml:st==="miss"?'<span class="miss">Missed</span> · '+base:st==="part"?'<span class="part">Partial</span> · '+km.toFixed(1)+' of '+d.km+' km':base;
+  return '<button class="day z-'+z+(mixed?" c-mix":catCls(cat))+(st==="done"?' done':'')+(d.date===TODAY?' today':'')+'" data-day="'+d.date+'"><span class="tile"><span class="a">'+DOW[dd.getDay()].toUpperCase()+'</span><span class="b">'+dd.getDate()+'</span><span class="a">'+MON[dd.getMonth()].toUpperCase()+'</span></span><span style="min-width:0"><div class="t">'+esc(d.title)+'</div><div class="s">'+s+tags+dayChips(d.date)+verdictChip(d.date)+'</div></span>'+(d.date>=TODAY&&!canMove(d.date,d.date+"x")?'<span class="drag" data-drag aria-label="Drag to move this session" title="Drag to move">⋮⋮</span>':'<span class="r">›</span>')+'</button>';
 }
 function sessionCard(d,w,label){
   const z=sessZone(d), zone=hasVdot()&&z!=="race"?zoneByKey(z==="x"?"st":z):null, cat=catOf(d);
@@ -869,7 +922,7 @@ function sessionCard(d,w,label){
   if(zone&&d.km)bits.push(zone.txt+(zone.hr?" · "+zone.hr:""));
   if(w)bits.push("W"+w.n+" "+(w.phase||""));
   const gk=gymKey(d);
-  return '<section class="dk pad z-'+z+'"><div class="ch"><span class="eb">'+esc(label)+' · '+fD(d.date,true)+'</span><span class="chip z-'+z+'"><i></i>'+esc(CAT_NAME[cat]||d.kind)+'</span></div>'+
+  return '<section class="dk pad z-'+z+'"><div class="ch"><span class="eb">'+esc(label)+' · '+fD(d.date,true)+'</span><span class="chip'+catCls(cat)+'">'+esc(CAT_NAME[cat]||d.kind)+'</span></div>'+
     '<div class="sess-t">'+esc(d.title)+'</div>'+
     '<div class="sess-m">'+esc(bits.filter(Boolean).join(" · "))+'</div>'+
     (d.detail?'<div class="how"><b>'+(cat==="run"?"How to run it.":"How to do it.")+'</b> '+fill(d.detail)+'</div>':'')+
@@ -923,8 +976,8 @@ function activityMeta(r){
   return {sport, title:r.title||sport, detail:parts.join(" · ")};
 }
 function activityButton(r){
-  const dd=pISO(r.date), z=isRun(r)&&(+r.km)>0?zoneOfPace(r.sec/r.km):"x", a=activityMeta(r);
-  return '<button type="button" class="day z-'+z+(r.date===TODAY?" today":"")+'" data-day="'+r.date+'"><span class="tile"><span class="a">'+DOW[dd.getDay()].toUpperCase()+'</span><span class="b">'+dd.getDate()+'</span><span class="a">'+MON[dd.getMonth()].toUpperCase()+'</span></span><span style="min-width:0"><div class="t">'+esc(a.title)+'</div><div class="s">'+esc(a.sport+(a.detail?" · "+a.detail:""))+'</div></span><span class="r">›</span></button>';
+  const dd=pISO(r.date), z=isRun(r)&&(+r.km)>0?zoneOfPace(r.sec/r.km):"x", a=activityMeta(r), cat=catOf(r);
+  return '<button type="button" class="day z-'+z+catCls(cat)+(r.date===TODAY?" today":"")+'" data-day="'+r.date+'"><span class="tile"><span class="a">'+DOW[dd.getDay()].toUpperCase()+'</span><span class="b">'+dd.getDate()+'</span><span class="a">'+MON[dd.getMonth()].toUpperCase()+'</span></span><span style="min-width:0"><div class="t">'+esc(a.title)+'</div><div class="s">'+esc(a.sport+(a.detail?" · "+a.detail:""))+'</div></span><span class="r">›</span></button>';
 }
 function loggedActivities(){return Object.values(S.runs).slice().sort((a,b)=>String(b.start||b.date).localeCompare(String(a.start||a.date)));}
 function loggedSection(rows,title){
@@ -934,7 +987,7 @@ function loggedSection(rows,title){
 function weekBreakdown(days){
   const dates=days.map(d=>d.date);
   const planned={gym:0,ball:0,runKm:0};
-  days.forEach(d=>{const c=catOf(d);if(c==="gym")planned.gym++;else if(c==="ball")planned.ball++;else if(c==="run")planned.runKm+=+d.km||0;});
+  days.forEach(d=>{const parts=gridParts(d).acts;if(parts.includes("gym"))planned.gym++;if(parts.includes("ball"))planned.ball++;if(parts.includes("run"))planned.runKm+=+d.km||0;});
   const gymDays=new Set(days.filter(d=>catOf(d)==="gym").map(d=>d.date));
   const ballDays=new Set(days.filter(d=>catOf(d)==="ball").map(d=>d.date));
   const gymDone=new Set(), ballDone=new Set();
@@ -944,14 +997,14 @@ function weekBreakdown(days){
   gymDays.forEach(dt=>{if((S.log[dt]||{}).gymDone)gymDone.add(dt);});
   return {planned,gymDone:gymDone.size,ballDone:ballDone.size,runKm};
 }
-function catLine(days){const b=weekBreakdown(days);return "Gym "+b.gymDone+"/"+b.planned.gym+" · Basketball "+b.ballDone+"/"+b.planned.ball+" · Run "+b.runKm.toFixed(1)+"/"+(Math.round(b.planned.runKm*10)/10)+" km";}
+function catLine(days){const b=weekBreakdown(days);return catMark("gym","Gym "+b.gymDone+"/"+b.planned.gym)+" · "+catMark("ball","Basketball "+b.ballDone+"/"+b.planned.ball)+" · "+catMark("run","Run "+b.runKm.toFixed(1)+"/"+(Math.round(b.planned.runKm*10)/10)+" km");}
 function catBoard(days){
   const b=weekBreakdown(days);
-  const cell=(tab,k,v)=>'<div class="m"><button type="button" data-tab="'+tab+'"><div class="k">'+k+'</div><div class="v">'+v+'</div></button></div>';
+  const cell=(tab,cls,k,v)=>'<div class="m '+cls+'"><button type="button" data-tab="'+tab+'"><div class="k">'+k+'</div><div class="v">'+v+'</div></button></div>';
   return '<section class="card pad"><div class="eb">Gym, basketball, run</div><div class="metrics" style="grid-template-columns:repeat(3,minmax(0,1fr))">'+
-    cell("gym","Gym",b.gymDone+'<small>/ '+b.planned.gym+'</small>')+
-    cell("ball","Basketball",b.ballDone+'<small>/ '+b.planned.ball+'</small>')+
-    cell("run","Run",b.runKm.toFixed(1)+'<small>/ '+(Math.round(b.planned.runKm*10)/10)+' km</small>')+
+    cell("gym","c-gym","Gym",b.gymDone+'<small>/ '+b.planned.gym+'</small>')+
+    cell("ball","c-ball","Basketball",b.ballDone+'<small>/ '+b.planned.ball+'</small>')+
+    cell("run","c-run","Run",b.runKm.toFixed(1)+'<small>/ '+(Math.round(b.planned.runKm*10)/10)+' km</small>')+
     '</div></section>';
 }
 function movemberRuns(){return Object.values(S.runs).filter(r=>isRun(r)&&+r.km>0&&r.date>="2026-11-01"&&r.date<="2026-11-30");}
@@ -978,7 +1031,7 @@ function movemberCard(){
   const done=official==null?logged:official, left=Math.max(0,60-done), pct=Math.max(0,Math.min(100,done/60*100));
   const daysLeft=TODAY>"2026-11-30"?0:TODAY<"2026-11-01"?dBetween("2026-11-01","2026-11-30")+1:dBetween(TODAY,"2026-11-30");
   const km=n=>{const s=(Math.round(n*100)/100).toFixed(2);return s.replace(/(\.\d)0$/,"$1");};
-  return '<section class="card pad" id="movember"><div class="eb">Movember Move</div><h2>'+km(done)+' <span class="sub">km done</span></h2><div class="sub">'+km(left)+' km left · '+daysLeft+' day'+(daysLeft===1?"":"s")+' left'+(official==null?"":" · Mo Space")+'. Runs in the app: '+km(logged)+' km. Basketball is not counted.</div><div class="minibar" style="margin-top:10px"><span class="holo" style="display:block;height:100%;width:'+pct+'%"></span></div><div class="sub" style="margin-top:10px">Projected '+km(proj.projected)+' km if the rest of November is run'+(proj.cross?". Passes 60 km on "+fD(proj.cross,true)+".":".")+'</div><form id="movF" class="grid2" style="margin-top:12px;align-items:end"><div class="field" style="margin-top:0"><label for="movKm">Official Mo Space total</label><input id="movKm" type="number" inputmode="decimal" step="0.01" min="0" value="'+(official==null?"":official)+'" placeholder="Mo Space km"></div><button class="btn" type="submit">Save</button></form></section>';
+  return '<section class="card pad" id="movember"><div class="eb">Movember Move</div><h2>'+km(done)+' <span class="sub">km done</span></h2><div class="sub">'+km(left)+' km left · '+daysLeft+' day'+(daysLeft===1?"":"s")+' left'+(official==null?"":" · Mo Space")+'. Runs in the app: '+km(logged)+' km. Basketball is not counted.</div><div class="minibar" style="margin-top:10px"><span style="display:block;height:100%;width:'+pct+'%;background:var(--cat-run)"></span></div><div class="sub" style="margin-top:10px">Projected '+km(proj.projected)+' km if the rest of November is run'+(proj.cross?". Passes 60 km on "+fD(proj.cross,true)+".":".")+'</div><form id="movF" class="grid2" style="margin-top:12px;align-items:end"><div class="field" style="margin-top:0"><label for="movKm">Official Mo Space total</label><input id="movKm" type="number" inputmode="decimal" step="0.01" min="0" value="'+(official==null?"":official)+'" placeholder="Mo Space km"></div><button class="btn" type="submit">Save</button></form></section>';
 }
 const WEIGHT_GOAL=92;
 function pastWeeks(){return Object.entries(S.pastweeks||{}).map(([id,w])=>({id,...(w||{})})).filter(w=>w.start).sort((a,b)=>String(a.start).localeCompare(String(b.start)));}
@@ -1010,7 +1063,7 @@ function vToday(){
     if(!S.loaded)return h+'<div class="card pad"><div class="empty">Loading your plan</div></div>';
     const all=loggedActivities(), today=all.filter(r=>r.date===TODAY), older=all.filter(r=>r.date!==TODAY);
     h+='<div class="stack">'+movemberCard()+weightCard();
-    if(today.length)h+='<section class="dk pad"><div class="ch"><span class="eb">Logged · '+fD(TODAY,true)+'</span><span class="chip">'+esc(CAT_NAME[catOf(today[0])]||"")+'</span></div>'+today.map(r=>{const a=activityMeta(r);return '<div class="sess-t">'+esc(a.title)+'</div><div class="sess-m">'+esc((CAT_NAME[catOf(r)]||a.sport)+(a.detail?" · "+a.detail:""))+'</div>';}).join("")+'<button class="linkrow" type="button" data-day="'+TODAY+'"><span>Session details</span><span aria-hidden="true">›</span></button></section>';
+    if(today.length)h+='<section class="dk pad"><div class="ch"><span class="eb">Logged · '+fD(TODAY,true)+'</span><span class="chip'+catCls(catOf(today[0]))+'">'+esc(CAT_NAME[catOf(today[0])]||"")+'</span></div>'+today.map(r=>{const a=activityMeta(r);return '<div class="sess-t">'+esc(a.title)+'</div><div class="sess-m">'+esc((CAT_NAME[catOf(r)]||a.sport)+(a.detail?" · "+a.detail:""))+'</div>';}).join("")+'<button class="linkrow" type="button" data-day="'+TODAY+'"><span>Session details</span><span aria-hidden="true">›</span></button></section>';
     h+=loggedSection(older,"Earlier");
     h+='<div class="card pad"><div class="empty">Plan coming soon.<div style="display:flex;gap:8px;justify-content:center;margin-top:12px"><button class="btn" type="button" data-log="'+TODAY+'">Log a session</button><button class="btn ghost" type="button" data-setup="1">Edit setup</button></div></div></div></div>';
     return h;
@@ -1065,22 +1118,22 @@ function pastSection(){
       (w.coachNote?'<div class="coach" style="margin-top:12px"><span class="eb">Coach</span><span>'+esc(w.coachNote)+'</span></div>':'')+
       (bits.length?'<div class="sub" style="margin-top:10px"><b style="color:var(--ink)">Check-in.</b> '+bits.join(" · ")+'</div>':'')+
       (cin.anything_else?'<div class="prose"><p>'+esc(cin.anything_else)+'</p></div>':'')+
-      '<div class="acts">'+sessions.map(s=>{const c=pastCat(s.type);return '<div class="act"><span class="chip">'+esc(CAT_NAME[c]||"Other")+'</span><span class="act-a"><b>'+esc(s.title||s.type||"Session")+'</b><span class="sub">'+esc([s.day,s.date?fD(s.date):"",s.planned_summary,s.done?"Done":"",s.rpe?"RPE "+s.rpe:""].filter(Boolean).join(" · "))+'</span></span></div>';}).join("")+'</div></details>';
+      '<div class="acts">'+sessions.map(s=>{const c=pastCat(s.type);return '<div class="act"><span class="chip'+catCls(c)+'">'+esc(CAT_NAME[c]||"Other")+'</span><span class="act-a"><b>'+esc(s.title||s.type||"Session")+'</b><span class="sub">'+esc([s.day,s.date?fD(s.date):"",s.planned_summary,s.done?"Done":"",s.rpe?"RPE "+s.rpe:""].filter(Boolean).join(" · "))+'</span></span></div>';}).join("")+'</div></details>';
   }).join("")+'</div>';
 }
 function vPlan(){
   const all=weekList(); const ws=visiblePlanWeeks(); const past=UI.showPast?pastSection():"";
   if(!all.length)return head("Plan","The block")+weekGrid(ws)+past+'<div class="card pad"><div class="empty">The plan appears here once loaded.</div></div>';
   const cur=weekOf(melbourneToday()); if(UI.openWeek==null)UI.openWeek=cur?cur.n:(ws[0]?ws[0].n:-1);
-  const total=ws.reduce((a,w)=>a+wPlan(w),0), done=ws.reduce((a,w)=>a+wAct(w),0), peak=ws.length?Math.max(...ws.map(wPlan)):0;
+  const cats=ws.reduce((o,w)=>{const b=weekBreakdown(w.days||[]);o.gym+=b.planned.gym;o.ball+=b.planned.ball;o.run+=b.planned.runKm;return o;},{gym:0,ball:0,run:0});
   const span=planBounds();
   let h=head("The block · "+span.n+" weeks","Gym, basketball and running",fD(span.start)+" to "+fD(span.end)+". Completed kilometres are laid over the plan.");
   h+=weekGrid(ws);
   h+=past;
-  h+='<section class="dk pad"><div class="ch"><div><div class="eb">'+fD(span.start)+' to '+fD(span.end)+' · Week '+(cur?cur.n:0)+' of '+span.n+'</div><h2>Training dose</h2><div class="lede">Weekly planned kilometres · later weeks hatched</div></div><div class="metrics" style="grid-template-columns:repeat(3,auto);margin:0;gap:18px"><div class="m"><div class="k">Recorded</div><div class="v">'+done.toFixed(1)+'<small>km</small></div></div><div class="m"><div class="k">Planned</div><div class="v">'+Math.round(total)+'<small>km</small></div></div><div class="m"><div class="k">Peak</div><div class="v">'+Math.round(peak)+'<small>km</small></div></div></div></div>'+doseChart(ws)+'</section>';
+  h+='<section class="dk pad"><div class="ch"><div><div class="eb">'+fD(span.start)+' to '+fD(span.end)+' · Week '+(cur?cur.n:0)+' of '+span.n+'</div><h2>Training dose</h2><div class="lede">Days each week · later weeks hatched</div></div><div class="metrics" style="grid-template-columns:repeat(3,auto);margin:0;gap:18px"><div class="m"><div class="k">Gym</div><div class="v">'+cats.gym+'<small>days</small></div></div><div class="m"><div class="k">Basketball</div><div class="v">'+cats.ball+'<small>days</small></div></div><div class="m"><div class="k">Run</div><div class="v">'+Math.round(cats.run)+'<small>km</small></div></div></div></div>'+doseChart(ws)+'</section>';
   h+='<section class="card pad" style="margin-top:14px">';
   ws.forEach(w=>{const open=UI.openWeek===w.n,p=wPlan(w),a=wAct(w);
-    h+='<button class="weekhead'+(cur&&cur.n===w.n?' cur':'')+'" data-week="'+w.n+'" aria-expanded="'+open+'"><span class="w">W'+w.n+'</span><span style="flex:1;min-width:0"><span style="display:block;font-weight:500">'+esc(w.phase)+'</span><span class="sub" style="display:block">'+fD(w.start)+' · '+catLine(w.days||[])+(a?' · '+a.toFixed(0)+' km done':'')+'</span>'+(a&&p?'<span class="minibar" style="display:block"><span class="holo" style="display:block;height:100%;width:'+Math.min(100,a/p*100)+'%"></span></span>':'')+'</span><span class="sub">'+(open?'Hide':'Show')+'</span></button>';
+    h+='<button class="weekhead'+(cur&&cur.n===w.n?' cur':'')+'" data-week="'+w.n+'" aria-expanded="'+open+'"><span class="w">W'+w.n+'</span><span style="flex:1;min-width:0"><span style="display:block;font-weight:500">'+esc(w.phase)+'</span><span class="sub" style="display:block">'+fD(w.start)+' · '+catLine(w.days||[])+(a?' · '+a.toFixed(0)+' km done':'')+'</span>'+(a&&p?'<span class="minibar" style="display:block"><span style="display:block;height:100%;width:'+Math.min(100,a/p*100)+'%;background:var(--cat-run)"></span></span>':'')+'</span><span class="sub">'+(open?'Hide':'Show')+'</span></button>';
     if(open)h+='<div style="padding:0 0 16px">'+(w.focus?'<div class="coach" style="margin-bottom:10px"><span class="eb">Focus</span><span>'+esc(w.focus)+'</span></div>':'')+'<div class="days">'+w.days.map(x=>dayRow(x)).join("")+'</div></div>';
   });
   h+='</section>';
@@ -1174,17 +1227,37 @@ function vFitness(){
 }
 
 function vBall(){
-  let h=head("Basketball","Games","Tuesday is the usual night. Monday is optional. Steam is not for basketball days.");
+  let h=head("Basketball","Games","Tuesday is the usual night. Monday is optional. Steam is not for basketball days.","ball");
   const days=[]; weekList().forEach(w=>(w.days||[]).forEach(d=>{if(catOf(d)==="ball")days.push(d);}));
   const upcoming=days.filter(d=>d.date>=addD(TODAY,-1)).slice(0,8);
   const logged=Object.values(S.runs).filter(r=>catOf(r)==="ball").sort((a,b)=>String(b.start||b.date).localeCompare(String(a.start||a.date)));
-  h+='<div class="stack"><section class="card pad"><div class="ch"><h2>On the plan</h2><button class="btn" type="button" data-logball="'+TODAY+'">Log a game</button></div><div class="days" style="margin-top:12px">'+(upcoming.length?upcoming.map(d=>dayRow(d)).join(""):'<div class="empty">No basketball days on the plan.</div>')+'</div></section>';
+  h+='<div class="stack"><section class="card pad"><div class="ch"><h2>On the plan</h2><button class="btn c-ball" type="button" data-logball="'+TODAY+'">Log a game</button></div><div class="days" style="margin-top:12px">'+(upcoming.length?upcoming.map(d=>dayRow(d)).join(""):'<div class="empty">No basketball days on the plan.</div>')+'</div></section>';
   h+='<section class="card pad"><div class="ch"><h2>Logged</h2><span class="sub">'+logged.length+'</span></div>'+(logged.length?'<div class="days" style="margin-top:12px">'+logged.map(activityButton).join("")+'</div>':'<div class="empty">Nothing logged yet. Monday 9 Nov is already in if you saved the game.</div>')+'</section></div>';
   return h;
 }
+function runMovingSec(r){const s=+r.sec||+r.moving_time||+r.movingTime||0;if(s>0)return s;const e=+r.el||+r.elapsed_time||0;return e>0?e:0;}
+function loggedRuns(){return Object.values(S.runs).filter(r=>isRun(r)&&+r.km>0).sort((a,b)=>String(a.date).localeCompare(String(b.date))||String(a.start||"").localeCompare(String(b.start||"")));}
+function runsOverview(){
+  const runs=loggedRuns();
+  if(!runs.length)return '<section class="dk pad" id="runboard"><div class="eb">Every run</div><h2>Distance and pace</h2><div class="lede">Bars appear here once a run is logged.</div></section>';
+  const km=runs.reduce((a,r)=>a+(+r.km||0),0);
+  const paced=runs.filter(r=>runMovingSec(r)>0);
+  const sec=paced.reduce((a,r)=>a+runMovingSec(r),0);
+  const pkm=paced.reduce((a,r)=>a+(+r.km||0),0);
+  const avg=pkm?sec/pkm:0, kmh=sec?pkm/(sec/3600):0;
+  const max=Math.max(...runs.map(r=>+r.km),1)*1.18;
+  const bars=runs.map(r=>{
+    const dsec=runMovingSec(r), dist=+r.km;
+    const pace=dsec?fP(dsec/dist):"";
+    const spd=dsec?(dist/(dsec/3600)).toFixed(1):"";
+    const h=Math.max(18,dist/max*132);
+    return '<button type="button" class="rb" data-day="'+r.date+'" aria-label="'+esc((r.title||"Run")+" "+fD(r.date)+(pace?" "+pace+"/km":""))+'"><span class="rb-pace">'+(pace?pace:"")+'</span><span class="rb-spd">'+(spd?spd+" km/h":"")+'</span><span class="rb-bar" style="height:'+h.toFixed(0)+'px"><b>'+dist.toFixed(1)+'</b></span><span class="rb-date">'+esc(fD(r.date))+'</span></button>';
+  }).join("");
+  return '<section class="dk pad" id="runboard"><div class="ch"><div><div class="eb">Every run</div><h2>Distance and pace</h2><div class="lede">Bar height is kilometres. Pace uses moving time.</div></div><div class="metrics" style="grid-template-columns:repeat(3,auto);margin:0;gap:16px"><div class="m"><div class="k">Total</div><div class="v">'+km.toFixed(1)+'<small>km</small></div></div><div class="m"><div class="k">Runs</div><div class="v">'+runs.length+'</div></div><div class="m"><div class="k">Avg pace</div><div class="v">'+(avg?fP(avg):"—")+'<small>/km</small></div></div></div></div><div class="rb-scroll">'+bars+'</div><div class="legend"><span><i class="rb-swatch"></i>Distance</span><span>'+(kmh?"Average speed "+kmh.toFixed(1)+" km/h. ":"")+'Pace sits above each bar.</span></div></section>';
+}
 function vRuns(){
-  let h=head("Run","Runs","Easy, tempo, reps and the 10 km time trial. Add a past run with + if it is missing.");
-  h+=movemberCard();
+  let h=head("Run","Runs","Easy, tempo, reps and the 10 km time trial. Add a past run with + if it is missing.","run");
+  h+=runsOverview()+movemberCard();
   const all=Object.values(S.runs).filter(r=>catOf(r)==="run").sort((a,b)=>(b.start||b.date).localeCompare(a.start||a.date)); const idx=dayIndex();
   h+='<section class="card pad" style="margin-top:10px"><div class="ch"><h2>Recorded</h2><span class="sub mono">'+all.length+' runs</span></div>';
   if(!all.length)h+='<div class="empty">No runs in the app yet.</div>';
@@ -1243,7 +1316,7 @@ const METHOD=[
 
 
 /* Training load: TSS per activity, then fitness (CTL 42d), fatigue (ATL 7d), form (TSB) */
-const SPORT_COL={run:"var(--z-lt2)",bike:"var(--z-st)",swim:"var(--z-rec)",gym:"var(--z-sp)",ball:"var(--z-vo2)",other:"var(--z-x)"};
+const SPORT_COL={run:"var(--cat-run)",bike:"var(--z-st)",swim:"var(--z-rec)",gym:"var(--cat-gym)",ball:"var(--cat-ball)",other:"var(--z-x)"};
 const SPORT_LBL={run:"Run",bike:"Ride",swim:"Swim",gym:"Gym",ball:"Basketball",other:"Other"};
 function sportKind(a){const t=String(a.type||"")+" "+String(a.title||"");
   if(/basketball/i.test(t))return "ball";
@@ -1608,7 +1681,7 @@ function openDay(date){
 }
 const QA_SPORTS=[["Run","Run","run"],["Basketball","Basketball","other"],["Soccer","Soccer","other"],["Gym","WeightTraining","other"],["Ride","Ride","other"],["Swim","Swim","other"],["Walk","Walk","other"],["Tennis","Tennis","other"],["Padel","Padel","other"],["Surf","Surf","other"],["Other","Workout","other"]];
 function openCatLog(){
-  const x='<div class="sheet-top"><span class="eb">Log</span><button class="btn ghost" id="shX" type="button">Close</button></div><div class="stack"><button class="btn block" type="button" id="logRun">Run</button><button class="btn block" type="button" id="logBall" style="background:var(--lime);color:var(--lime-ink)">Basketball</button><button class="btn ghost block" type="button" id="logGym">Gym</button><div class="sub">Soccer and steam stay as notes on the day. Steam is only after gym.</div></div>';
+  const x='<div class="sheet-top"><span class="eb">Log</span><button class="btn ghost" id="shX" type="button">Close</button></div><div class="stack"><button class="btn block c-run" type="button" id="logRun">Run</button><button class="btn block c-ball" type="button" id="logBall">Basketball</button><button class="btn block c-gym" type="button" id="logGym">Gym</button><div class="sub">Soccer and steam stay as notes on the day. Steam is only after gym.</div></div>';
   $("#sheetRoot").innerHTML='<div class="scrim" id="scrim"><div class="sheet" role="dialog" aria-modal="true" aria-label="Log">'+x+'</div></div>';
   $("#scrim").onclick=e=>{if(e.target.id==="scrim")closeSheet();}; $("#shX").onclick=closeSheet;
   $("#logRun").onclick=()=>openQuickAdd("Run");
@@ -1619,7 +1692,7 @@ function openQuickAdd(preset,date){
   const nowT=new Date().toTimeString().slice(0,5); let sp=null, rpe=0; const when=date&&/^\d{4}-\d{2}-\d{2}$/.test(date)?date:TODAY;
   const x='<div class="sheet-top"><span class="eb">Log an activity</span><button class="btn ghost" id="shX" type="button">Close</button></div>'+
    '<form id="qaF" class="stack" style="gap:14px;margin-top:6px">'+
-   '<div class="field"><span class="flabel">What</span><div class="qa-sp">'+QA_SPORTS.map((q,i)=>'<button type="button" data-qa="'+i+'" aria-pressed="false">'+q[0]+'</button>').join("")+'</div></div>'+
+   '<div class="field"><span class="flabel">What</span><div class="qa-sp">'+QA_SPORTS.map((q,i)=>{const cc=q[0]==="Run"?"run":q[0]==="Basketball"?"ball":q[0]==="Gym"?"gym":"";return '<button type="button" data-qa="'+i+'"'+(cc?' data-cc="'+cc+'"':'')+' aria-pressed="false">'+q[0]+'</button>';}).join("")+'</div></div>'+
    '<div class="field" id="qaGym" style="display:none"><button class="btn ghost" type="button" id="qaLift">Log sets and reps instead</button></div>'+
    '<div class="field"><label for="qaName">Name (optional)</label><input id="qaName" placeholder="e.g. Club game, social hit"></div>'+
    '<div class="grid2"><div class="field"><label for="qaD">Date</label><input id="qaD" type="date" value="'+when+'" max="'+TODAY+'"></div><div class="field"><label for="qaT">Start</label><input id="qaT" type="time" value="'+nowT+'"></div></div>'+
@@ -1960,7 +2033,7 @@ function vGym(){
   UI.gymP=UI.gymP||"month";
   const draft=gymDraft();
   const it=dayIndex()[TODAY]; const todayKey=it?gymKey(it.d):null;
-  let h=head("Gym","Sessions","Machines and dumbbells. Log every set. Steam only after gym, not after basketball.");
+  let h=head("Gym","Sessions","Machines and dumbbells. Log every set. Steam only after gym, not after basketball.","gym");
   const gymDays=[]; weekList().forEach(w=>(w.days||[]).forEach(d=>{if(catOf(d)==="gym"&&d.date>=TODAY&&d.date<=addD(TODAY,13))gymDays.push(d);}));
   if(gymDays.length)h+='<section class="card pad"><div class="eb">Coming up</div><div class="days" style="margin-top:8px">'+gymDays.slice(0,4).map(dayRow).join("")+'</div></section>';
   h+='<section class="dk pad gymstart" style="margin-top:10px">';
