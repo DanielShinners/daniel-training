@@ -8,13 +8,13 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Training">
+<meta name="apple-mobile-web-app-title" content="Squiz">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="icon" href="favicon-32.png" sizes="32x32" type="image/png">
 <link rel="icon" href="favicon-16.png" sizes="16x16" type="image/png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<title>Daniel Training</title>
+<title>Squiz</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&display=swap">
@@ -92,8 +92,7 @@ h2{font-size:22px;font-weight:400;letter-spacing:-.03em;line-height:var(--space-
 /* Shell */
 .top{position:sticky;top:0;z-index:12;padding-top:env(safe-area-inset-top,0px);background:color-mix(in srgb, var(--bg) 78%, transparent);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
 .top-in{max-width:1080px;margin:0 auto;padding:12px 16px 8px;display:flex;align-items:center;gap:10px}
-.mark{width:28px;height:28px;border-radius:50%;background:conic-gradient(from 210deg,#7EE8FF,#D8F34A 34%,#F7F7FF 54%,#C9A4FF 76%,#7EE8FF);position:relative;flex:none}
-.mark::after{content:"";position:absolute;inset:18%;border-radius:50%;background:var(--accent);border:0}
+.mark{width:28px;height:28px;border-radius:22%;display:block;flex:none;object-fit:cover}
 .brand{font-weight:500;letter-spacing:-.02em;font-size:16px}
 .top .sp{flex:1}
 .race{font-family:var(--sans);font-size:12px;font-weight:500;color:var(--ink2);background:var(--card);border:1px solid var(--line);border-radius:999px;padding:6px 12px;white-space:nowrap;box-shadow:var(--shadow)}
@@ -573,10 +572,10 @@ ol.opts li::before{counter-increment:opt;content:counter(opt);font-weight:500;co
 </head>
 <body>
 <header class="top" id="topbar">
-  <div class="top-in"><span class="mark" aria-hidden="true"></span><span class="brand">Daniel Training</span><span class="sp"></span><span class="race" id="raceChip" style="display:none"></span></div>
+  <div class="top-in"><img class="mark" src="icon.svg" alt="" width="28" height="28"><span class="brand">Squiz</span><span class="sp"></span><span class="race" id="raceChip" style="display:none"></span></div>
 </header>
 <nav class="nav" id="nav" aria-label="Sections" hidden></nav>
-<section class="signin" id="signin" hidden><div class="card pad"><span class="mark" aria-hidden="true" style="display:block;margin-bottom:14px"></span><div class="eb acc">Daniel Training</div><h1 style="margin-top:6px">Sign in</h1>
+<section class="signin" id="signin" hidden><div class="card pad"><img class="mark" src="icon.svg" alt="" width="48" height="48" style="margin-bottom:14px"><div class="eb acc">Squiz</div><h1 style="margin-top:6px">Sign in</h1>
 <form id="siPwF"><div class="field"><label for="siE">Email</label><input id="siE" type="email" autocomplete="username" inputmode="email" required placeholder="you@example.com"></div><div class="field"><label for="siP">Password</label><input id="siP" type="password" autocomplete="current-password" placeholder="Your password"></div><button class="btn block" style="margin-top:14px" id="siPwGo" type="submit">Sign in</button></form>
 <div class="sub" id="siMsg" style="margin-top:12px"></div>
 <div class="hr"></div><div class="eb">First time, or no password yet</div><div class="sub" style="margin-top:6px">Tap below, then tap Log In in the email (don't press and hold). It opens in Safari, signs you in there and asks you to set a password. Then come back to the home screen app and sign in with it.</div><button class="btn ghost block" id="siLink" type="button" style="margin-top:10px">Email me a sign-in link</button></div></section>
