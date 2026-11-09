@@ -1,0 +1,24 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer"><meta name="robots" content="noindex">
+<title>Connect Strava</title><style>
+body{font:16px/1.5 -apple-system,system-ui,Segoe UI,Roboto,sans-serif;max-width:460px;margin:40px auto;padding:0 18px;color:#111}
+h1{font-size:22px}label{display:block;margin:16px 0 6px;font-weight:600}
+input{width:100%;box-sizing:border-box;padding:10px;font:inherit;border:1px solid #bbb;border-radius:8px}
+button{margin-top:20px;padding:11px 18px;font:inherit;font-weight:600;border:0;border-radius:8px;background:#fc4c02;color:#fff}
+.note{color:#555;font-size:14px}
+</style></head><body>
+<h1>Connect Strava to your training app</h1>
+<p class="note">Copy these from <a href="https://www.strava.com/settings/api" target="_blank" rel="noopener">strava.com/settings/api</a>. They are sent straight to your app's server (Supabase) and are not stored on this page or shown to anyone.</p>
+<p id="bad" style="color:#b00020;display:none">This page needs your setup link. Open the setup link you were sent.</p>
+<form id="f" method="post" action="https://dsbfhvmcxafqeawwgcrf.supabase.co/functions/v1/strava/setup" autocomplete="off">
+<input type="hidden" name="t" id="t">
+<label for="cid">Client ID</label><input id="cid" name="client_id" inputmode="numeric" pattern="[0-9]+" required>
+<label for="cs">Client Secret</label><input id="cs" name="client_secret" type="password" pattern="[0-9a-fA-F]{20,80}" required>
+<button type="submit">Save and connect Strava</button>
+</form>
+<script>
+var m=/[#&]t=([^&]+)/.exec(location.hash);
+if(m){document.getElementById("t").value=decodeURIComponent(m[1]);history.replaceState(null,"",location.pathname);}
+else{document.getElementById("bad").style.display="";document.getElementById("f").style.display="none";}
+</script>
+</body></html>
