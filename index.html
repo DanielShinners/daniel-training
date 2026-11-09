@@ -488,25 +488,20 @@ input[type=date],input[type=time]{min-height:44px;-webkit-appearance:none;appear
 .wg-table{display:grid;gap:4px;min-width:320px}
 .wg-head,.wg-row{display:grid;grid-template-columns:34px repeat(7,minmax(0,1fr));gap:3px;align-items:center}
 .wg-head span{text-align:center;font-size:10px;font-weight:500;color:var(--ink3)}
-.wg-wk{font-size:12px;font-weight:500;color:var(--ink2)}
+.wg-wk{font-size:12px;font-weight:500;color:var(--ink)}
 .wg-row.cur .wg-wk{font-weight:600;color:var(--ink)}
 .wgrid .wg-cell{position:relative;height:34px;border:0;border-radius:8px;padding:0;width:100%;cursor:pointer;background:transparent}
 .wgrid .wg-fill{display:block;height:100%;border-radius:8px;overflow:hidden}
 .wgrid .wg-and{display:flex}
 .wgrid .wg-and i{flex:1;display:block}
 .wgrid .wg-or{background:linear-gradient(90deg,var(--a) 50%,var(--b) 50%)}
-.wgrid .g-ball{background:var(--wg-ball);color:var(--wg-ink)}
-.wgrid .g-run{background:var(--wg-run);color:var(--wg-run-ink)}
-.wgrid .g-gym{background:var(--wg-gym);color:var(--cat-gym-ink)}
-.wgrid .g-rest{background:var(--wg-rest);color:var(--wg-rest-ink)}
-.wgrid .wg-n{position:absolute;inset:0;display:grid;place-items:center;font-size:11px;font-weight:500;pointer-events:none}
-.wgrid .t-ball .wg-n{color:var(--wg-ink)}
-.wgrid .t-run .wg-n{color:var(--wg-run-ink)}
-.wgrid .t-gym .wg-n{color:var(--cat-gym-ink)}
-.wgrid .t-rest .wg-n{color:var(--wg-rest-ink)}
-.wgrid .t-mix .wg-n{color:#fff;text-shadow:0 0 2px #1C1206,0 0 2px #1C1206,0 1px 1px #1C1206}
+.wgrid .g-ball{background:var(--wg-ball)}
+.wgrid .g-run{background:var(--wg-run)}
+.wgrid .g-gym{background:var(--wg-gym)}
+.wgrid .g-rest{background:var(--wg-rest)}
+.wgrid .wg-n{position:absolute;inset:0;display:grid;place-items:center;font-size:11px;font-weight:500;pointer-events:none;color:var(--ink);text-shadow:none}
 .wgrid .wg-cell.today{box-shadow:0 0 0 2px var(--ink);border-radius:8px}
-.wg-legend{display:flex;flex-wrap:wrap;gap:8px 14px;margin-top:12px;font-size:12px;font-weight:500;color:var(--ink2)}
+.wg-legend{display:flex;flex-wrap:wrap;gap:8px 14px;margin-top:12px;font-size:12px;font-weight:500;color:var(--ink)}
 .wg-legend span{display:inline-flex;align-items:center;gap:6px}
 .wg-legend i{width:12px;height:12px;border-radius:4px;display:inline-block}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .wgrid{--wg-rest:#2A2E3A;--wg-rest-ink:rgba(243,244,248,.72)}}
@@ -739,7 +734,8 @@ function status(d){const lg=S.log[d.date]||{},km=kmOn(d.date);
   if(!(+d.km))return (lg.done||lg.gymDone||otherOn(d.date).length)?"done":"rest";
   if(lg.done||km>0){if(km>0&&km<d.km*.75&&!lg.done)return "part";return "done";}
   if(d.date<TODAY)return "miss";return "todo";}
-const wPlan=w=>(w.days||[]).reduce((a,d)=>a+(+d.km||0),0);
+const wPlan=w=>w&&w.target!=null&&w.target!==""&&isFinite(+w.target)?+w.target:(w&&w.days||[]).reduce((a,d)=>a+(+d.km||0),0);
+const km1=n=>{const x=Math.round((+n||0)*10)/10;return String(x);};
 const wAct=w=>(w.days||[]).reduce((a,d)=>a+kmOn(d.date),0);
 
 /* Coach read for a day */
@@ -1084,7 +1080,7 @@ function vToday(){
   h+='</div><div class="stack">';
   const days7=w.days.length>7?w.days.slice(dayPos(w),dayPos(w)+7):w.days;
   {const dts=days7.map(x=>x.date); const {t}=weekTotals(dts); const tot=Object.values(t).reduce((q,s2)=>({n:q.n+s2.n,sec:q.sec+s2.sec,tss:q.tss+s2.tss}),{n:0,sec:0,tss:0}); const runWeek=P>0||A>0; const ft=lastFoot(dts);
-  h+='<section class="card pad wkcard"><div class="ch"><div><div class="eb">'+fD(days7[0].date)+' to '+fD(days7[days7.length-1].date)+'</div><h2>This week</h2></div><div class="wk-big">'+(runWeek?A.toFixed(1)+'<span class="sub"> / '+Math.round(P)+' km</span>':fHM(tot.sec)+'<span class="sub"> trained</span>')+'</div></div>'+
+  h+='<section class="card pad wkcard"><div class="ch"><div><div class="eb">'+fD(days7[0].date)+' to '+fD(days7[days7.length-1].date)+'</div><h2>This week</h2></div><div class="wk-big">'+(runWeek?A.toFixed(1)+'<span class="sub"> / '+km1(P)+' km</span>':fHM(tot.sec)+'<span class="sub"> trained</span>')+'</div></div>'+
     weekMinChart(dts,"wkday")+weekChips(dts)+
     '<div class="wk-read">'+esc(weekRead(dts))+'</div>'+
     '<div class="metrics"><div class="m"><div class="k">Sessions</div><div class="v">'+tot.n+'</div></div><div class="m"><div class="k">Load</div><div class="v">'+Math.round(tot.tss)+'<small>TSS</small></div></div>'+
@@ -1128,7 +1124,7 @@ function vPlan(){
   let h=head("The block · "+span.n+" weeks","Gym, basketball and running",fD(span.start)+" to "+fD(span.end)+". Completed kilometres are laid over the plan.");
   h+=weekGrid(ws);
   h+=past;
-  h+='<section class="dk pad"><div class="ch"><div><div class="eb">'+fD(span.start)+' to '+fD(span.end)+' · Week '+(cur?cur.n:0)+' of '+span.n+'</div><h2>Training dose</h2><div class="lede">Days each week · later weeks hatched</div></div><div class="metrics" style="grid-template-columns:repeat(3,auto);margin:0;gap:18px"><div class="m"><div class="k">Gym</div><div class="v">'+cats.gym+'<small>days</small></div></div><div class="m"><div class="k">Basketball</div><div class="v">'+cats.ball+'<small>days</small></div></div><div class="m"><div class="k">Run</div><div class="v">'+Math.round(cats.run)+'<small>km</small></div></div></div></div>'+doseChart(ws)+'</section>';
+  h+='<section class="dk pad"><div class="ch"><div><div class="eb">'+fD(span.start)+' to '+fD(span.end)+' · Week '+(cur?cur.n:0)+' of '+span.n+'</div><h2>Training dose</h2><div class="lede">Days each week · later weeks hatched</div></div><div class="metrics" style="grid-template-columns:repeat(3,auto);margin:0;gap:18px"><div class="m"><div class="k">Gym</div><div class="v">'+cats.gym+'<small>days</small></div></div><div class="m"><div class="k">Basketball</div><div class="v">'+cats.ball+'<small>days</small></div></div><div class="m"><div class="k">Run</div><div class="v">'+km1(cats.run)+'<small>km</small></div></div></div></div>'+doseChart(ws)+'</section>';
   h+='<section class="card pad" style="margin-top:14px">';
   ws.forEach(w=>{const open=UI.openWeek===w.n,p=wPlan(w),a=wAct(w);
     h+='<button class="weekhead'+(cur&&cur.n===w.n?' cur':'')+'" data-week="'+w.n+'" aria-expanded="'+open+'"><span class="w">W'+w.n+'</span><span style="flex:1;min-width:0"><span style="display:block;font-weight:500">'+esc(w.phase)+'</span><span class="sub" style="display:block">'+fD(w.start)+' · '+catLine(w.days||[])+(a?' · '+a.toFixed(0)+' km done':'')+'</span>'+(a&&p?'<span class="minibar" style="display:block"><span style="display:block;height:100%;width:'+Math.min(100,a/p*100)+'%;background:var(--cat-run)"></span></span>':'')+'</span><span class="sub">'+(open?'Hide':'Show')+'</span></button>';
