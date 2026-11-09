@@ -109,7 +109,8 @@ h2{font-size:22px;font-weight:400;letter-spacing:-.03em;line-height:1.15;margin:
   #topbar:not([hidden]) ~ #toastRoot .toast{bottom:calc(22px + env(safe-area-inset-bottom,0px))}
 }
 section.card[style*="border-left"]{border-left-width:0!important;box-shadow:inset 4px 0 0 var(--zc, var(--accent)), var(--shadow)}
-@media (max-width:360px){.nav button{font-size:9px;padding:6px 1px 5px}.nav svg{width:16px;height:16px}}
+@media (max-width:520px){.nav{width:calc(100% - 12px)}.nav button{font-size:9px;letter-spacing:-.03em;padding:7px 0 6px}}
+@media (max-width:360px){.nav button{font-size:9px;padding:6px 0 5px}.nav svg{width:16px;height:16px}}
 .wrap{max-width:1080px;margin:0 auto;padding-inline:16px;padding-block:12px 48px}
 .head{margin:6px 2px 16px}
 .cols{display:grid;gap:10px}
@@ -449,6 +450,16 @@ input[type=date],input[type=time]{min-height:44px;-webkit-appearance:none;appear
 .pastwk summary{display:block;position:relative;padding-right:52px}
 .pastwk summary::after{content:"Show";position:absolute;right:0;top:2px;color:var(--faint);font-size:13px;font-weight:500}
 .pastwk[open] summary::after{content:"Hide"}
+.mtbl{width:100%;border-collapse:collapse;font-size:13px;line-height:1.35;margin-top:12px}
+.mtbl th,.mtbl td{padding:10px 8px 10px 0;border-top:1px solid var(--line);vertical-align:top;text-align:left}
+.mtbl thead th{border-top:0;font-size:11px;font-weight:500;color:var(--ink3);padding-top:0}
+.mtbl tbody th{font-weight:500;width:30%}
+ol.opts{margin:10px 0 0;padding:0;list-style:none;display:grid;gap:12px;counter-reset:opt}
+ol.opts li{display:grid;grid-template-columns:26px 1fr;gap:8px;align-items:start;font-size:14.5px;line-height:1.45}
+ol.opts li::before{counter-increment:opt;content:counter(opt);font-weight:500;color:var(--accent);background:var(--accentSoft);border-radius:999px;width:24px;height:24px;display:grid;place-items:center;font-size:12px}
+.shop-ul{margin:12px 0 0;padding:0;list-style:none;display:grid;gap:8px}
+.shop-ul li{font-size:14.5px;line-height:1.4;padding-left:14px;position:relative}
+.shop-ul li::before{content:"";position:absolute;left:0;top:.55em;width:6px;height:6px;border-radius:99px;background:var(--accent)}
 .old-n{padding:12px 0;border-top:1px solid var(--line)}.old-n:first-of-type{border-top:0;margin-top:8px}.old-n b{font-weight:500;display:block;margin:2px 0}
 .msg .when{display:block;font-family:var(--sans);font-size:10px;font-weight:500;letter-spacing:.04em;text-transform:uppercase;opacity:.6;margin-top:6px}
 .composer{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:10px;align-items:end}
@@ -960,6 +971,63 @@ function vPlan(){
   return h;
 }
 
+function vMeals(){
+  const template=[
+    "Morning: coffee only. On gym or morning-training days, optionally add a Greek yoghurt or a shake (whey, creatine, banana, milk) mid-morning.",
+    "Lunch (first meal, 50–60 g protein): see the options.",
+    "Afternoon (30–40 g): Greek yoghurt with berries or 2 boiled eggs. Before training, a banana or mango.",
+    "Dinner (60–70 g): a dinner option, always with salad or veg, plus rice or potatoes on training days.",
+    "Evening if short on protein (20–30 g): Greek yoghurt or a shake."
+  ];
+  const lunch=[
+    "Tuna wrap or tuna on rice: 2 cans of tuna with salad (about 50 g)",
+    "Takeaway sushi: salmon, tuna or chicken rolls or sashimi plus edamame, not tempura or mayo-heavy rolls (about 30–40 g). Top up with a Greek yoghurt or 2 eggs in the afternoon.",
+    "Omelette: 4 eggs with tomato, mushroom and spring onion, adding bacon or sausage 2–3 times a week (about 30–40 g). Top up with a Greek yoghurt or 2 eggs in the afternoon.",
+    "Leftover steak or schnitzel in a wrap with salad (about 40–45 g)"
+  ];
+  const dinner=[
+    "Steak (250 g) with salad or veg, plus potatoes on training days (about 60 g)",
+    "Chicken schnitzel, air-fried, with salad, 2–3 times a week (about 50 g)",
+    "Lean or chicken sausages with eggs and veg, or egg-and-sausage fried rice on training days, 2–3 times a week (about 35–45 g)"
+  ];
+  const snacks=[
+    "Greek yoghurt with berries (about 20 g).",
+    "2 boiled eggs and a kiwi fruit or apple (about 12 g).",
+    "A banana or mango before training."
+  ];
+  const around=[
+    "Bacon grilled or short cut, sausages lean or chicken, schnitzel air-fried, each 2–3 times a week.",
+    "Night basketball or soccer: a proper lunch with rice or a wrap, then a banana or mango and a coffee 60–90 min before.",
+    "Saturday long run: a banana and a coffee 30–60 min before, carrying a Hyro for 10–12 km on hot days.",
+    "Within an hour after: a shake and fruit, or eggs and bacon with toast."
+  ];
+  const shop=[
+    ["Protein",["eggs (2–3 dozen)","tuna (6–8 cans)","steak (3–4)","chicken schnitzel (1 pack)","lean or chicken sausages (1 pack)","short-cut bacon (1 pack)"]],
+    ["Dairy",["Greek or high-protein yoghurt (3 large tubs)","granola (1 box)","lite or skim milk"]],
+    ["Fruit",["bananas (7–10)","mangoes (2–3)","kiwi fruit","apples","blueberries and raspberries (frozen is fine)"]],
+    ["Additions",["rice or microwave rice pouches (about 6 serves)","potatoes","wraps","salad mix","tomatoes","cucumber","mushrooms","spring onions","frozen veg","whey and creatine only if he's run out"]]
+  ];
+  const cell=(a,b)=>'<td>'+esc(a)+'</td><td>'+esc(b)+'</td>';
+  let h=head("Food","Meal plan","He doesn't eat breakfast, only coffee (2–3 long blacks or strong lattes a day). Lunch is his first meal. He often gets takeaway sushi for lunch. His wife does the grocery shopping.");
+  h+='<div class="stack">';
+  h+='<section class="card pad" id="meal-targets"><h2>Daily targets</h2><table class="mtbl"><thead><tr><th></th><th>Training day</th><th>Rest or easy day</th></tr></thead><tbody>';
+  h+='<tr><th scope="row">Calories (estimate)</th>'+cell("about 2,600–2,800 kcal","about 2,200–2,400 kcal")+'</tr>';
+  h+='<tr><th scope="row">Protein</th>'+cell("180–200 g","180–200 g")+'</tr>';
+  h+='<tr><th scope="row">Carbs</th>'+cell("250–300 g, mostly around the session","150–200 g")+'</tr>';
+  h+='<tr><th scope="row">Fat</th>'+cell("70–80 g","70–80 g")+'</tr>';
+  h+='<tr><th scope="row">Fluids</th>'+cell("3 L+, plus Hyro after steam, games and long runs","2.5–3 L")+'</tr>';
+  h+='</tbody></table><div class="sub" style="margin-top:10px">Training days are gym, quality runs, long runs, basketball and soccer.</div></section>';
+  h+='<section class="card pad" id="meal-template"><h2>Day template</h2><div class="prose">'+template.map(t=>'<p>'+esc(t)+'</p>').join("")+'</div><div class="sub" style="margin-top:10px">This comes to about 180 g without the optional mid-morning add-on.</div></section>';
+  h+='<section class="card pad"><h2>Coffee</h2><div class="prose"><p>A long black is about 0 kcal. A strong full-cream latte is roughly 8–10 g protein and 150–200 kcal (estimates). Skim or lite milk, or a protein latte, cuts that.</p><p>Last coffee around 2 pm. A coffee before a run or game is fine.</p></div></section>';
+  h+='<section class="card pad" id="meal-lunch"><h2>Lunch options</h2><ol class="opts">'+lunch.map(t=>'<li>'+esc(t)+'</li>').join("")+'</ol></section>';
+  h+='<section class="card pad"><h2>Dinner options</h2><ol class="opts">'+dinner.map(t=>'<li>'+esc(t)+'</li>').join("")+'</ol></section>';
+  h+='<section class="card pad"><h2>Snacks</h2><div class="prose">'+snacks.map(t=>'<p>'+esc(t)+'</p>').join("")+'</div></section>';
+  h+='<section class="card pad"><h2>Around training</h2><div class="prose">'+around.map(t=>'<p>'+esc(t)+'</p>').join("")+'</div></section>';
+  h+='<section class="card pad"><h2>Weekends</h2><div class="prose"><p>2–4 beers across the weekend, not per night. 1 treat meal (a pub parma counts), after the long run. Protein still 180 g+. Sunday is a rest-day pattern unless he runs.</p></div></section>';
+  h+='<div id="meal-shop"><div class="head" style="margin-bottom:0"><h2>Weekly shopping list</h2></div>'+shop.map(([name,items])=>'<details class="card pad pastwk" open><summary><span style="font-weight:500">'+esc(name)+'</span></summary><ul class="shop-ul">'+items.map(t=>'<li>'+esc(t)+'</li>').join("")+'</ul></details>').join("")+'</div>';
+  h+='</div>';
+  return h;
+}
 function vFitness(){
   const race=goalRace();
   let h=head("Run","10 km at 5:45",race?"Time trial "+fD(race.date,true)+". Each session already has its pace written out.":"Each session already has its pace written out.");
@@ -1923,7 +1991,7 @@ function gymCtx(){const a=liftAgg(addD(TODAY,-27),TODAY);if(!a.n)return "GYM: no
   return "GYM last 4 weeks: "+a.n+" sessions, "+fT(a.t)+" lifted, "+a.sets+" sets. Top muscles by sets: "+top+". Last session "+lifts().slice(-1)[0].date+" "+(lifts().slice(-1)[0].name||"");}
 
 /* Shell */
-const TABS=[["today","Today"],["gym","Gym"],["ball","Basketball"],["run","Run"],["plan","Plan"],["coach","Coach"]];
+const TABS=[["today","Today"],["gym","Gym"],["ball","Basketball"],["run","Run"],["meals","Meals"],["plan","Plan"],["coach","Coach"]];
 const NAV_ICON={
   today:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 10.5 12 4.5l7.5 6V20a.5.5 0 0 1-.5.5h-4.5V14h-5v6.5H5a.5.5 0 0 1-.5-.5z"/></svg>',
   plan:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3.5V7M16 3.5V7M4 10h16"/></svg>',
@@ -1931,10 +1999,11 @@ const NAV_ICON={
   gym:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 8.5v7M17.5 8.5v7M3.5 10v4M20.5 10v4M6.5 12h11"/></svg>',
   run:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="15" cy="4.8" r="1.35"/><path d="M7.5 20.5 10 15l2.4 1.2 1.6-3.4-2.8-1.5 1.3-2.4 3.8 1.8 1.1-2.2"/></svg>',
   ball:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M4.2 12h15.6M12 4.2c2.2 2.4 2.2 13.2 0 15.6M12 4.2c-2.2 2.4-2.2 13.2 0 15.6"/></svg>',
+  meals:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4v6.2c0 1 .7 1.8 1.6 1.8h.8c.9 0 1.6-.8 1.6-1.8V4M9 12v8M16.5 4c.4 2.2.4 4.3 0 6.4-.3 1.3-1.1 2-2 2h-.4V20"/></svg>',
   coach:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 18.2c.7-2.6 2.6-4.2 6-4.2s5.3 1.6 6 4.2"/><circle cx="12" cy="8.2" r="3"/></svg>'
 };
 function render(){
-  const y=scrollY; const v={today:vToday,plan:vPlan,gym:vGym,ball:vBall,run:vRuns,runs:vRuns,coach:vCoach,fitness:vFitness}[UI.tab]||vToday;
+  const y=scrollY; const v={today:vToday,plan:vPlan,gym:vGym,ball:vBall,run:vRuns,runs:vRuns,meals:vMeals,coach:vCoach,fitness:vFitness}[UI.tab]||vToday;
   $("#app").innerHTML=v();
   if(S.db)passwordPrompt();
   $("#nav").innerHTML=TABS.map(t=>'<button type="button" data-tab="'+t[0]+'" aria-current="'+(UI.tab===t[0]?"page":"false")+'">'+NAV_ICON[t[0]]+'<span>'+t[1]+'</span></button>').join("");
@@ -1943,7 +2012,7 @@ function render(){
   if(gs.goalDate){$("#raceChip").style.display="";$("#raceChip").innerHTML=esc(gs.goalShort||"Goal")+' <b>'+Math.max(0,dBetween(TODAY,gs.goalDate))+'d</b>';}
   else if(race){$("#raceChip").style.display="";$("#raceChip").innerHTML='10 km <b>'+Math.max(0,dBetween(TODAY,race.date))+'d</b>';}
   else $("#raceChip").style.display="none";
-  $("#fab").style.display=S.db?"":"none";
+  $("#fab").style.display=S.db&&UI.tab!=="meals"?"":"none";
   bind($("#app")); scrollTo(0,y);
 }
 function setTab(t){UI.tab=t;UI.sel=null;try{localStorage.setItem("dt-tab",t);}catch(e){}closeSheet();render();scrollTo(0,0);}
