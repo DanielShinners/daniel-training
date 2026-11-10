@@ -182,6 +182,12 @@ h2{font-size:22px;font-weight:400;letter-spacing:-.03em;line-height:var(--space-
 .legend .over{color:#EF4444}
 .legend .under{color:#22C55E}
 .wnote{flex:1 0 100%;display:grid;gap:8px;margin-top:4px}
+.gl.up{color:#22C55E}
+.gl.down{color:#EF4444}
+.dash-stats .v.gl.up{color:#22C55E}
+.dash-stats .v.gl.down{color:#EF4444}
+.alloc{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 12px;align-items:center}
+.alloc .wtrack{grid-column:1/-1;margin-top:0}
 #topbar:not([hidden]) ~ #app{padding-bottom:calc(156px + env(safe-area-inset-bottom,0px))}
 #topbar:not([hidden]) ~ #fab{bottom:calc(88px + env(safe-area-inset-bottom,0px))}
 #topbar:not([hidden]) ~ #toastRoot .toast{bottom:calc(92px + env(safe-area-inset-bottom,0px))}
@@ -2998,7 +3004,7 @@ const WEALTH_EXAMPLE={
     {name:"Emergency fund",target:10000,saved:4200},{name:"Holiday",target:3000,saved:1800},{name:"House deposit",target:40000,saved:12000},{name:"Buffer",target:400,saved:500}
   ]},
   networth:{accounts:[
-    {name:"Everyday",kind:"Cash",balance:4200},{name:"Saver",kind:"Savings",balance:12800},{name:"Super",kind:"Super",balance:64000},{name:"Index fund",kind:"Investments",balance:18500}
+    {name:"Everyday",kind:"Cash",balance:4200},{name:"Saver",kind:"Savings",balance:12800},{name:"Super",kind:"Super",balance:64000}
   ],history:[
     {month:"2026-11",total:99500},{month:"2026-06",total:91000},{month:"2026-09",total:96300},{month:"2026-07",total:92800},{month:"2026-10",total:98400},{month:"2026-08",total:94100}
   ]},
@@ -3012,6 +3018,14 @@ const WEALTH_EXAMPLE={
     {name:"Example cover",amount:120,due:"2026-11-30",cadence:"Yearly"},
     {name:"Rent",amount:2400,due:"2026-12-01",cadence:"Monthly"},
     {name:"Example levy",amount:90,due:"2026-12-15",cadence:"Quarterly"}
+  ]},
+  investments:{holdings:[
+    {name:"Example Aus shares ETF",ticker:"EXA",type:"etf",platform:"Example broker",units:120,value:10800,cost:9000,asAt:"2026-11-01"},
+    {name:"Example global ETF",ticker:"EXG",type:"fund",platform:"Example broker",units:80,value:9600,cost:10000,asAt:"2026-11-01"},
+    {name:"Example company",ticker:"EXC",type:"share",platform:"Example broker",units:50,value:2500,cost:2000,asAt:"2026-10-15"},
+    {name:"Example term",type:"other",value:800,cost:800,asAt:"2026-09-01"}
+  ],properties:[
+    {name:"Home",value:650000,mortgage:420000,asAt:"2026-10-01"}
   ]}
 };
 let wealthStore=null, wealthLive=false;
@@ -3098,17 +3112,66 @@ function billRows(items){
   }).join("")+'</div>';
 }
 function isLiability(a){return /^liabilit/i.test(String(a&&a.kind||"").trim());}
+function normName(s){return String(s||"").trim().toLowerCase();}
+function holdGroup(type){
+  const t=String(type||"").toLowerCase();
+  if(t==="etf"||t==="fund"||/etf|fund/.test(t)) return "ETF/fund";
+  if(t==="share"||t==="shares"||/share|stock/.test(t)) return "Shares";
+  return "Other";
+}
+function pctTxt(p){
+  if(p==null||!isFinite(p)) return "";
+  const r=Math.round(p*10)/10, neg=r<0, abs=Math.abs(r);
+  const body=Math.abs(abs-Math.round(abs))<0.05?String(Math.round(abs)):abs.toFixed(1);
+  return (neg?"−":"")+body+"%";
+}
+function glClass(n){return n>0.005?"up":n<-0.005?"down":"";}
+function glMoney(n){return {c:glClass(n), t:(n>0.005?"+":"")+aud(n)};}
+function investDoc(){
+  if(wealthLive&&wealthStore) return wealthStore.investments||{holdings:[],properties:[]};
+  return WEALTH_EXAMPLE.investments;
+}
+function investModel(){
+  const doc=investDoc()||{};
+  const holdings=(doc.holdings||[]).filter(h=>h&&h.name).map(h=>{
+    const value=+h.value||0, cost=+h.cost||0;
+    return {name:h.name, ticker:h.ticker||"", platform:h.platform||"", units:h.units, value, cost, gain:value-cost, group:holdGroup(h.type), asAt:String(h.asAt||"").slice(0,10)};
+  });
+  const properties=(doc.properties||[]).filter(p=>p&&p.name).map(p=>{
+    const value=+p.value||0, mortgage=Math.abs(+p.mortgage||0);
+    return {name:p.name, value, mortgage, equity:value-mortgage, asAt:String(p.asAt||"").slice(0,10)};
+  });
+  const value=holdings.reduce((s,h)=>s+h.value,0), cost=holdings.reduce((s,h)=>s+h.cost,0);
+  const groups=["ETF/fund","Shares","Other"].map(name=>({name, value:holdings.filter(h=>h.group===name).reduce((s,h)=>s+h.value,0)}));
+  return {holdings, properties, value, cost, gain:value-cost, equity:properties.reduce((s,p)=>s+p.equity,0), groups};
+}
 function worthModel(){
+  const inv=investModel();
   const accounts=(wealthDoc("networth").accounts||[]).filter(Boolean);
-  const debts=accounts.filter(isLiability), assets=accounts.filter(a=>!isLiability(a));
-  const assetSum=assets.reduce((s,a)=>s+(+a.balance||0),0);
-  const debtSum=debts.reduce((s,a)=>s+Math.abs(+a.balance||0),0);
+  const holdNames=new Set(inv.holdings.map(h=>normName(h.name)));
+  const propNames=new Set(inv.properties.map(p=>normName(p.name)));
+  const lines=[];
+  accounts.forEach(a=>{
+    const n=normName(a.name);
+    if(holdNames.has(n)||propNames.has(n)) return;
+    if(isLiability(a)&&inv.properties.some(p=>p.mortgage>0&&(n===normName(p.name+" mortgage")||n==="mortgage"))) return;
+    const liability=isLiability(a);
+    lines.push({name:a.name||"Account", kind:a.kind||"Account", amount:liability?Math.abs(+a.balance||0):(+a.balance||0), liability});
+  });
+  inv.holdings.forEach(h=>lines.push({name:h.name, kind:h.group, amount:h.value, liability:false}));
+  inv.properties.forEach(p=>{
+    lines.push({name:p.name, kind:"Property", amount:p.value, liability:false});
+    if(p.mortgage>0) lines.push({name:"Mortgage", kind:"Liability", amount:p.mortgage, liability:true, note:p.name});
+  });
+  const assetSum=lines.filter(l=>!l.liability).reduce((s,l)=>s+l.amount,0);
+  const debtSum=lines.filter(l=>l.liability).reduce((s,l)=>s+l.amount,0);
   const net=assetSum-debtSum;
+  const superSum=lines.filter(l=>!l.liability&&/^super$/i.test(String(l.kind||""))).reduce((s,l)=>s+l.amount,0);
   const hist=(wealthDoc("networth").history||[]).filter(h=>h&&h.month).slice().sort((a,b)=>String(a.month).localeCompare(String(b.month)));
   const latest=hist.length?hist[hist.length-1]:null, prev=hist.length>1?hist[hist.length-2]:null;
   const change=latest&&prev?(+latest.total||0)-(+prev.total||0):null;
   const stale=!!latest&&Math.abs((+latest.total||0)-net)>0.005;
-  return {accounts,assetSum,debtSum,net,hist,latest,prev,change,since:prev?monthShort(prev.month):"",stale,hasDebt:debts.length>0};
+  return {lines,assetSum,debtSum,net,superSum,hist,latest,prev,change,since:prev?monthShort(prev.month):"",stale,hasDebt:lines.some(l=>l.liability),inv};
 }
 function worthNote(w){
   const chip=w.hasDebt?"":'<span class="chip">Assets only, no debts loaded</span>';
@@ -3167,10 +3230,40 @@ function vWorth(){
   const scale=dashScale(w.hist.map(h=>+h.total||0));
   const bars=w.hist.map(h=>dashBar({label:ymLabel(h.month),accent:"wealth",h:scale(+h.total||0),val:kAud(h.total),aria:ymLabel(h.month)+" "+aud(h.total)})).join("");
   const since=w.change==null?"—":aud(w.change)+" since "+w.since+".";
-  const rows=w.accounts.map(a=>'<div class="wrow" style="grid-template-columns:minmax(0,1fr) auto"><span><div class="t">'+esc(a.name||"")+'</div><div class="s">'+esc(a.kind||"")+'</div></span><span class="amt">'+aud(a.balance)+'</span></div>').join("");
-  return wealthHead("Snapshot","Net worth","Assets minus liabilities. A liability is stored as a positive balance.")+
+  const rows=w.lines.map(a=>{
+    const sub=[a.kind,a.note&&normName(a.note)!==normName(a.name)?a.note:""].filter(Boolean).join(" · ");
+    return '<div class="wrow" style="grid-template-columns:minmax(0,1fr) auto"><span><div class="t">'+esc(a.name||"")+'</div><div class="s">'+esc(sub)+'</div></span><span class="amt">'+aud(a.amount)+'</span></div>';
+  }).join("");
+  return wealthHead("Snapshot","Net worth","Holdings and the home are included. A mortgage is a liability.")+
     dashCard("wnet","Trend",aud(w.net),since,statTrio(["Assets",aud(w.assetSum),""],["Liabilities",aud(w.debtSum),""],["Net worth",aud(w.net),""]),bars,'<div class="legend"><span><i class="rb-swatch wealth"></i>Total</span></div>'+worthNote(w))+
     '<section class="card pad"><div class="eb">Accounts</div><h2 style="margin-bottom:12px">Balances</h2><div class="stack">'+rows+'</div></section>';
+}
+function holdingRow(h){
+  const bits=[h.ticker,h.platform,h.units!=null&&h.units!==""?String(h.units)+" units":""].filter(Boolean);
+  const when=h.asAt?"as at "+fD(h.asAt):"";
+  const meta=[bits.join(" · "),when].filter(Boolean).join(" · ");
+  const gl=glMoney(h.gain), pct=h.cost?pctTxt(h.gain/h.cost*100):"";
+  return '<div class="wrow" style="grid-template-columns:minmax(0,1fr) auto"><span><div class="t">'+esc(h.name)+'</div>'+(meta?'<div class="s">'+esc(meta)+'</div>':"")+'<div class="s'+(gl.c?" gl "+gl.c:"")+'">'+gl.t+(pct?" · "+pct:"")+'</div></span><span class="amt">'+aud(h.value)+'</span></div>';
+}
+function allocBars(inv, superSum){
+  const slices=[].concat(inv.groups.map(g=>({name:g.name,v:g.value})),[{name:"Property equity",v:inv.equity},{name:"Super",v:superSum}]).filter(s=>s.v>0);
+  const sum=slices.reduce((a,s)=>a+s.v,0)||1;
+  return '<div class="stack">'+slices.map(s=>'<div class="alloc"><span class="t">'+esc(s.name)+'</span><span class="amt">'+aud(s.v)+'</span><div class="wtrack"><i style="width:'+Math.max(1,Math.round(s.v/sum*100))+'%"></i></div></div>').join("")+'</div>';
+}
+function vInvest(){
+  const inv=investModel(), w=worthModel(), gl=glMoney(inv.gain), pct=inv.cost?pctTxt(inv.gain/inv.cost*100):"";
+  const groups=["ETF/fund","Shares","Other"].map(name=>{
+    const items=inv.holdings.filter(h=>h.group===name); if(!items.length) return "";
+    const total=items.reduce((s,h)=>s+h.value,0);
+    return '<section class="card pad"><div class="eb">'+esc(name)+'</div><h2 style="margin-bottom:12px">'+aud(total)+'</h2><div class="stack">'+items.map(holdingRow).join("")+'</div></section>';
+  }).join("");
+  const props=inv.properties.map(p=>{
+    const lvr=p.value>0?pctTxt(p.mortgage/p.value*100):"—";
+    return '<section class="card pad"><div class="eb">Property</div><h2>'+esc(p.name)+'</h2>'+(p.asAt?'<div class="lede">Valued as at '+esc(fD(p.asAt))+'</div>':"")+'<div class="metrics dash-stats" style="margin-top:12px">'+statTrio(["Value",aud(p.value),""],["Mortgage",aud(p.mortgage),""],["Equity",aud(p.equity),""])+'</div><div class="sub" style="margin-top:8px">LVR '+(lvr||"—")+'</div></section>';
+  }).join("");
+  return wealthHead("Portfolio","Invest","Entered by hand. A market feed can refresh prices later.")+
+    '<section class="card pad"><div class="ch"><div><div class="eb">Together</div><h2>'+aud(inv.value)+'</h2><div class="lede"><span class="'+(gl.c?"gl "+gl.c:"")+'">'+gl.t+(pct?" · "+pct:"")+'</span> against cost. Equity '+aud(inv.equity)+'.</div></div><div class="metrics dash-stats">'+statTrio(["Value",aud(inv.value),""],["Cost",aud(inv.cost),""],["Gain",'<span class="'+(gl.c?"gl "+gl.c:"")+'">'+gl.t+'</span>',""])+'</div></div>'+allocBars(inv,w.superSum)+'</section>'+
+    groups+props;
 }
 function vBills(){
   const bills=billModel();
@@ -3191,7 +3284,7 @@ async function loadWealth(){
 
 /* Shell */
 const TABS=[["today","Today"],["gym","Gym"],["ball","Basketball"],["run","Run"],["meals","Meals"],["plan","Plan"],["coach","Coach"]];
-const WEALTH_TABS=[["overview","Overview"],["budget","Budget"],["goals","Goals"],["worth","Worth"],["bills","Bills"]];
+const WEALTH_TABS=[["overview","Overview"],["budget","Budget"],["goals","Goals"],["invest","Invest"],["worth","Worth"],["bills","Bills"]];
 const NAV_ICON={
   today:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 10.5 12 4.5l7.5 6V20a.5.5 0 0 1-.5.5h-4.5V14h-5v6.5H5a.5.5 0 0 1-.5-.5z"/></svg>',
   plan:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3.5V7M16 3.5V7M4 10h16"/></svg>',
@@ -3205,6 +3298,7 @@ const NAV_ICON={
   budget:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="6" width="16" height="12" rx="2"/><path d="M4 10h16"/></svg>',
   goals:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7.2"/><circle cx="12" cy="12" r="3.2"/><path d="M12 4.8V8"/></svg>',
   worth:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 17V9M10 17V6M15 17v-4M20 17V8"/></svg>',
+  invest:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7"/><path d="M12 12V5M12 12l5 3.2"/></svg>',
   bills:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4.5" width="14" height="15" rx="2"/><path d="M8 9h8M8 13h8M8 16.5h5"/></svg>'
 };
 function paintArea(){
@@ -3213,7 +3307,7 @@ function paintArea(){
 }
 function render(){
   if(UI.area==="wealth"&&!signedIn()){applyGate();return;}
-  const y=scrollY; const v={today:vToday,plan:vPlan,gym:vGym,ball:vBall,run:vRuns,runs:vRuns,meals:vMeals,coach:vCoach,fitness:vFitness,profile:vProfile,overview:vWealthOverview,budget:vBudget,goals:vGoals,worth:vWorth,bills:vBills}[UI.tab]||(UI.area==="wealth"?vWealthOverview:vToday);
+  const y=scrollY; const v={today:vToday,plan:vPlan,gym:vGym,ball:vBall,run:vRuns,runs:vRuns,meals:vMeals,coach:vCoach,fitness:vFitness,profile:vProfile,overview:vWealthOverview,budget:vBudget,goals:vGoals,invest:vInvest,worth:vWorth,bills:vBills}[UI.tab]||(UI.area==="wealth"?vWealthOverview:vToday);
   $("#app").innerHTML=v();
   if(S.db)passwordPrompt();
   const tabs=UI.area==="wealth"?WEALTH_TABS:TABS;
@@ -3233,7 +3327,7 @@ function render(){
   }
 }
 const TABS_OK={today:1,gym:1,ball:1,run:1,meals:1,plan:1,coach:1,profile:1};
-const WEALTH_OK={overview:1,budget:1,goals:1,worth:1,bills:1,wealth:1};
+const WEALTH_OK={overview:1,budget:1,goals:1,invest:1,worth:1,bills:1,wealth:1};
 function routeFromHash(){
   const raw=(location.hash||"").replace(/^#\/?/,"");
   const bits=raw.split("/"), a=bits[0], b=bits[1]||"";
