@@ -2582,6 +2582,10 @@ function openDay(date, opts){
   document.querySelectorAll("#sheetRoot [data-moveto]").forEach(b=>b.onclick=async()=>{closeSheet();await swapDays(b.dataset.movefrom,b.dataset.moveto);});
   document.querySelectorAll("#sheetRoot [data-liftopen]").forEach(b=>b.onclick=()=>openLift(b.dataset.liftopen));
   document.querySelectorAll("#sheetRoot [data-liftstart]").forEach(b=>b.onclick=()=>{const dr=gymDraft();const L=dr||newSession(b.dataset.liftstart);if(!dr)L.date=date;openLogger(L);});
+  document.querySelectorAll("#sheetRoot [data-logball]").forEach(b=>b.onclick=e=>{e.stopPropagation(); const when=date; closeThen(()=>openQuickAdd("Basketball", when));});
+  document.querySelectorAll("#sheetRoot [data-logrun]").forEach(b=>b.onclick=e=>{e.stopPropagation(); const when=date; closeThen(()=>openQuickAdd("Run", when));});
+  document.querySelectorAll("#sheetRoot [data-day]").forEach(b=>b.onclick=e=>{const inner=e.target.closest("button, a, input, textarea, select, label"); if(inner&&inner!==b) return; openDay(b.dataset.day);});
+  document.querySelectorAll("#sheetRoot [data-log]").forEach(b=>b.onclick=()=>openDay(b.dataset.log));
   bindGameStats($("#sheetRoot"));
   bindGym($("#sheetRoot"));
   const f=$("#lf"); if(!f)return;
@@ -2760,7 +2764,10 @@ function openGoalSheet(id, addScope){
   };
 }
 $("#fab").onclick=()=>{if(UI.area==="wealth"&&UI.tab==="goals")openGoalSheet("", goalAddScope());else openCatLog();};
-function closeSheet(){if(location.hash.indexOf("#day/")===0){history.back();return;} $("#sheetRoot").innerHTML=""; commitPaint();}
+let sheetNext=null;
+function closeThen(fn){sheetNext=fn; closeSheet();}
+function runSheetNext(){const fn=sheetNext; if(!fn) return; sheetNext=null; setTimeout(fn,0);}
+function closeSheet(){if(location.hash.indexOf("#day/")===0){history.back();return;} $("#sheetRoot").innerHTML=""; commitPaint(); runSheetNext();}
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeSheet();});
 
 /* Import */
@@ -4532,6 +4539,7 @@ function applyRoute(){
   try{localStorage.setItem("dt-tab",UI.tab);localStorage.setItem("dt-area",UI.area);}catch(e){}
   $("#sheetRoot").innerHTML="";
   render();
+  runSheetNext();
 }
 window.addEventListener("popstate",()=>{if(!hashLock)applyRoute();});
 window.addEventListener("hashchange",()=>{if(!hashLock)applyRoute();});
