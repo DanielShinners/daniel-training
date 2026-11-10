@@ -995,7 +995,7 @@ function catOf(x){
   const title=String(x.title||x.name||""), type=String(x.type||""), kind=x.kind||"";
   if(RUN_KINDS[kind]||(isRun(x)&&+x.km>0))return "run";
   if(isGymPlan(x))return "gym";
-  if(/basketball/i.test(title)||/basketball/i.test(type))return "ball";
+  if(/basketball/i.test(title)||/basketball/i.test(type)||/basketball/i.test(String(x.sport||""))||x.source==="game")return "ball";
   if(/soccer/i.test(title))return "other";
   if(kind==="rest")return "rest";
   if(/\bgym\b|weight|strength/i.test(type+" "+title))return "gym";
@@ -1062,8 +1062,13 @@ function dayGymState(date){
   if(part==="done")return "done";
   return part?"part":"none";
 }
+function isMissedGame(r){
+  if(!r||typeof r!=="object")return false;
+  if(r.played===false||r.seasonOnly)return true;
+  return r.source==="game"&&r.played!==true;
+}
 function activityCompletes(r){
-  if(!r||r.notDone)return false;
+  if(!r||r.notDone||isMissedGame(r))return false;
   if(isRun(r))return (+r.km>0)||(+r.sec>0);
   const g=gymActivityState(r);
   if(g==="part"||g==="none")return false;
@@ -1182,7 +1187,7 @@ function partDone(date, part){
     if(lg.done)return true;
     return Object.values(S.runs).some(r=>r&&r.date===date&&!r.notDone&&(isRun(r)||catOf(r)==="run")&&((+r.km>0)||(+r.sec>0)));
   }
-  if(part==="ball")return Object.values(S.runs).some(r=>r&&r.date===date&&!r.notDone&&catOf(r)==="ball");
+  if(part==="ball")return Object.values(S.runs).some(r=>r&&r.date===date&&!r.notDone&&!isMissedGame(r)&&catOf(r)==="ball");
   return false;
 }
 function weekGrid(weeks){
@@ -1300,7 +1305,45 @@ function fixtureWhen(date){
   return [time,court].filter(Boolean).join(" · ");
 }
 function gameOn(date){
-  return Object.values(S.runs).filter(r=>r.date===date&&catOf(r)==="ball").sort((a,b)=>String(b.start||"").localeCompare(String(a.start||"")))[0]||null;
+  return Object.values(S.runs).filter(r=>r.date===date&&catOf(r)==="ball"&&!isMissedGame(r)).sort((a,b)=>String(b.start||"").localeCompare(String(a.start||"")))[0]||null;
+}
+function seasonMiss(date){
+  const last=((S.basketball||{}).season||{}).lastGame;
+  if(!last||String(last.date||"").slice(0,10)!==date)return null;
+  if(last.for==null||last.for===""||last.against==null||last.against==="")return null;
+  if(Object.values(S.runs).some(r=>r&&r.date===date&&(catOf(r)==="ball"||isMissedGame(r))))return null;
+  const opponent=last.opponent||"";
+  const round=last.round||"";
+  return {date,sport:"basketball",type:"Basketball",source:"game",played:false,seasonOnly:true,round,opponent,gameId:last.gameId||"",title:[round,opponent?"vs "+opponent:""].filter(Boolean).join(" ")||"Basketball",result:{for:last.for,against:last.against,outcome:String(last.outcome||"").toUpperCase(),opponent}};
+}
+function savedMiss(date){
+  return Object.values(S.runs).find(r=>r&&r.date===date&&isMissedGame(r))||null;
+}
+function dayGame(date){
+  return gameOn(date)||savedMiss(date)||seasonMiss(date);
+}
+function fixtureFor(date){
+  const g=seasonGame(date);
+  if(g)return {round:g.round||"",opponent:g.opponent||"",gameId:g.gameId||""};
+  const saved=savedMiss(date);
+  if(saved)return {round:saved.round||"",opponent:saved.opponent||(saved.result&&saved.result.opponent)||"",gameId:saved.gameId||""};
+  const season=seasonMiss(date);
+  if(season)return {round:season.round||"",opponent:season.opponent||"",gameId:season.gameId||""};
+  return null;
+}
+function showMissForm(date){
+  if(gameOn(date))return false;
+  const plan=dayIndex()[date];
+  if(plan&&(catOf(plan.d)==="ball"||gridParts(plan.d).acts.includes("ball")))return true;
+  return !!fixtureFor(date);
+}
+function ballResults(){
+  const list=Object.values(S.runs).filter(r=>r&&(catOf(r)==="ball"||isMissedGame(r)));
+  const have=new Set(list.map(r=>r.date));
+  const last=((S.basketball||{}).season||{}).lastGame;
+  const d=last&&String(last.date||"").slice(0,10);
+  if(d&&!have.has(d)){const v=seasonMiss(d); if(v)list.push(v);}
+  return list;
 }
 function outcomeOf(r){const o=r&&r.result&&String(r.result.outcome||"").trim().toUpperCase();return o==="W"||o==="L"||o==="D"?o:"";}
 function cleanTitle(raw, cat, date){
@@ -1310,14 +1353,24 @@ function cleanTitle(raw, cat, date){
   return t;
 }
 function scoreHtml(r){
-  if(!r||catOf(r)!=="ball")return "";
+  if(!r||catOf(r)!=="ball"||isMissedGame(r))return "";
   const pts=r.stats&&r.stats.points;
   if(pts==null||pts==="")return "";
   const min=r.stats&&r.stats.minutes;
   const o=outcomeOf(r);
   const pill=o?'<span class="res '+o.toLowerCase()+'">'+o+'</span>':"";
   const mins=min!=null&&min!==""?'<span class="mins">'+esc(String(min))+' min</span>':"";
-  return '<span class="score">'+pill+'<b>'+esc(String(pts))+' pts</b>'+mins+'</span>';
+  const team=r.result&&r.result.for!=null&&r.result.for!==""&&r.result.against!=null&&r.result.against!==""?'<b>'+esc(String(r.result.for))+'–'+esc(String(r.result.against))+'</b>':"";
+  return '<span class="score">'+pill+team+'<b>'+esc(String(pts))+' pts</b>'+mins+'</span>';
+}
+function gameScoreHtml(r){
+  if(!r)return "";
+  if(!isMissedGame(r))return scoreHtml(r);
+  const x=r.result||{};
+  if(x.for==null||x.for===""||x.against==null||x.against==="")return "";
+  const o=outcomeOf(r);
+  const pill=o?'<span class="res '+o.toLowerCase()+'">'+o+'</span>':"";
+  return '<span class="score">'+pill+'<b>'+esc(String(x.for))+'–'+esc(String(x.against))+'</b><span class="chip">Didn\'t play</span></span>';
 }
 function doneTick(){return '<span class="done-tick" data-doneopen="1" aria-label="Done. Open to mark as not done"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.2 12.4 10.1 16.2 17.8 7.8" fill="none" stroke="#000" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>';}
 function rowSide(done, trail){return '<span class="day-side">'+(done?doneTick():"")+(trail||"")+'</span>';}
@@ -1328,10 +1381,10 @@ function dayRow(d,dark){
   const page=pageType();
   const tagParts=page?parts.filter(a=>a!==page):(mixed?parts:[cat]);
   const nameHtml=tagParts.filter(a=>a&&a!=="rest").map(a=>catMark(a,esc(CAT_NAME[a]||a))).join(" · ");
-  const game=(cat==="ball"||parts.includes("ball"))?gameOn(d.date):null;
+  const game=dayGame(d.date);
   const title=cleanTitle(d.title, cat, d.date);
-  const score=scoreHtml(game);
-  const o=outcomeOf(game);
+  const score=gameScoreHtml(game);
+  const o=(cat==="ball"||parts.includes("ball"))?outcomeOf(game):"";
   const tags=(/soccer/i.test(d.extra||"")?' <span class="chip">Soccer option</span>':'')+(cat==="gym"&&/steam/i.test((d.detail||"")+(d.extra||""))&&page!=="gym"?' <span class="chip">Steam</span>':'');
   const bits=[];
   if(st==="miss")bits.push('<span class="miss">Missed</span>');
@@ -1340,7 +1393,8 @@ function dayRow(d,dark){
   if(nameHtml)bits.push(nameHtml);
   const loggedRun=cat==="ball"?game:Object.values(S.runs).find(r=>r.date===d.date&&catOf(r)===cat);
   if(loggedRun){const logged=stripTypePrefix(loggedRun.title||"","ball"===cat?"ball":cat);if(logged&&!sameTypeName(logged,cat)&&logged.toLowerCase()!==String(title).toLowerCase())bits.push(esc(logged));}
-  if(!(score)&&(cat==="ball"||parts.includes("ball"))){const tip=fixtureWhen(d.date); if(tip)bits.push(esc(tip));}
+  if(game&&isMissedGame(game)){const who=[game.round,game.opponent?"vs "+game.opponent:""].filter(Boolean).join(" "); if(who)bits.push(esc(who));}
+  if(!(score)&&(cat==="ball"||parts.includes("ball")||fixtureFor(d.date))){const tip=fixtureWhen(d.date); if(tip)bits.push(esc(tip));}
   const s=bits.filter(Boolean).join(" · ");
   const trail=d.date>=TODAY&&!canMove(d.date,d.date+"x")?'<span class="drag" data-drag aria-label="Drag to move this session" title="Drag to move">⋮⋮</span>':'<span class="r" aria-hidden="true">›</span>';
   return '<button class="day z-'+z+(mixed?" c-mix":catCls(cat))+(o==="W"?" res-w":o==="L"?" res-l":"")+(st==="done"?' done':'')+(d.date===TODAY?' today':'')+'" data-day="'+d.date+'"><span class="tile"><span class="a">'+DOW[dd.getDay()].toUpperCase()+'</span><span class="b">'+dd.getDate()+'</span><span class="a">'+MON[dd.getMonth()].toUpperCase()+'</span></span><span style="min-width:0"><div class="tline"><div class="t">'+esc(title)+'</div>'+(score||"")+'</div>'+(s?'<div class="s">'+s+tags+dayChips(d.date)+verdictChip(d.date)+'</div>':'')+'</span>'+rowSide(st==="done",trail)+'</button>';
@@ -1532,9 +1586,10 @@ function sessionCard(d,w,label){
   if(w)bits.push("W"+w.n+" "+(w.phase||""));
   const gk=gymKey(d);
   const parsed=cat==="gym"?parseGymTemplate(d.detail):null;
-  const game=cat==="ball"?gameOn(d.date):null;
-  const score=scoreHtml(game);
-  if(cat==="ball"&&!score){const tip=fixtureWhen(d.date); if(tip)bits.push(tip);}
+  const game=dayGame(d.date);
+  const score=gameScoreHtml(game);
+  if(!score){const tip=fixtureWhen(d.date); if(tip)bits.push(tip);}
+  if(game&&isMissedGame(game)){const who=[game.round,game.opponent?"vs "+game.opponent:""].filter(Boolean).join(" "); if(who)bits.push(who);}
   const shell=(cat==="gym"?'<section class="card pad gymsess tapday"':'<section class="dk pad tapday z-'+z+'"')+' data-day="'+d.date+'">';
   const how=cat==="gym"?(parsed?gymTrackerHtml(d,parsed):(d.detail?'<div class="how"><b>How to do it.</b> '+fill(d.detail)+'</div>':'')):(d.detail?'<div class="how"><b>'+(cat==="run"?"How to run it.":"How to do it.")+'</b> '+fill(d.detail)+'</div>':'');
   const logBtn=(cat!=="gym"&&gk&&d.date<=TODAY?'<button class="btn ghost" data-liftstart="G'+gk+'">Log gym</button>':'')+(cat==="gym"&&!parsed&&gk&&d.date<=TODAY?'<button class="btn ghost" data-liftstart="G'+gk+'">Log gym</button>':'')+(cat==="ball"&&d.date<=TODAY?'<button class="btn ghost" data-logball="'+d.date+'">Log basketball</button>':'')+(cat==="run"&&d.date<=TODAY?'<button class="btn ghost" data-logrun="'+d.date+'">Log run</button>':'');
@@ -1552,7 +1607,7 @@ function sessionCard(d,w,label){
 function doneCard(d){
   const rs=Object.values(S.runs).filter(r=>r.date===d.date&&isRun(r)), km=rs.reduce((a,r)=>a+(+r.km||0),0), sec=rs.reduce((a,r)=>a+(+r.sec||0),0);
   const hr=rs.length?Math.round(rs.reduce((a,r)=>a+(+r.avgHr||0)*(+r.sec||0),0)/Math.max(1,sec)):0; const a=rs[0]?analyseRun(rs[0],d):null;
-  const others=Object.values(S.runs).filter(r=>r.date===d.date&&!isRun(r));
+  const others=Object.values(S.runs).filter(r=>r.date===d.date&&!isRun(r)&&!isMissedGame(r));
   return '<section class="card pad donecard"><div class="ch"><span class="eb">Today · '+fD(d.date,true)+'</span><span class="donetag">Done ✓</span></div>'+
     '<div class="done-t">'+esc(d.title)+(a&&a.tone?' <span class="vchip tone-'+a.tone+'">'+esc(a.head)+'</span>':'')+'</div>'+
     (km?'<div class="done-m mono"><span><b>'+km.toFixed(1)+'</b> km</span><span><b>'+fP(sec/km)+'</b> /km</span>'+(hr?'<span><b>'+hr+'</b> bpm</span>':'')+'<span><b>'+fHM(sec)+'</b>'+(rs[0]&&+rs[0].el>sec+29?' <small>('+fHM(+rs[0].el)+' elapsed)</small>':'')+'</span></div>':'')+
@@ -1636,6 +1691,7 @@ function otherStatLine(stats){
 function activityExtra(r,clamp){
   const cat=catOf(r);
   if(cat==="ball"){
+    if(isMissedGame(r))return "";
     const score=scoreHtml(r), note=r&&r.notes!=null?String(r.notes).trim():"";
     let h=score?"":resultLine(r);
     const line=score?otherStatLine(r.stats):statLine(r&&r.stats);
@@ -1669,7 +1725,7 @@ function paintGameStats(id){
   });
 }
 function gameStatsEditor(r){
-  if(catOf(r)!=="ball")return "";
+  if(catOf(r)!=="ball"||isMissedGame(r))return "";
   const id=runKey(r); if(!id)return "";
   const st=r.stats||{};
   const has=!!(statLine(st)||(r.notes!=null&&String(r.notes).trim()));
@@ -1703,13 +1759,13 @@ function bindGameStats(root){
 function activityButton(r){
   const dd=pISO(r.date), z=isRun(r)&&(+r.km)>0?zoneOfPace(r.sec/r.km):"x", a=activityMeta(r), cat=catOf(r);
   const title=cleanTitle(a.title, cat, r.date);
-  const score=scoreHtml(r), o=outcomeOf(r);
+  const score=gameScoreHtml(r), o=outcomeOf(r), missed=isMissedGame(r);
   const page=pageType();
   const sport=(page&&page===cat)?"":a.sport;
   const detail=(cat==="ball"&&score)?"":a.detail;
   const sub=[sport,detail].filter(Boolean).join(" · ");
-  const done=cat==="ball"&&!!score;
-  return '<button type="button" class="day z-'+z+catCls(cat)+(o==="W"?" res-w":o==="L"?" res-l":"")+(done?" done":"")+(r.date===TODAY?" today":"")+'" data-day="'+r.date+'" data-run="'+esc(runKey(r))+'"><span class="tile"><span class="a">'+DOW[dd.getDay()].toUpperCase()+'</span><span class="b">'+dd.getDate()+'</span><span class="a">'+MON[dd.getMonth()].toUpperCase()+'</span></span><span style="min-width:0"><div class="tline"><div class="t">'+esc(title)+'</div>'+score+'</div>'+(sub?'<div class="s">'+esc(sub)+'</div>':'')+'<div class="act-box">'+activityExtra(r,true)+'</div></span>'+rowSide(true,'<span class="r" aria-hidden="true">›</span>')+'</button>';
+  const done=!missed&&cat==="ball"&&!!score;
+  return '<button type="button" class="day z-'+z+catCls(cat)+(o==="W"?" res-w":o==="L"?" res-l":"")+(done?" done":"")+(r.date===TODAY?" today":"")+'" data-day="'+r.date+'" data-run="'+esc(runKey(r))+'"><span class="tile"><span class="a">'+DOW[dd.getDay()].toUpperCase()+'</span><span class="b">'+dd.getDate()+'</span><span class="a">'+MON[dd.getMonth()].toUpperCase()+'</span></span><span style="min-width:0"><div class="tline"><div class="t">'+esc(title)+'</div>'+score+'</div>'+(sub?'<div class="s">'+esc(sub)+'</div>':'')+'<div class="act-box">'+activityExtra(r,true)+'</div></span>'+rowSide(!missed,'<span class="r" aria-hidden="true">›</span>')+'</button>';
 }
 function loggedActivities(){return Object.values(S.runs).slice().sort((a,b)=>String(b.start||b.date).localeCompare(String(a.start||a.date)));}
 function loggedSection(rows,title){
@@ -1972,6 +2028,11 @@ function ballSeasonCard(){
   if(s.competition)h+='<div class="lede">'+esc(s.competition)+'</div>';
   if(s.venue)h+='<div class="sub" style="margin-top:4px">'+esc(s.venue)+'</div>';
   if(ladder)h+='<div class="ball-ladder"><b>'+esc(String(ladder).split(" · ")[0])+'</b>'+(ladder.includes(" · ")?" · "+esc(ladder.split(" · ").slice(1).join(" · ")):"")+'</div>';
+  if(s.lastGame&&s.lastGame.for!=null&&s.lastGame.for!==""){
+    const g=s.lastGame, d=String(g.date||"").slice(0,10);
+    const shown=dayGame(d);
+    h+='<div class="eb" style="margin-top:12px">Last</div><div class="tline"><span class="t">'+esc([g.round,g.opponent?"vs "+g.opponent:""].filter(Boolean).join(" "))+'</span>'+(shown?gameScoreHtml(shown):"")+'</div>';
+  }
   if(next){const nx=esc(gameLine(next));h+='<div class="eb" style="margin-top:12px">Next</div>'+(links.fixture?'<a class="ball-next" href="'+esc(links.fixture)+'" target="_blank" rel="noopener">'+nx+'</a>':'<div class="ball-next">'+nx+'</div>');}
   if(later.length)h+='<div class="ball-later">'+later.map(g=>'<div>'+esc(gameLine(g))+'</div>').join("")+'</div>';
   const buttons=[link(links.fixture,"Fixture"),link(links.ladder,"Ladder"),link(links.team,"Team"),link(links.calendarPdf,"Season PDF")].join("");
@@ -1985,7 +2046,7 @@ function vBall(){
   h+=ballOverview();
   const days=[]; weekList().forEach(w=>(w.days||[]).forEach(d=>{if(catOf(d)==="ball")days.push(d);}));
   const upcoming=days.filter(d=>d.date>=addD(TODAY,-1)).slice(0,8);
-  const logged=Object.values(S.runs).filter(r=>catOf(r)==="ball").sort((a,b)=>String(b.start||b.date).localeCompare(String(a.start||a.date)));
+  const logged=ballResults().sort((a,b)=>String(b.date||"").localeCompare(String(a.date||""))||String(b.start||"").localeCompare(String(a.start||"")));
   h+='<div class="stack"><section class="card pad"><div class="ch"><h2>On the plan</h2><button class="btn c-ball" type="button" data-logball="'+TODAY+'">Log a game</button></div><div class="days" style="margin-top:12px">'+(upcoming.length?upcoming.map(d=>dayRow(d)).join(""):'<div class="empty">No basketball days on the plan.</div>')+'</div></section>';
   h+='<section class="card pad"><div class="ch"><h2>Logged</h2><span class="sub">'+logged.length+'</span></div>'+(logged.length?'<div class="days" style="margin-top:12px">'+logged.map(activityButton).join("")+'</div>':'<div class="empty">Nothing logged yet. Monday 9 Nov is already in if you saved the game.</div>')+'</section></div>';
   return h;
@@ -2053,7 +2114,7 @@ function ballMinutes(r){const s=runMovingSec(r);return s>0?Math.round(s/60):0;}
 function ballPoints(r){const n=r&&r.stats&&r.stats.points;if(n==null||n==="")return null;const v=+n;return isFinite(v)?v:null;}
 function ballMark(r){const o=r&&r.result&&String(r.result.outcome||"").trim().toUpperCase();return o==="W"||o==="L"?o:"";}
 function ballRecord(){
-  const games=Object.values(S.runs).filter(r=>catOf(r)==="ball");
+  const games=ballResults();
   let w=0,l=0,d=0,any=false;
   games.forEach(r=>{const o=r.result&&String(r.result.outcome||"").trim().toUpperCase();if(o==="W"){w++;any=true;}else if(o==="L"){l++;any=true;}else if(o==="D"){d++;any=true;}});
   if(any)return [w+"W",l+"L",d?d+"D":""].filter(Boolean).join(" ");
@@ -2062,12 +2123,12 @@ function ballRecord(){
   return "—";
 }
 function ballOverview(){
-  const logged=Object.values(S.runs).filter(r=>catOf(r)==="ball").sort((a,b)=>String(a.date).localeCompare(String(b.date))||String(a.start||"").localeCompare(String(b.start||"")));
+  const logged=ballResults().sort((a,b)=>String(a.date).localeCompare(String(b.date))||String(a.start||"").localeCompare(String(b.start||"")));
   const planned=planDays(d=>gridParts(d).acts.includes("ball"));
-  const doneDates=new Set(logged.map(r=>r.date));
+  const anyDates=new Set(logged.map(r=>r.date));
   const items=[];
-  logged.forEach(r=>items.push({plan:false,date:r.date,pts:ballPoints(r),min:ballMinutes(r),mark:ballMark(r),title:r.title||"Basketball"}));
-  planned.forEach(d=>{if(!doneDates.has(d.date))items.push({plan:true,date:d.date,pts:null,min:0,mark:"",title:d.title||"Basketball"});});
+  logged.forEach(r=>items.push({plan:false,date:r.date,pts:isMissedGame(r)?null:ballPoints(r),min:isMissedGame(r)?0:ballMinutes(r),mark:ballMark(r),title:r.title||"Basketball",miss:isMissedGame(r)}));
+  planned.forEach(d=>{if(!anyDates.has(d.date))items.push({plan:true,date:d.date,pts:null,min:0,mark:"",title:d.title||"Basketball"});});
   items.sort((a,b)=>a.date.localeCompare(b.date));
   const scored=items.filter(it=>!it.plan&&it.pts!=null);
   const total=scored.reduce((a,it)=>a+it.pts,0);
@@ -2078,7 +2139,7 @@ function ballOverview(){
   const anchor=dashAnchor(items.map(it=>it.date));
   const bars=items.map(it=>{
     const val=it.plan?"—":(it.pts==null?"—":String(it.pts));
-    const sub=it.min?it.min+" min":"";
+    const sub=it.miss?"Didn't play":(it.min?it.min+" min":"");
     return dashBar({date:it.date,plan:it.plan,accent:"ball",mark:it.plan?"":it.mark,anchor,h:it.plan?36:(it.pts==null?36:scale(it.pts)),val,sub,aria:(it.plan?"Planned ":"")+(it.title||"Game")+" "+fD(it.date)+(it.pts!=null?" "+it.pts+" pts":"")+(it.mark?" "+it.mark:"")+(sub?" "+sub:"")});
   }).join("");
   const lede=avg?(trim1(avg)+" points per game."):"Points per game.";
@@ -2238,6 +2299,7 @@ function sportKind(a){const t=String(a.type||"")+" "+String(a.title||"");
   if(isRun(a)||/run/i.test(a.type||""))return "run"; if(/ride|cycl|bike|velo/i.test(t))return "bike"; if(/swim/i.test(t))return "swim";
   if(/weight|strength|workout|training|crossfit|fitness|stair|gym|yoga|pilates/i.test(t))return "gym"; return "other";}
 function tssOf(a){
+  if(isMissedGame(a))return 0;
   const h=(+a.sec||0)/3600, L=+S.settings.lthr||167; if(!(h>0))return 0;
   const k=sportKind(a);
   if(/meditat|breath/i.test(String(a.type||"")+String(a.title||"")))return 0;
@@ -2253,7 +2315,7 @@ function tssOf(a){
 }
 function dailyLoad(){
   const d={};const add=(date,k,v)=>{if(!v)return;(d[date]=d[date]||{t:0,by:{}});d[date].t+=v;d[date].by[k]=(d[date].by[k]||0)+v;};
-  Object.values(S.runs).forEach(a=>add(a.date,sportKind(a),tssOf(a)));
+  Object.values(S.runs).forEach(a=>{if(!isMissedGame(a))add(a.date,sportKind(a),tssOf(a));});
   Object.values(S.log).forEach(l=>{ // manual entries only when nothing synced that day for that kind
     const syn=Object.values(S.runs).filter(r=>r.date===l.date);
     if(l.manualKm>0&&!syn.some(r=>isRun(r)&&r.source!=="manual"))0;
@@ -2280,7 +2342,7 @@ function gymMatch(date){ // pair app-logged lift sessions with Garmin/Strava gym
 function liftMinutes(l){const m=gymMatch(l.date).find(p=>p.lift.id===l.id);return m&&m.act?Math.round(m.act.sec/60):(+l.min||0);}
 function loadItems(date){
   const pairs=gymMatch(date), byAct={}; pairs.forEach(p=>{if(p.act)byAct[p.act.stravaId||p.act.start]=p.lift;});
-  const items=Object.values(S.runs).filter(r=>r.date===date).map(r=>{const lf=sportKind(r)==="gym"?byAct[r.stravaId||r.start]:null;
+  const items=Object.values(S.runs).filter(r=>r.date===date&&!isMissedGame(r)).map(r=>{const lf=sportKind(r)==="gym"?byAct[r.stravaId||r.start]:null;
     return {title:lf?(lf.name||"Gym session"):(r.title||r.type||"Activity"),k:sportKind(r),sec:+r.sec||0,km:+r.km||0,hr:r.avgHr,run:isRun(r),tss:tssOf(r),how:tssHow(r),start:r.start||"",liftId:lf?lf.id:null,lifted:lf?sessStats(lf).t:0};});
   pairs.filter(p=>!p.act).forEach(p=>{const m=+p.lift.min||45;items.push({title:p.lift.name||"Gym session",k:"gym",sec:m*60,tss:m/60*.55*.55*100,how:"estimate",start:p.lift.date+"T"+String(p.lift.start||"").replace(":",""),liftId:p.lift.id,lifted:sessStats(p.lift).t});});
   const l=S.log[date];
@@ -2434,11 +2496,11 @@ function openLoad(date){
   const ser=all.slice(-UI.ldWin); if(UI.ldDate<ser[0].d)UI.ldDate=ser[0].d;
   // weeks
   const wks={}; ser.forEach(p=>{const m=monOf(p.d);const w=(wks[m]=wks[m]||{m,t:0,by:{},sec:0,end:p,n:0});w.t+=p.t;SPORTS.forEach(k=>w.by[k]=(w.by[k]||0)+(p.by[k]||0));w.end=p;});
-  Object.values(S.runs).forEach(r=>{const m=monOf(r.date);if(wks[m]&&r.date>=ser[0].d){wks[m].sec+=+r.sec||0;wks[m].n++;}});
+  Object.values(S.runs).forEach(r=>{if(isMissedGame(r))return; const m=monOf(r.date);if(wks[m]&&r.date>=ser[0].d){wks[m].sec+=+r.sec||0;wks[m].n++;}});
   const wl=Object.values(wks).sort((a,b)=>b.m.localeCompare(a.m)); const wMax=Math.max(1,...wl.map(w=>w.t));
   const prevCtl=m=>{const i=all.findIndex(p=>p.d===addD(m,-1));return i>=0?all[i].ctl:null;};
   // sports
-  const sp={}; Object.values(S.runs).filter(r=>r.date>=ser[0].d).forEach(r=>{const k=sportKind(r);const s=(sp[k]=sp[k]||{n:0,sec:0,tss:0,km:0});s.n++;s.sec+=+r.sec||0;s.tss+=tssOf(r);s.km+=+r.km||0;});
+  const sp={}; Object.values(S.runs).filter(r=>r.date>=ser[0].d&&!isMissedGame(r)).forEach(r=>{const k=sportKind(r);const s=(sp[k]=sp[k]||{n:0,sec:0,tss:0,km:0});s.n++;s.sec+=+r.sec||0;s.tss+=tssOf(r);s.km+=+r.km||0;});
   const spT=Object.values(sp).reduce((a,s)=>a+s.tss,0)||1;
   const winBtns='<div class="seg" role="group" aria-label="Range">'+[[56,"8W"],[112,"16W"],[365,"1Y"]].map(o=>'<button data-ldwin="'+o[0]+'" aria-pressed="'+(UI.ldWin===o[0])+'">'+o[1]+'</button>').join("")+'</div>';
   let x='<div class="sheet-top"><span class="eb">Training load</span><button class="btn ghost" id="shX" type="button">Close</button></div>';
@@ -2490,7 +2552,7 @@ function loadRead(all,now,dC){
 /* Coach chat */
 function coachContext(){
   const w=weekOf(TODAY), z=ZONES(), since=addD(TODAY,-14);
-  const runs=Object.values(S.runs).filter(r=>r.date>=since).sort((a,b)=>a.date.localeCompare(b.date)).map(r=>r.date+" "+(r.title||r.type)+": "+(isRun(r)?(+r.km).toFixed(1)+"km "+fP(r.sec/r.km)+"/km":fDur(r.sec))+(r.avgHr?" HR "+Math.round(r.avgHr):"")).join("\n")||"none";
+  const runs=Object.values(S.runs).filter(r=>r.date>=since&&!isMissedGame(r)).sort((a,b)=>a.date.localeCompare(b.date)).map(r=>r.date+" "+(r.title||r.type)+": "+(isRun(r)?(+r.km).toFixed(1)+"km "+fP(r.sec/r.km)+"/km":fDur(r.sec))+(r.avgHr?" HR "+Math.round(r.avgHr):"")).join("\n")||"none";
   const logs=Object.values(S.log).filter(l=>l.date>=since).sort((a,b)=>a.date.localeCompare(b.date)).map(l=>l.date+": "+[l.done?"done":"",l.rpe?"RPE "+l.rpe:"",l.foot!=null?"foot "+l.foot+"/10":"",(l.niggles||[]).map(n=>n.area+" "+n.side+" "+n.score+"/10").join(", "),l.shoe||"",l.heatMin?l.heatType+" "+l.heatMin+"min":"",l.note||""].filter(Boolean).join(" | ")).join("\n")||"none";
   const plan=w?(w.days||[]).map(d=>d.date+" "+d.dow+": "+d.title+(d.km?" "+d.km+"km":"")).join("\n"):"no plan week";
   const nxt=weekList().find(x=>w&&x.n===w.n+1);
@@ -2613,6 +2675,56 @@ async function uncompleteDay(date){
     openDay(date);
   }catch(err){if(btn&&btn.isConnected)btn.disabled=false; toast("Couldn't update. Try again.");}
 }
+function outcomeFromScores(forN,agN){
+  if(!(forN>=0)||!(agN>=0))return "";
+  if(forN>agN)return "W";
+  if(forN<agN)return "L";
+  return "D";
+}
+function missFormHtml(date){
+  if(!showMissForm(date))return "";
+  const existing=savedMiss(date);
+  const season=!existing&&seasonMiss(date);
+  const src=existing||season;
+  const res=src&&src.result||{};
+  const fx=fixtureFor(date)||{};
+  const oc=String(res.outcome||outcomeFromScores(+res.for,+res.against)||"").toUpperCase();
+  const note=season?'<div class="sub">Shown from the season result. It is not saved on this day until you save it.</div>':"";
+  return '<form id="missF" class="card pad" style="margin-top:12px"><div class="eb">Game</div><h2 style="margin:0">Didn\'t play — add score</h2>'+note+
+    '<div class="grid2" style="margin-top:8px"><div class="field" style="margin-top:0"><label for="msFor">Our score</label><input id="msFor" inputmode="numeric" value="'+esc(res.for!=null?res.for:"")+'"></div><div class="field" style="margin-top:0"><label for="msAg">Their score</label><input id="msAg" inputmode="numeric" value="'+esc(res.against!=null?res.against:"")+'"></div></div>'+
+    '<div class="field"><span class="flabel">Result</span><div class="seg" id="msOc" role="group" aria-label="Result">'+["W","L","D"].map(k=>'<button type="button" data-oc="'+k+'" aria-pressed="'+(oc===k)+'">'+k+'</button>').join("")+'</div></div>'+
+    '<button class="btn" type="submit" id="msSave">Save score</button><div class="sub" id="msMsg"></div></form>';
+}
+function bindMissForm(date){
+  const f=$("#missF"); if(!f)return;
+  let lock=false;
+  const pressed=()=>(f.querySelector("[data-oc][aria-pressed=true]")||{}).dataset||{};
+  const setOc=k=>{f.querySelectorAll("[data-oc]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.oc===k));};
+  const sync=()=>{if(lock)return; const a=wholeInt($("#msFor").value), b=wholeInt($("#msAg").value); if(!a.ok||a.empty||!b.ok||b.empty)return; const o=outcomeFromScores(a.n,b.n); if(o)setOc(o);};
+  $("#msFor").addEventListener("input",()=>{lock=false; sync();});
+  $("#msAg").addEventListener("input",()=>{lock=false; sync();});
+  f.querySelectorAll("[data-oc]").forEach(b=>b.onclick=()=>{lock=true; setOc(b.dataset.oc);});
+  f.onsubmit=async e=>{
+    e.preventDefault();
+    const msg=$("#msMsg");
+    const a=wholeInt($("#msFor").value), b=wholeInt($("#msAg").value);
+    if(!a.ok||a.empty||!b.ok||b.empty){msg.textContent="Enter both scores as whole numbers.";return;}
+    const oc=pressed().oc||outcomeFromScores(a.n,b.n);
+    if(oc!=="W"&&oc!=="L"&&oc!=="D"){msg.textContent="Pick W, L or D.";return;}
+    if(!S.db){msg.textContent="Saving is unavailable right now.";return;}
+    const existing=savedMiss(date);
+    const fx=fixtureFor(date)||{};
+    const id=existing&&runKey(existing)?runKey(existing):"game-"+date;
+    const opponent=(existing&&existing.opponent)||fx.opponent||"";
+    const round=(existing&&existing.round)||fx.round||"";
+    const doc={date,sport:"basketball",type:"Basketball",source:"game",played:false,round,opponent,title:[round,opponent?"vs "+opponent:""].filter(Boolean).join(" ")||"Basketball",result:{for:a.n,against:b.n,outcome:oc,opponent}};
+    const gid=(existing&&existing.gameId)||fx.gameId||"";
+    if(gid)doc.gameId=gid;
+    $("#msSave").disabled=true;
+    try{await S.db.collection("runs").doc(id).set(doc); S.runs[id]=doc; toast("Score saved"); openDay(date);}
+    catch(err){$("#msSave").disabled=false; msg.textContent="Couldn't save. Try again.";}
+  };
+}
 function openDay(date, opts){
   if(!(opts&&opts.quiet)&&location.hash!=="#day/"+date){
     const tab=(UI.tab&&{home:1,today:1,plan:1,gym:1,ball:1,run:1,meals:1,coach:1,profile:1}[UI.tab])?UI.tab:"home";
@@ -2628,7 +2740,8 @@ function openDay(date, opts){
   if(it)x+=sessionCard(it.d,it.w,"Session").replace(/<button class="btn" data-log[^>]*>Log session<\/button>/,"");
   x+=moveChips(date);
   const shown=actsForKind(date, kind);
-  if(shown.length)x+='<section class="card pad" style="margin-top:12px"><div class="eb">Recorded</div>'+shown.map(r=>{const c=catOf(r);const title=cleanTitle(r.title||r.type||"Activity",c,r.date);return '<div class="rec-act" data-run="'+esc(runKey(r))+'"><div class="tline" style="margin-top:8px"><span class="t">'+esc(title)+'</span>'+(c==="ball"?scoreHtml(r):'<span class="mono sub">'+(kind==="run"&&isRun(r)?(+r.km).toFixed(2)+' km · '+fP(r.sec/r.km)+'/km · '+fDur(+r.sec||0):fDur(r.sec))+'</span>')+'</div><div class="act-box">'+activityExtra(r,false)+'</div>'+(kind==="ball"?gameStatsEditor(r):"")+'</div>';}).join("")+'</section>';
+  if(shown.length)x+='<section class="card pad" style="margin-top:12px"><div class="eb">Recorded</div>'+shown.map(r=>{const c=catOf(r);const title=cleanTitle(r.title||r.type||"Activity",c,r.date);return '<div class="rec-act" data-run="'+esc(runKey(r))+'"><div class="tline" style="margin-top:8px"><span class="t">'+esc(title)+'</span>'+(c==="ball"?gameScoreHtml(r):'<span class="mono sub">'+(kind==="run"&&isRun(r)?(+r.km).toFixed(2)+' km · '+fP(r.sec/r.km)+'/km · '+fDur(+r.sec||0):fDur(r.sec))+'</span>')+'</div><div class="act-box">'+activityExtra(r,false)+'</div>'+(kind==="ball"&&!isMissedGame(r)?gameStatsEditor(r):"")+'</div>';}).join("")+'</section>';
+  x+=missFormHtml(date);
   if(kind==="run")x+=sessionCheckHtml(date);
   {
     const runNow=Object.values(S.runs).find(r=>r.date===date&&isRun(r)&&+r.km>0);
@@ -2664,6 +2777,7 @@ function openDay(date, opts){
   document.querySelectorAll("#sheetRoot [data-day]").forEach(b=>b.onclick=e=>{const inner=e.target.closest("button, a, input, textarea, select, label"); if(inner&&inner!==b) return; openDay(b.dataset.day);});
   document.querySelectorAll("#sheetRoot [data-log]").forEach(b=>b.onclick=()=>openDay(b.dataset.log));
   const undo=$("#markUndone"); if(undo)undo.onclick=()=>uncompleteDay(date);
+  bindMissForm(date);
   bindGameStats($("#sheetRoot"));
   bindGym($("#sheetRoot"));
   const f=$("#lf"); if(!f)return;
