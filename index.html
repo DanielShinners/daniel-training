@@ -3398,15 +3398,38 @@ function budgetModel(){
   const spent=cats.reduce((a,c)=>a+(+c.spent||0),0), budget=cats.reduce((a,c)=>a+(+c.budget||0),0);
   const listed=(b.incomeSources||[]).filter(Boolean);
   const sources=listed.filter(isFamily);
-  const recurring=sources.filter(s=>!isOnce(s.cadence));
+  const pack=incomePack();
+  const recurring=sources.filter(s=>!isOnce(s.cadence)&&!isTransferPay(s));
   const pay=s=>Math.round(monthlyEquiv(+s.amount||0,s.cadence)*100)/100;
-  const income=listed.length?recurring.reduce((a,s)=>a+pay(s),0):(+b.income||0);
+  const income=pack.people.length?pack.jointMonth:(listed.length?recurring.reduce((a,s)=>a+pay(s),0):(+b.income||0));
   const estimate=recurring.some(s=>sourceBasis(s)==="gross"||s.isEstimate);
   const grossOnly=recurring.length>0&&recurring.every(s=>sourceBasis(s)==="gross");
   const today=melbourneToday();
   const next=(recurring.filter(s=>s.nextPay&&String(s.nextPay)>=today).sort((a,c)=>String(a.nextPay).localeCompare(String(c.nextPay)))[0])||null;
-  return {b,cats,spent,budget,income,allocate:income-budget,sources,next,estimate,grossOnly};
+  return {b,cats,spent,budget,income,allocate:income-budget,sources,next,estimate,grossOnly,pack};
 }
+function payCents(n){return Math.round((+n||0)*100)/100;}
+function fortnightToMonth(n){return payCents((+n||0)*26/12);}
+function isTransferPay(s){return !s||/transfer/i.test(String(s.name||""))||s.id==="splurge";}
+function payLandings(s){return Array.isArray(s&&s.netByAccount)?s.netByAccount.filter(Boolean):[];}
+function jointFortnight(s){
+  const rows=payLandings(s);
+  const ing=rows.filter(a=>/ing/i.test(a.account||"")&&String(a.scope||"").toLowerCase()!=="personal");
+  if(ing.length) return ing.reduce((n,a)=>n+(+a.amount||0),0);
+  const fam=rows.filter(a=>String(a.scope||"").toLowerCase()==="family");
+  if(fam.length) return fam.reduce((n,a)=>n+(+a.amount||0),0);
+  if(!rows.length&&!isTransferPay(s)&&isFamily(s)) return s.net!=null&&s.net!==""&&sourceBasis(s)!=="gross"?+s.net:(+s.amount||0);
+  return 0;
+}
+function incomePack(){
+  const people=(wealthDoc("budget").incomeSources||[]).filter(s=>s&&!isOnce(s.cadence)&&!isTransferPay(s)&&isFamily(s));
+  const jointFn=payCents(people.reduce((n,s)=>n+jointFortnight(s),0));
+  const daniel=people.find(s=>/lulu|daniel/i.test(s.name||""));
+  const grossFn=daniel&&daniel.gross!=null&&daniel.gross!==""?+daniel.gross:null;
+  const superFn=payCents(people.reduce((n,s)=>n+(+s.superSG||0),0));
+  return {people,jointFn,jointMonth:fortnightToMonth(jointFn),danielGrossMonth:grossFn==null?null:fortnightToMonth(grossFn),superFn,superMonth:fortnightToMonth(superFn)};
+}
+function whoPay(s){return /sarah/i.test(s.name||"")?"Sarah":(/lulu|daniel/i.test(s.name||"")?"Daniel":(s.name||"Pay"));}
 function goalBits(g){
   const saved=g.saved!=null&&g.saved!==""&&isFinite(+g.saved)?+g.saved:null;
   const hasT=g.target!=null&&g.target!==""&&isFinite(+g.target)&&+g.target>0;
@@ -3970,21 +3993,18 @@ function toDateChip(doc, monthId){
   return "Partial month";
 }
 function incomeBasis(){
-  const {sources}=budgetModel();
-  const recurring=sources.filter(s=>!isOnce(s.cadence));
-  const gross=recurring.some(s=>sourceBasis(s)==="gross"&&/lulu|daniel/i.test(s.name||""));
-  const sarah=recurring.some(s=>sourceBasis(s)==="net"&&/sarah/i.test(s.name||""));
-  if(gross&&sarah) return "Daniel gross + Sarah take-home";
+  const {pack}=budgetModel();
+  if(pack.people.some(s=>payLandings(s).some(a=>/ing/i.test(a.account||"")))) return "Take-home into ING";
+  const recurring=pack.people;
   if(recurring.length&&recurring.every(s=>sourceBasis(s)==="gross")) return "Gross";
-  if(recurring.some(s=>s.isEstimate)) return "Net estimate";
   return "";
 }
-function incomePeople(sources){
-  return (sources||[]).filter(s=>!isOnce(s.cadence)).map(s=>{
-    const who=/sarah/i.test(s.name||"")?"Sarah":(/lulu|daniel/i.test(s.name||"")?"Daniel":(s.name||"Pay"));
-    const kind=sourceBasis(s)==="gross"?"gross":"take-home";
-    const pay=Math.round(monthlyEquiv(+s.amount||0,s.cadence)*100)/100;
-    return '<div class="sub">'+esc(who)+" · "+kind+" · "+aud(pay)+'</div>';
+function incomePeople(people){
+  return (people||[]).map(s=>{
+    const who=whoPay(s);
+    const gross=s.gross==null||s.gross===""?who+" · gross · Not provided":who+" · gross · "+aud(fortnightToMonth(s.gross));
+    const net=s.net!=null&&s.net!==""?who+" · take-home · "+aud(fortnightToMonth(s.net)):"";
+    return '<div class="sub">'+esc(gross)+'</div>'+(net?'<div class="sub">'+esc(net)+'</div>':"");
   }).join("");
 }
 function leftOverLine(income, spent){
@@ -4017,7 +4037,8 @@ function vWealthOverview(){
   const upcoming=bills.soon.slice(0,3);
   const worth=ovCard('data-tab="worth" aria-label="Net worth"',"Net worth",'<h2 class="net-debt">'+aud(w.net)+'</h2><div class="metrics ov-metrics"><div class="m"><div class="k">Assets</div><div class="v">'+aud(w.assetSum)+'</div></div><div class="m"><div class="k">Liabilities</div><div class="v">'+aud(w.debtSum)+'</div></div></div>');
   const port=ovCard('data-tab="invest" aria-label="Portfolio"',"Portfolio",'<h2>'+aud(total)+'</h2><div class="ov-split">'+ovDonut(rows)+'<div class="ov-leg">'+rows.map(s=>'<span><span class="nm"><i style="background:'+s.color+'"></i>'+esc(s.name)+(s.name==="Property"&&s.gain?'<span class="gain">'+esc(s.gain)+'</span>':"")+'</span><b>'+aud(s.v)+'</b></span>').join("")+'</div></div>');
-  const budBody='<h2>'+(pick.month?aud(spent.total):"—")+'</h2><div class="lede">'+(pick.month?esc(monthName(pick.month.month)):"")+(basis?" · "+esc(basis):"")+' · '+aud(money.income)+'</div>'+top.map(c=>'<div class="ov-line"><span>'+esc(c.name)+'</span><b>'+aud(c.v)+'</b></div>').join("")+(pick.month?leftOverLine(money.income, spent.total):"")+(partial?'<div class="sub">Partial month · '+esc(monthShort(partial))+'</div>':"");
+  const grossBit=money.pack.danielGrossMonth!=null?'<div class="sub">gross '+audBar(money.pack.danielGrossMonth)+'</div>':"";
+  const budBody='<h2>'+aud(money.income)+'</h2><div class="lede">Take-home'+(pick.month?" · "+esc(monthName(pick.month.month))+" spent "+aud(spent.total):"")+'</div>'+grossBit+top.map(c=>'<div class="ov-line"><span>'+esc(c.name)+'</span><b>'+aud(c.v)+'</b></div>').join("")+(pick.month?leftOverLine(money.income, spent.total):"")+(partial?'<div class="sub">Partial month · '+esc(monthShort(partial))+'</div>':"");
   const bud=ovCard('data-budview="expenses" aria-label="Budget"',"Budget",budBody);
   const goalBody=goals.length?'<div class="ov-goals">'+goals.map(g=>{const x=goalBits(g); return '<div class="ov-goal">'+progressRing(x.ratio, goalIconFor(g.name, g.icon)).replace('class="ring','class="ring sm')+'<span><b>'+esc(g.name||"Goal")+'</b><span class="sub">'+(x.hasT?aud(x.saved||0)+" of "+aud(x.target):"No target yet")+'</span></span><span class="amt">'+(x.hasT?x.pct+"%":"")+'</span></div>';}).join("")+(extra?'<div class="ov-more">+'+extra+' more</div>':"")+'</div>':'<div class="sub">No goals yet.</div>';
   const goal=ovCard('data-tab="goals" aria-label="Goals"',"Goals",goalBody);
@@ -4031,14 +4052,41 @@ function vWealthOverview(){
 }
 function budSeg(){
   const b=(id,label)=>'<button type="button" data-budview="'+id+'" aria-pressed="'+(UI.budView===id)+'">'+label+'</button>';
-  return '<div class="scopes" role="group" aria-label="Budget view">'+b("plan","Plan")+b("expenses","Expenses")+'</div>';
+  return '<div class="scopes" role="group" aria-label="Budget view">'+b("plan","Plan")+b("income","Income")+b("expenses","Expenses")+'</div>';
+}
+function landingLines(s){
+  return payLandings(s).map(a=>{
+    const range=Array.isArray(a.range)&&a.range.length===2?aud(a.range[0],true)+"–"+aud(a.range[1],true):"";
+    const note=[a.isAverage?"average":"",range,String(a.scope||"").toLowerCase()==="personal"?"personal":""].filter(Boolean).join(" · ");
+    return '<div class="ov-line"><span>'+esc(a.account||"Account")+'</span><b>'+aud(a.amount,true)+'</b></div>'+(note?'<div class="sub">'+esc(note)+'</div>':"");
+  }).join("");
+}
+function incomeCard(s){
+  const who=whoPay(s);
+  const gross=s.gross==null||s.gross===""?"Not provided":aud(s.gross,true);
+  const grossMonth=s.gross==null||s.gross===""?"":'<div class="sub">'+aud(fortnightToMonth(s.gross))+' a month</div>';
+  const ded=s.deductions!=null&&s.deductions!==""?'<div class="ov-line"><span>Tax and deductions</span><b>'+aud(s.deductions,true)+'</b></div>':"";
+  const net=s.net!=null&&s.net!==""?aud(s.net,true):"—";
+  const netMonth=s.net!=null&&s.net!==""?'<div class="sub">'+aud(fortnightToMonth(s.net))+' a month</div>':"";
+  const sac=s.salarySacrifice?'<div class="sub">Salary sacrifice '+aud(s.salarySacrifice,true)+' a fortnight</div>':"";
+  const sup=s.superSG?'<div class="sub">Super on top '+aud(s.superSG,true)+' a fortnight · not income</div>':"";
+  const emp=s.employer?'<div class="lede">'+esc(s.employer)+'</div>':"";
+  const src=s.source?'<div class="sub">'+esc(s.source)+'</div>':"";
+  return '<section class="card pad"><div class="eb">'+esc(who)+'</div><h2>'+(s.net!=null&&s.net!==""?aud(fortnightToMonth(s.net)):"—")+'</h2>'+emp+'<div class="sub">Take-home a month</div><div class="ov-line"><span>Gross</span><b>'+gross+'</b></div>'+grossMonth+ded+'<div class="ov-line"><span>Take-home</span><b>'+net+'</b></div>'+netMonth+'<div class="eb" style="margin-top:12px">Where it lands</div>'+landingLines(s)+sup+sac+src+'</section>';
+}
+function incomeView(){
+  const pack=incomePack();
+  if(!pack.people.length) return '<section class="card pad"><div class="empty">No salary yet.</div></section>';
+  const total='<section class="card pad"><div class="eb">Family</div><h2>'+aud(pack.jointMonth)+'</h2><div class="lede">Take-home into ING joint</div><div class="sub">'+aud(pack.jointFn,true)+' a fortnight</div>'+(pack.superFn?'<div class="sub">Super on top '+aud(pack.superFn,true)+' a fortnight · not income</div>':"")+'</section>';
+  return total+pack.people.map(incomeCard).join("");
 }
 function vBudget(){
   const head=budSeg();
   if(UI.budView==="expenses") return wealthHead("Spending","Expenses","Where the money went.")+head+vExpenses();
+  if(UI.budView==="income") return wealthHead("Pay","Income","What is earned, and what lands.")+head+incomeView();
   const pick=spendPick("plan");
   const spentNow=spendTotal(pick.month, pick.doc);
-  const {b,cats,income,budget,sources}=budgetModel();
+  const {b,cats,income,budget,pack}=budgetModel();
   const basis=incomeBasis();
   const chip=pick.month?toDateChip(pick.doc, pick.month.month):"";
   const title=pick.month?monthName(pick.month.month):"Spending";
@@ -4051,11 +4099,10 @@ function vBudget(){
   const tx=(b.transactions||[]).filter(t=>t&&isFamily(t)).slice().sort((a,c)=>String(c.date||"").localeCompare(String(a.date||"")));
   const txRows=tx.map(t=>{const ds=String(t.date||"").slice(0,10), dd=/^\d{4}-\d{2}-\d{2}$/.test(ds)?pISO(ds):null; return '<div class="wrow">'+(dd?'<span class="tile"><span class="a">'+MON[dd.getMonth()].toUpperCase()+'</span><span class="b">'+dd.getDate()+'</span></span>':'<span class="tile"></span>')+'<span style="min-width:0"><div class="t">'+esc(t.name||"")+'</div><div class="s">'+esc(t.category||"")+'</div></span><span class="amt">'+audTxn(t.amount)+'</span></div>';}).join("");
   const planNote=cats.some(c=>+c.budget>0)?'<div class="sub">'+aud(income-budget)+' to allocate</div>':"";
-  const monthCard=pick.month?'<section class="card pad" id="wbudget">'+nav+'<div class="metrics ov-metrics ov-pair" style="margin-top:12px"><div class="m"><div class="k">Income</div><div class="v">'+aud(income)+'</div></div><div class="m"><div class="k">Spent</div><div class="v">'+aud(spentNow.total)+'</div></div></div>'+(basis?'<div class="sub">'+esc(basis)+'</div>':"")+leftOverLine(income, spentNow.total)+incomePeople(sources)+planNote+'</section>':'<section class="card pad"><div class="empty">No expenses yet.</div></section>';
+  const monthCard=pick.month?'<section class="card pad" id="wbudget">'+nav+'<div class="metrics ov-metrics ov-pair" style="margin-top:12px"><div class="m"><div class="k">Income</div><div class="v">'+aud(income)+'</div></div><div class="m"><div class="k">Spent</div><div class="v">'+aud(spentNow.total)+'</div></div></div>'+(basis?'<div class="sub">'+esc(basis)+'</div>':"")+leftOverLine(income, spentNow.total)+incomePeople(pack.people)+planNote+'</section>':'<section class="card pad"><div class="empty">No expenses yet.</div></section>';
   return wealthHead(title,"Spending","Income and what the family spent.")+
     head+
     monthCard+
-    '<section class="card pad"><div class="eb">Coming in</div><h2 style="margin-bottom:12px">'+aud(income)+'</h2>'+incomeRows(sources)+'</section>'+
     (rows?'<section class="card pad"><div class="eb">By category</div><h2 style="margin-bottom:12px">Where it went</h2><div class="stack">'+rows+'</div></section>':"")+
     (txRows?'<section class="card pad"><div class="eb">Recent</div><h2 style="margin-bottom:12px">Transactions</h2><div class="stack">'+txRows+'</div></section>':"");
 }
@@ -4562,7 +4609,7 @@ function bind(r){
   const so=$("#signOut",r); if(so)so.onclick=async()=>{so.disabled=true;try{await SB.auth.signOut();}catch(e){so.disabled=false;toast("Couldn't sign out. Try again.");}};
   r.querySelectorAll("[data-logball]").forEach(b=>b.onclick=()=>openQuickAdd("Basketball",b.dataset.logball));
   r.querySelectorAll("[data-logrun]").forEach(b=>b.onclick=()=>openQuickAdd("Run",b.dataset.logrun));
-  r.querySelectorAll("[data-budview]").forEach(b=>b.onclick=()=>{UI.budView=b.dataset.budview==="expenses"?"expenses":"plan"; if(UI.tab!=="budget") setTab("budget"); else render();});
+  r.querySelectorAll("[data-budview]").forEach(b=>b.onclick=()=>{UI.budView=b.dataset.budview==="expenses"?"expenses":b.dataset.budview==="income"?"income":"plan"; if(UI.tab!=="budget") setTab("budget"); else render();});
   r.querySelectorAll("[data-invview]").forEach(b=>b.onclick=()=>{UI.invView=b.dataset.invview==="property"?"property":"holdings"; if(UI.tab!=="invest") setTab("invest"); else render();});
   r.querySelectorAll("[data-propval]").forEach(b=>b.onclick=()=>openPropertyValue(b.dataset.propval));
   r.querySelectorAll("[data-expm]").forEach(b=>b.onclick=()=>{if(b.disabled) return; const doc=expenseDoc(), months=expenseMonths(doc); const pick=expensePicked(months, doc); const idx=Math.max(0,Math.min(months.length-1,pick.idx+(+b.dataset.expm||0))); UI.expMonth=months[idx]?months[idx].month:""; UI.expAvg=false; render();});
