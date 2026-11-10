@@ -759,15 +759,41 @@ if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.ser
 "use strict";
 let RACE_DATE="2099-01-01";
 /* Supabase */
-const SB=window.supabase.createClient(window.APP_CONFIG.supabaseUrl,window.APP_CONFIG.supabaseKey,{auth:{storageKey:"dt-auth",persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,flowType:"implicit"}});
+const liveFetch=(input,init)=>fetch(input,Object.assign({},init,{cache:"no-store"}));
+const SB=window.supabase.createClient(window.APP_CONFIG.supabaseUrl,window.APP_CONFIG.supabaseKey,{auth:{storageKey:"dt-auth",persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,flowType:"implicit"},global:{fetch:liveFetch}});
 function makeDb(sb){
-  const subs={};let chan=null;
-  async function load(col){const {data,error}=await sb.from("dt_docs").select("id,data").eq("collection",col).limit(5000);if(error)throw error;return data;}
-  function snapOf(rows){return {docs:rows.map(r=>({id:r.id,exists:true,data:()=>r.data}))};}
-  async function emit(col){const l=subs[col];if(!l)return;try{const rows=await load(col);l.forEach(f=>f(rows));}catch(e){l.forEach(f=>f(null,e));}}
+  const subs={}, cache={}, pins={};let chan=null;
+  async function load(col){const {data,error}=await sb.from("dt_docs").select("id,data").eq("collection",col).limit(5000);if(error)throw error;return data||[];}
+  function snapOf(rows){return {docs:(rows||[]).map(r=>({id:r.id,exists:true,data:()=>r.data}))};}
+  function same(a,b){try{return JSON.stringify(a)===JSON.stringify(b);}catch(e){return false;}}
+  function reconcile(col, rows){
+    const bag=pins[col]; if(!bag) return rows||[];
+    let out=(rows||[]).slice(); const now=Date.now();
+    Object.keys(bag).forEach(id=>{
+      const pin=bag[id], got=out.find(r=>r.id===id);
+      if((got&&same(got.data, pin.data))||now-pin.at>8000){delete bag[id]; return;}
+      out=out.filter(r=>r.id!==id); out.push({id, data:pin.data});
+    });
+    if(!Object.keys(bag).length) delete pins[col];
+    return out;
+  }
+  const tickets={};
+  function publish(col, rows){cache[col]=rows||[]; const l=subs[col]; if(l) l.forEach(f=>f(cache[col]));}
+  async function emit(col){
+    if(!subs[col]&&cache[col]==null)return;
+    const ticket=tickets[col]=(tickets[col]||0)+1;
+    try{const rows=await load(col); if(tickets[col]!==ticket)return; publish(col, reconcile(col, rows));}
+    catch(e){if(tickets[col]!==ticket)return; const l=subs[col]; if(l) l.forEach(f=>f(null,e));}
+  }
   function ensureChan(){if(chan)return;chan=sb.channel("dt").on("postgres_changes",{event:"*",schema:"public",table:"dt_docs"},p=>{const c=(p.new&&p.new.collection)||(p.old&&p.old.collection);if(c)emit(c);else Object.keys(subs).forEach(emit);}).subscribe();}
-  function listen(col,f){(subs[col]=subs[col]||[]).push(f);ensureChan();load(col).then(r=>f(r),e=>f(null,e));}
-  async function put(col,id,data){const {error}=await sb.from("dt_docs").upsert({collection:col,id,data},{onConflict:"collection,id"});if(error)throw error;emit(col);}
+  function listen(col,f){(subs[col]=subs[col]||[]).push(f);ensureChan();if(cache[col])f(cache[col]);emit(col);}
+  async function put(col,id,data){
+    (pins[col]=pins[col]||{})[id]={data, at:Date.now()};
+    if(cache[col]){const rows=cache[col].filter(r=>r.id!==id); rows.push({id, data}); publish(col, rows);}
+    const {error}=await sb.from("dt_docs").upsert({collection:col,id,data},{onConflict:"collection,id"});
+    if(error){if(pins[col])delete pins[col][id]; await emit(col); throw error;}
+    emit(col);
+  }
   return {
     refresh(){Object.keys(subs).forEach(emit);},
     collection(col){const api={limit(){return api;},doc(id){return {set:d=>put(col,id,d)};},onSnapshot(next,err){listen(col,(rows,e)=>{if(e){err&&err(e);return;}next(snapOf(rows));});return ()=>{};}};return api;},
@@ -1528,6 +1554,7 @@ function bindGameStats(root){
     try{
       await S.db.collection("runs").doc(id).set(merged.next);
       S.runs[id]=merged.next;
+      commitPaint();
       paintGameStats(id);
       btn.textContent="Saved";
       setTimeout(()=>{if(btn.isConnected){btn.disabled=false;btn.textContent="Save";}},1400);
@@ -2325,10 +2352,12 @@ async function sendChat(text){
   if(!text)return; if(!S.db){toast("Chat is unavailable right now");return;}
   const ts=new Date(); const stamp=iso(ts)+"T"+p2(ts.getHours())+":"+p2(ts.getMinutes())+":"+p2(ts.getSeconds());
   const id=stamp.replace(/[^0-9]/g,"")+"-u";
-  const st=$("#chatState"); const inp=$("#chatIn"); if(inp)inp.value="";
+  const oldIn=$("#chatIn"); if(oldIn)oldIn.value="";
   try{await S.db.collection("chat").doc(id).set({ts:stamp,role:"user",text,via:"dashboard",handled:false});}catch(e){toast("Couldn't send. Try again.");return;}
+  commitPaint();
+  const st=$("#chatState"), inp=$("#chatIn");
   const sample=async(turns)=>{const {data,error}=await SB.functions.invoke("coach",{body:{turns}});if(error){let code="error";try{const b=await error.context.json();code=b.code||code;}catch(_){}throw {code};}return {text:data.text};};
-  if(st)st.textContent="Coach is thinking";
+  if(st)st.textContent="Coach is thinking"; if(inp)inp.focus();
   const turns=S.chat.slice(-12).map(m=>({role:m.role==="user"?"user":"assistant",content:m.text}));
   if(!turns.length||turns[turns.length-1].content!==text)turns.push({role:"user",content:text});
   while(turns.length&&turns[0].role!=="user")turns.shift();
@@ -2337,7 +2366,7 @@ async function sendChat(text){
   try{const {text:reply}=await sample(turns,{cache:false});
     const t2=new Date(); const s2=iso(t2)+"T"+p2(t2.getHours())+":"+p2(t2.getMinutes())+":"+p2(t2.getSeconds());
     await S.db.collection("chat").doc(s2.replace(/[^0-9]/g,"")+"-c").set({ts:s2,role:"coach",text:reply,via:"dashboard",planChange:/PLAN CHANGE:/i.test(reply),handled:!/PLAN CHANGE:/i.test(reply)});
-    if(st)st.textContent="";
+    commitPaint(); const again=$("#chatIn"); if(again)again.focus();
   }catch(e){if(st)st.textContent=e&&e.code==="no_key"?"Coach needs the API key added in Supabase. Your message is saved.":"No reply this time. Your message is saved for the next sync.";}
 }
 
@@ -2538,8 +2567,11 @@ async function persistGoals(data){
   if(!signedIn()){toast("Sign in to save a goal"); return false;}
   const {error}=await SB.from("wealth_docs").upsert({id:"goals",data,updated_at:new Date().toISOString()},{onConflict:"id"});
   if(error){toast("Couldn't save. Try again."); return false;}
+  wealthEpoch++;
+  wealthPin={data, at:Date.now()};
   if(!wealthStore) wealthStore={};
   wealthStore.goals=data; wealthLive=true;
+  commitPaint();
   return true;
 }
 function openGoalSheet(id){
@@ -2598,7 +2630,7 @@ function openGoalSheet(id){
   };
 }
 $("#fab").onclick=()=>{if(UI.area==="wealth"&&UI.tab==="goals")openGoalSheet();else openCatLog();};
-function closeSheet(){if(location.hash.indexOf("#day/")===0){history.back();return;}$("#sheetRoot").innerHTML="";}
+function closeSheet(){if(location.hash.indexOf("#day/")===0){history.back();return;} $("#sheetRoot").innerHTML=""; commitPaint();}
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeSheet();});
 
 /* Import */
@@ -2630,8 +2662,8 @@ async function importFiles(files){if(!S.db){toast("Importing is unavailable righ
   toast("Importing "+a.length+" activities");let ok=0;
   for(const r of a){for(const k of Object.keys(r))if(r[k]==null||(typeof r[k]==="number"&&!isFinite(r[k])))delete r[k];
     const id=(r.start||r.date).replace(/[^0-9A-Za-z]/g,"")+"-"+(r.sport==="run"?Math.round(r.km*10):"x"+Math.round(r.sec/60));r.imported=new Date().toISOString();
-    try{await S.db.collection("runs").doc(id).set(r);ok++;}catch(e){if(e&&e.code==="quota_exceeded"){toast("Storage is full.");return;}}}
-  toast(ok+" imported");}
+    try{await S.db.collection("runs").doc(id).set(r);ok++;}catch(e){if(e&&e.code==="quota_exceeded"){toast("Storage is full.");commitPaint();return;}}}
+  toast(ok+" imported"); commitPaint();}
 
 /* ===================== Session check + pace review ===================== */
 function targetsFor(d,v){
@@ -3148,7 +3180,16 @@ const WEALTH_EXAMPLE={
     {id:"ins-life",type:"Life",insurer:"Example life",premium:45,cadence:"Monthly",renewal:"2027-03-01"}
   ]}
 };
-let wealthStore=null, wealthLive=false;
+let wealthStore=null, wealthLive=false, wealthEpoch=0, wealthPin=null, wealthFetch=0;
+function wealthSame(a,b){try{return JSON.stringify(a)===JSON.stringify(b);}catch(e){return false;}}
+function applyWealthPin(){
+  if(!wealthPin) return;
+  if(Date.now()-wealthPin.at>8000){wealthPin=null; return;}
+  const got=wealthStore&&wealthStore.goals;
+  if(got&&wealthSame(got, wealthPin.data)){wealthPin=null; return;}
+  if(!wealthStore) wealthStore={};
+  wealthStore.goals=wealthPin.data; wealthLive=true;
+}
 function wealthDoc(id){return (wealthLive&&wealthStore&&wealthStore[id])||WEALTH_EXAMPLE[id]||{};}
 function aud(n,cents){
   const v=+n||0, abs=Math.abs(v);
@@ -3581,13 +3622,24 @@ function vBills(){
     insuranceCard();
 }
 async function loadWealth(){
-  if(!signedIn()){wealthStore=null;wealthLive=false;return;}
+  if(!signedIn()){wealthStore=null;wealthLive=false;wealthPin=null;sched();return;}
+  const epoch=wealthEpoch, ticket=++wealthFetch;
   try{
     const {data,error}=await SB.from("wealth_docs").select("id,data");
-    if(error||!data||!data.length){wealthStore=null;wealthLive=false;}
+    if(epoch!==wealthEpoch||ticket!==wealthFetch) return;
+    if(error) return;
+    if(!data||!data.length){wealthStore=null;wealthLive=false;}
     else{wealthStore={};data.forEach(r=>{if(r&&r.id)wealthStore[r.id]=r.data||{};});wealthLive=true;}
-  }catch(e){wealthStore=null;wealthLive=false;}
+  }catch(e){return;}
+  if(epoch!==wealthEpoch||ticket!==wealthFetch) return;
+  applyWealthPin();
   sched();
+}
+let wealthChan=false;
+function listenWealth(){
+  if(wealthChan||!SB) return;
+  wealthChan=true;
+  SB.channel("dt-wealth").on("postgres_changes",{event:"*",schema:"public",table:"wealth_docs"},()=>{loadWealth();}).subscribe();
 }
 
 /* Shell */
@@ -3712,7 +3764,7 @@ document.addEventListener("click",e=>{
     if(!S.db){toast("Saving is unavailable right now");return;}
     const next={...(S.log[date]||{}),date,gymDone:true,updated:new Date().toISOString()};
     fin.disabled=true;
-    S.db.doc("log/"+date).set(next).then(()=>{S.log[date]=next; const tog=document.getElementById("lfGym"); if(tog)tog.setAttribute("aria-checked","true"); paintGymProgress(date); toast("Session complete");}).catch(()=>{fin.disabled=false; toast("Couldn't save. Try again.");});
+    S.db.doc("log/"+date).set(next).then(()=>{S.log[date]=next; commitPaint(); toast("Session complete");}).catch(()=>{fin.disabled=false; toast("Couldn't save. Try again.");});
     return;
   }
   const area=e.target.closest("[data-area]"); if(area&&area.tagName==="BUTTON"){setArea(area.dataset.area);return;}
@@ -3807,7 +3859,7 @@ function bind(r){
     if(!S.db){toast("Saving is unavailable right now");return;}
     const hist=(S.settings.history||[]).slice(); if(v!==+S.settings.vdot)hist.push({date:TODAY,vdot:+S.settings.vdot});
     const next={...S.settings,vdot:v,lthr:L,maxHr:M,history:hist,updated:new Date().toISOString()};
-    sv.disabled=true;try{await S.db.doc("settings/main").set(next);S.settings=next;toast("Inputs saved");}catch(e){toast("Couldn't save. Try again.");}finally{sv.disabled=false;}};
+    sv.disabled=true;try{await S.db.doc("settings/main").set(next);S.settings=next;toast("Inputs saved");commitPaint();}catch(e){toast("Couldn't save. Try again.");}finally{sv.disabled=false;}};
   const mf=$("#movF",r); if(mf)mf.onsubmit=async e=>{e.preventDefault();const raw=$("#movKm",r).value.trim();if(!S.db){toast("Saving is unavailable right now");return;}const doc={updated:new Date().toISOString()};if(raw==="")doc.official=null;else{const km=parseFloat(raw);if(!(km>=0)){toast("Enter kilometres");return;}doc.official=km;}try{await S.db.collection("adjust").doc("movember-2026").set(doc);toast(doc.official==null?"Using runs in the app":"Mo Space total saved");render();}catch(err){toast("Couldn't save");}};
   const wf=$("#wtF",r); if(wf)wf.onsubmit=async e=>{e.preventDefault();const kg=parseFloat($("#wtKg",r).value);const date=($("#wtD",r)&&$("#wtD",r).value)||TODAY;if(!(kg>40&&kg<200)){toast("Enter a weight in kg");return;}if(!/^\d{4}-\d{2}-\d{2}$/.test(date)){toast("Choose a date");return;}if(!S.db){toast("Saving is unavailable right now");return;}try{await S.db.collection("weights").doc(date).set({date,kg,updated:new Date().toISOString()});toast("Weigh-in saved");render();}catch(err){toast("Couldn't save");}};
   const so=$("#signOut",r); if(so)so.onclick=async()=>{so.disabled=true;try{await SB.auth.signOut();}catch(e){so.disabled=false;toast("Couldn't sign out. Try again.");}};
@@ -3818,6 +3870,7 @@ function bind(r){
 }
 let rq=0,pend=false;const typing=()=>{const a=document.activeElement;return !!(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName));};
 function sched(){cancelAnimationFrame(rq);rq=requestAnimationFrame(()=>{if(typing()||$("#scrim")){pend=true;return;}pend=false;render();});}
+function commitPaint(){cancelAnimationFrame(rq);pend=false;render();}
 document.addEventListener("focusout",()=>setTimeout(()=>{if(pend&&!typing()&&!$("#scrim"))sched();},60));
 new MutationObserver(()=>{if(pend&&!$("#scrim"))sched();}).observe($("#sheetRoot"),{childList:true});
 if(!location.hash){const t=UI.area==="wealth"?(WEALTH_OK[UI.tab]?UI.tab:"overview"):(TABS_OK[UI.tab]?UI.tab:"today"); UI.tab=t; writeHash(t,"",true);}
@@ -3837,7 +3890,11 @@ function startData(){
   db.collection("adjust").onSnapshot(s=>{S.adjust={};s.docs.forEach(d=>{if(d.exists)S.adjust[d.id]=d.data();});sched();},()=>{});
   db.collection("basketball").onSnapshot(s=>{S.basketball={};s.docs.forEach(d=>{if(d.exists)S.basketball[d.id]=d.data();});sched();},()=>{});
   db.doc("settings/main").onSnapshot(d=>{if(d.exists)S.settings=d.data()||{};sched();},()=>{});
-  document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"){db.refresh();loadWealth();}});
+  listenWealth();
+  let liveT=0;
+  const refreshLive=()=>{clearTimeout(liveT); liveT=setTimeout(()=>{if(S.db)S.db.refresh(); if(signedIn())loadWealth();},150);};
+  document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")refreshLive();});
+  window.addEventListener("focus",refreshLive);
   loadWealth();
 }
 (async function boot(){
