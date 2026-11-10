@@ -133,12 +133,24 @@ h2{font-size:22px;font-weight:400;letter-spacing:-.03em;line-height:var(--space-
 .ring.wealth .ring-q{stroke:var(--ring-track, #D5D8E0);fill:none;stroke-linecap:butt}
 button.goal{width:100%;text-align:left;color:inherit}
 button.pie-card{width:100%;display:block;text-align:left;color:inherit}
+button.exp-jump{width:100%;display:flex;justify-content:space-between;align-items:center;text-align:left;color:inherit;padding:12px 14px;border-radius:var(--space-radius);background:var(--card);border:1px solid var(--line);font-weight:500}
+button.exp-jump span:last-child{color:var(--ink3);font-size:18px}
+.exp-nav{display:flex;align-items:center;gap:8px;margin-top:12px}
+.exp-nav .chev{width:36px;height:36px;border-radius:999px;border:1px solid var(--line);font-size:18px;color:var(--ink)}
+.exp-nav .chev:disabled{opacity:.35}
+.exp-nav .lab{flex:1;text-align:center;font-weight:500}
+.exp-nav .avg,.exp-inc{border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:13px;font-weight:500;color:var(--ink2)}
+.exp-nav .avg[aria-pressed="true"],.exp-inc[aria-pressed="true"]{background:#72F476;color:#000;border-color:#72F476}
+.exp-inc{margin-top:10px}
 .pie{width:180px;height:180px;display:block;margin:14px auto 2px}
 .pie-leg{display:grid;gap:8px;margin-top:14px}
 .pie-leg > span{display:grid;grid-template-columns:10px minmax(0,1fr) auto auto;gap:8px;align-items:center;color:var(--ink);font-size:14px;font-weight:500}
 .pie-leg i{width:10px;height:10px;border-radius:99px}
 .pie-leg .amt,.pie-leg .pct{font-variant-numeric:tabular-nums}
 .pie-leg .pct{color:var(--ink3);min-width:48px;text-align:right}
+.pie-leg .nm{display:flex;align-items:center;gap:6px;min-width:0}
+.pie-leg .nm svg{width:16px;height:16px;flex:none;color:var(--ink2)}
+.pie-leg .nm svg *{fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .ring .ring-ico{color:var(--ink2)}
 .ring .ring-ico *{fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .gicons{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
@@ -849,7 +861,7 @@ function applyGate(){
 
 const S={chat:[],weeks:{},pastweeks:{},runs:{},log:{},lifts:{},notes:[],weights:{},adjust:{},basketball:{},settings:{},db:null,loaded:false};
 function hasVdot(){const v=S.settings&&S.settings.vdot;return v!=null&&v!==""&&isFinite(+v)&&+v>0;}
-const UI={tab:"today",area:"health",scope:"all",sel:null,openWeek:null,recipe:4,showPast:false};
+const UI={tab:"today",area:"health",scope:"all",sel:null,openWeek:null,recipe:4,showPast:false,budView:"plan",expMonth:"",expAvg:false,expAll:false};
 try{const t=localStorage.getItem("dt-tab"); if(t) UI.tab=t; const a=localStorage.getItem("dt-area"); if(a==="health"||a==="wealth") UI.area=a; const sc=localStorage.getItem("dt-scope"); if(sc==="all"||sc==="personal"||sc==="family") UI.scope=sc;}catch(e){}
 
 /* utils */
@@ -1896,10 +1908,10 @@ function dashCard(id,eb,title,lede,stats,bars,legend){
 function statTrio(a,b,c){const m=(k,v,s)=>'<div class="m"><div class="k">'+k+'</div><div class="v">'+v+(s?'<small>'+s+'</small>':'')+'</div></div>';return m(a[0],a[1],a[2])+m(b[0],b[1],b[2])+m(c[0],c[1],c[2]);}
 function dashBar(o){
   const plan=!!o.plan, mark=o.mark==="W"||o.mark==="L"?o.mark:"";
-  const cls="rb"+(plan?" plan":"")+dashScrollMark(o.date,o.anchor);
+  const cls="rb"+(plan?" plan":"")+dashScrollMark(o.date||o.exp,o.anchor);
   const bar="rb-bar"+(o.accent?" "+o.accent:"")+(plan?" plan":"")+(mark?" cap-"+mark.toLowerCase():"");
   const sub=(mark?'<i class="wl '+mark.toLowerCase()+'"></i>':"")+(o.sub?esc(o.sub):"");
-  const act=o.tab?' data-tab="'+esc(o.tab)+'"':(o.date?' data-day="'+o.date+'"':"");
+  const act=o.tab?' data-tab="'+esc(o.tab)+'"':(o.exp?' data-expmonth="'+esc(o.exp)+'"':(o.date?' data-day="'+o.date+'"':""));
   const label=o.label!=null?esc(o.label):(o.date?esc(fD(o.date)):"");
   return '<button type="button" class="'+cls+'"'+act+' aria-label="'+esc(o.aria||"")+'"><span class="rb-val">'+o.val+'</span><span class="'+bar+'" style="height:'+Math.round(o.h)+'px"></span><span class="rb-date">'+label+'</span><span class="rb-sub'+(o.tone?' '+o.tone:'')+'">'+sub+'</span></button>';
 }
@@ -3120,6 +3132,17 @@ function gymCtx(){const a=liftAgg(addD(TODAY,-27),TODAY);if(!a.n)return "GYM: no
   return "GYM last 4 weeks: "+a.n+" sessions, "+fT(a.t)+" lifted, "+a.sets+" sets. Top muscles by sets: "+top+". Last session "+lifts().slice(-1)[0].date+" "+(lifts().slice(-1)[0].name||"");}
 
 /* Wealth: example figures until wealth_docs has rows. Never written back. */
+function buildExampleExpenses(){
+  const base=[["Rent/Housing","family",2400],["Groceries","family",640],["Kids & childcare","family",420],["Eating out","personal",310],["Insurance","family",180],["Shopping","personal",180],["Utilities","family",160],["Car","personal",140],["Health","personal",90],["Subscriptions","personal",55],["Other","family",45],["Vanguard","personal",800],["Mortgage","family",2800]];
+  const factor=[0.92,0.95,1.04,0.98,1.06,0.9,1,0.97,1.08,0.94,1.02,1];
+  const months=[];
+  for(let i=0;i<12;i++){
+    const dt=new Date(2025,11+i,1);
+    const month=dt.getFullYear()+"-"+p2(dt.getMonth()+1);
+    months.push({month,categories:base.map(([name,scope,amount])=>({name,scope,amount:i===11?amount:Math.round(amount*factor[i])}))});
+  }
+  return {source:"ING joint",excludeFromSpend:["Vanguard","Mortgage"],months};
+}
 const WEALTH_EXAMPLE={
   budget:{month:"2026-11",incomeSources:[
     {id:"pay-salary",name:"Example salary",amount:3800,cadence:"Fortnightly",nextPay:"2026-11-18",scope:"personal",basis:"gross",isEstimate:false,from:"acct-day"},
@@ -3185,7 +3208,8 @@ const WEALTH_EXAMPLE={
   insurance:{items:[
     {id:"ins-home",type:"Home",insurer:"Example cover",premium:140,cadence:"Monthly",renewal:"2026-11-28"},
     {id:"ins-life",type:"Life",insurer:"Example life",premium:45,cadence:"Monthly",renewal:"2027-03-01"}
-  ]}
+  ]},
+  expenses:buildExampleExpenses()
 };
 let wealthStore=null, wealthLive=false, wealthEpoch=0, wealthPin=null, wealthFetch=0;
 function wealthSame(a,b){try{return JSON.stringify(a)===JSON.stringify(b);}catch(e){return false;}}
@@ -3540,11 +3564,8 @@ function pieWedge(cx,cy,r,a0,a1){
   const x0=cx+r*Math.cos(a0), y0=cy+r*Math.sin(a0), x1=cx+r*Math.cos(a1), y1=cy+r*Math.sin(a1);
   return '<path d="M '+cx+' '+cy+' L '+x0.toFixed(2)+' '+y0.toFixed(2)+' A '+r+' '+r+' 0 '+(sweep>Math.PI?1:0)+' 1 '+x1.toFixed(2)+' '+y1.toFixed(2)+' Z"/>';
 }
-function portfolioPie(){
-  const sums=pieModel();
-  const parts=PIE_BUCKETS.map(b=>({...b,value:sums[b.key]})).filter(b=>b.value>0.005);
-  const total=parts.reduce((s,b)=>s+b.value,0);
-  const rows=mixRows(parts.map(b=>({name:b.name,v:b.value,color:b.color})));
+function pieSvg(rows){
+  const total=rows.reduce((s,r)=>s+r.v,0);
   let a=-Math.PI/2;
   const shapes=rows.map(s=>{
     const sweep=total>0?(s.v/total)*Math.PI*2:0, a1=a+sweep, d=pieWedge(50,50,46,a,a1);
@@ -3552,9 +3573,117 @@ function portfolioPie(){
     return d.replace(/<(circle|path)/,'<$1 fill="'+s.color+'"');
   }).join("");
   const label=rows.map(s=>s.name+" "+aud(s.v)+" "+pctTxt(s.pct)).join(", ");
-  const legend='<div class="pie-leg">'+rows.map(s=>'<span><i style="background:'+s.color+'"></i><span class="nm">'+esc(s.name)+'</span><span class="amt">'+aud(s.v)+'</span><span class="pct">'+pctTxt(s.pct)+'</span></span>').join("")+'</div>';
-  const pie=rows.length?'<svg class="pie" viewBox="0 0 100 100" role="img" aria-label="'+esc(label)+'">'+shapes+'</svg>':"";
-  return '<button type="button" class="card pad pie-card" data-tab="invest" aria-label="Portfolio '+aud(total)+'. Open investments."><div class="ch"><div><div class="eb">Portfolio</div><h2>'+aud(total)+'</h2><div class="lede">Super, Vanguard, shares and savings.</div></div></div>'+pie+legend+'</button>';
+  return rows.length?'<svg class="pie" viewBox="0 0 100 100" role="img" aria-label="'+esc(label)+'">'+shapes+'</svg>':"";
+}
+function pieLegend(rows){
+  return '<div class="pie-leg">'+rows.map(s=>'<span><i style="background:'+s.color+'"></i><span class="nm">'+(s.icon||"")+esc(s.name)+'</span><span class="amt">'+aud(s.v)+'</span><span class="pct">'+pctTxt(s.pct)+'</span></span>').join("")+'</div>';
+}
+function portfolioPie(){
+  const sums=pieModel();
+  const parts=PIE_BUCKETS.map(b=>({...b,value:sums[b.key]})).filter(b=>b.value>0.005);
+  const total=parts.reduce((s,b)=>s+b.value,0);
+  const rows=mixRows(parts.map(b=>({name:b.name,v:b.value,color:b.color})));
+  return '<button type="button" class="card pad pie-card" data-tab="invest" aria-label="Portfolio '+aud(total)+'. Open investments."><div class="ch"><div><div class="eb">Portfolio</div><h2>'+aud(total)+'</h2><div class="lede">Super, Vanguard, shares and savings.</div></div></div>'+pieSvg(rows)+pieLegend(rows)+'</button>';
+}
+const SPEND_ICONS={
+  bag:'<path d="M6.5 8.5h11l-.8 11H7.3z"/><path d="M9 8.5V6.8a3 3 0 0 1 6 0v1.7"/>',
+  fork:'<path d="M8 4.5v6M10.5 4.5v6M13 4.5c1.6 1.4 1.6 4.2 0 6M8 7.2h2.5M10.7 10.5V19.5"/>',
+  bolt:'<path d="M13 3.5 6.5 13h5L10 20.5 17.5 10h-5z"/>'
+};
+const SPEND_META={
+  insurance:{color:"#2A56F6",icon:"shield"},
+  car:{color:"#8E9AAB",icon:"car"},
+  groceries:{color:"#72F476",icon:"bag"},
+  "eating out":{color:"#F97316",icon:"fork"},
+  utilities:{color:"#1296A3",icon:"bolt"},
+  "rent/housing":{color:"#5B6B8A",icon:"house"},
+  rent:{color:"#5B6B8A",icon:"house"},
+  housing:{color:"#5B6B8A",icon:"house"},
+  subscriptions:{color:"#7A5AF0",icon:"phone"},
+  "kids & childcare":{color:"#D8F34A",icon:"kid"},
+  "kids and childcare":{color:"#D8F34A",icon:"kid"},
+  health:{color:"#3DCFC4"},
+  shopping:{color:"#E0A31A",icon:"gift"},
+  other:{color:"#C5C9D3"},
+  vanguard:{color:"#A78BFA"},
+  mortgage:{color:"#9AA3B2",icon:"house"}
+};
+const SPEND_FALLBACK=["#2A56F6","#72F476","#D8F34A","#8E9AAB","#F97316","#1296A3","#7A5AF0","#E0A31A","#3DCFC4","#5B6B8A"];
+function spendKey(name){return String(name||"").trim().toLowerCase().replace(/\s+/g," ");}
+function spendMeta(name){return SPEND_META[spendKey(name)]||null;}
+function spendColor(name){
+  const meta=spendMeta(name); if(meta) return meta.color;
+  const s=spendKey(name); let h=0; for(let i=0;i<s.length;i++) h=(h*31+s.charCodeAt(i))>>>0;
+  return SPEND_FALLBACK[h%SPEND_FALLBACK.length];
+}
+function spendIconSvg(name){
+  const meta=spendMeta(name); if(!meta||!meta.icon) return "";
+  const body=GOAL_ICONS[meta.icon]||SPEND_ICONS[meta.icon]; if(!body) return "";
+  return '<svg viewBox="0 0 24 24" aria-hidden="true">'+body+'</svg>';
+}
+function expenseDoc(){
+  const live=wealthLive&&wealthStore&&wealthStore.expenses;
+  if(live&&Array.isArray(live.months)) return live;
+  return WEALTH_EXAMPLE.expenses||{months:[]};
+}
+function expenseMonths(doc){
+  return (doc.months||[]).filter(m=>m&&/^\d{4}-\d{2}$/.test(String(m.month))).slice().sort((a,b)=>String(a.month).localeCompare(String(b.month)));
+}
+function expenseSkip(doc, include){
+  if(include) return new Set();
+  return new Set((doc.excludeFromSpend||[]).map(n=>String(n||"").trim().toLowerCase()).filter(Boolean));
+}
+function expenseCats(month, doc, include){
+  const skip=expenseSkip(doc, include), map={};
+  ((month&&month.categories)||[]).forEach(c=>{
+    if(!c||!c.name||!inScope(c)) return;
+    const name=String(c.name).trim();
+    if(!name||skip.has(name.toLowerCase())) return;
+    const n=+c.amount||0; if(!(n>0)) return;
+    map[name]=(map[name]||0)+n;
+  });
+  return Object.keys(map).map(name=>({name,v:map[name]})).sort((a,b)=>b.v-a.v||a.name.localeCompare(b.name));
+}
+function expenseSlices(cats){
+  const ranked=cats.filter(c=>c.v>0.005).sort((a,b)=>b.v-a.v||a.name.localeCompare(b.name));
+  const named=ranked.filter(c=>spendKey(c.name)!=="other");
+  const otherOwn=ranked.filter(c=>spendKey(c.name)==="other").reduce((s,c)=>s+c.v,0);
+  let keep=named, extra=otherOwn;
+  if(named.length>10){extra+=named.slice(10).reduce((s,c)=>s+c.v,0); keep=named.slice(0,10);}
+  const parts=keep.map(c=>({name:c.name,v:c.v,color:spendColor(c.name),icon:spendIconSvg(c.name)}));
+  if(extra>0.005) parts.push({name:"Other",v:extra,color:spendColor("Other"),icon:""});
+  return mixRows(parts);
+}
+function expensePicked(months){
+  if(!months.length) return {idx:-1, avg:false};
+  let idx=months.findIndex(m=>m.month===UI.expMonth);
+  if(idx<0) idx=months.length-1;
+  return {idx, avg:!!UI.expAvg};
+}
+function expenseLink(){
+  const doc=expenseDoc(), months=expenseMonths(doc);
+  if(!months.length) return "";
+  const last=months[months.length-1];
+  const total=expenseCats(last, doc, false).reduce((s,c)=>s+c.v,0);
+  return '<button type="button" class="exp-jump" data-budview="expenses"><span>'+esc(doc.source||"Expenses")+' · '+esc(monthShort(last.month))+' · '+aud(total)+'</span><span aria-hidden="true">›</span></button>';
+}
+function vExpenses(){
+  const doc=expenseDoc(), months=expenseMonths(doc);
+  if(!months.length) return '<section class="card pad"><div class="empty">No expenses yet.</div></section>';
+  const pick=expensePicked(months), month=months[pick.idx], include=!!UI.expAll;
+  const cats=pick.avg?(()=>{const n=months.length, map={}; months.forEach(m=>expenseCats(m,doc,include).forEach(c=>{map[c.name]=(map[c.name]||0)+c.v;})); return Object.keys(map).map(name=>({name,v:map[name]/n})).sort((a,b)=>b.v-a.v||a.name.localeCompare(b.name));})():expenseCats(month, doc, include);
+  const rows=expenseSlices(cats);
+  const total=cats.reduce((s,c)=>s+c.v,0);
+  const label=pick.avg?"Average":ymLabel(month.month);
+  const trend=months.slice(-12);
+  const totals=trend.map(m=>({month:m.month,total:expenseCats(m,doc,include).reduce((s,c)=>s+c.v,0)}));
+  const scale=dashScale(totals.map(t=>t.total));
+  const anchor=pick.avg?trend[trend.length-1].month:month.month;
+  const bars=totals.map(t=>dashBar({label:monthShort(t.month),accent:"wealth",h:t.total>0?scale(t.total):36,val:audBar(t.total),exp:t.month,anchor,aria:ymLabel(t.month)+" "+audBar(t.total)})).join("");
+  const excluded=(doc.excludeFromSpend||[]).filter(Boolean);
+  const nav='<div class="exp-nav"><button type="button" class="chev" data-expm="-1" aria-label="Previous month"'+(pick.idx<=0?" disabled":"")+'>‹</button><div class="lab">'+esc(label)+'</div><button type="button" class="chev" data-expm="1" aria-label="Next month"'+(pick.idx>=months.length-1?" disabled":"")+'>›</button><button type="button" class="avg" data-expavg="1" aria-pressed="'+(pick.avg?"true":"false")+'">Average</button></div>';
+  const tog=excluded.length?'<button type="button" class="exp-inc" data-expinc="1" aria-pressed="'+(include?"true":"false")+'">Include investing & mortgage</button>':"";
+  return '<section class="card pad exp-card"><div class="ch"><div><div class="eb">'+esc(doc.source||"Expenses")+'</div><h2>'+aud(total)+'</h2></div></div>'+nav+tog+pieSvg(rows)+pieLegend(rows)+'<div class="eb" style="margin-top:16px">Last 12 months</div><div class="rb-scroll">'+bars+'</div></section>';
 }
 function insuranceCard(){
   const doc=wealthLive&&wealthStore?(wealthStore.insurance||{items:[]}):(WEALTH_EXAMPLE.insurance||{items:[]});
@@ -3581,6 +3710,7 @@ function vWealthOverview(){
   const nextTxt=bills.next?"Next is "+esc(bills.next.name)+" on "+esc(fD(billDue(bills.next),true))+". ":"";
   let h=wealthHead("Wealth","Overview","Where things stand.");
   h+=dashCard("wspend","This month","Spending",aud(allocate)+" still to allocate."+(estimate?" "+miniChip("Net estimate"):""),statTrio(["Income",aud(income),""],["Spent",aud(spent),""],["To allocate",aud(allocate),""]),spendBars(cats,"budget"),'<div class="legend"><span><i class="rb-swatch wealth"></i>Spent</span><span class="over">Over</span><span class="under">Under</span></div>');
+  h+=expenseLink();
   h+=emergencyCard()+portfolioPie();
   h+='<section class="card pad"><div class="ch"><div><div class="eb">Saving</div><h2>Goals</h2></div><div class="metrics dash-stats">'+statTrio(["Saved",aud(saved),""],["Target",aud(target),""],[goalGap<0?"Over":"Left",aud(Math.abs(goalGap)),""])+'</div></div>'+goalCards(goals)+'<button class="btn ghost" type="button" data-tab="goals" style="margin-top:12px">Open goals</button></section>';
   h+=dashCard("wworth","Snapshot","Net worth",since,statTrio(["Assets",aud(w.assetSum),""],["Liabilities",aud(w.debtSum),""],["Net worth",aud(w.net),""]),trend,'<div class="legend"><span><i class="rb-swatch wealth"></i>Total</span></div>'+worthNote(w));
@@ -3589,7 +3719,13 @@ function vWealthOverview(){
   h+='<section class="card pad"><div class="ch"><div><div class="eb">Coming up</div><h2>Bills</h2>'+(nextTxt?'<div class="lede">'+nextTxt.trim()+'</div>':"")+'</div><div class="metrics dash-stats">'+statTrio(["Due this month",aud(bills.face,true),""],["Next",bills.next?aud(bills.next.amount,true):"—",""],["Per month",aud(bills.equiv),""])+'</div></div>'+billRows(shown)+'<button class="btn ghost" type="button" data-tab="bills" style="margin-top:12px">Open bills</button></section>';
   return h;
 }
+function budSeg(){
+  const b=(id,label)=>'<button type="button" data-budview="'+id+'" aria-pressed="'+(UI.budView===id)+'">'+label+'</button>';
+  return '<div class="scopes" role="group" aria-label="Budget view">'+b("plan","Plan")+b("expenses","Expenses")+'</div>';
+}
 function vBudget(){
+  const head=budSeg()+scopeBar();
+  if(UI.budView==="expenses") return wealthHead("ING","Expenses","Where the money went.")+head+vExpenses();
   const {b,cats,spent,income,allocate,sources,estimate}=budgetModel();
   const rows=cats.map(c=>{
     const spentN=+c.spent||0, bud=+c.budget||0, tone=budgetTone(spentN,bud), pct=budgetPct(spentN,bud);
@@ -3599,7 +3735,7 @@ function vBudget(){
   const tx=(b.transactions||[]).filter(t=>t&&inScope(t)).slice().sort((a,c)=>String(c.date||"").localeCompare(String(a.date||"")));
   const txRows=tx.map(t=>{const ds=String(t.date||"").slice(0,10), dd=/^\d{4}-\d{2}-\d{2}$/.test(ds)?pISO(ds):null; return '<div class="wrow">'+(dd?'<span class="tile"><span class="a">'+MON[dd.getMonth()].toUpperCase()+'</span><span class="b">'+dd.getDate()+'</span></span>':'<span class="tile"></span>')+'<span style="min-width:0"><div class="t">'+esc(t.name||"")+'</div><div class="s">'+esc(t.category||"")+'</div></span><span class="amt">'+audTxn(t.amount)+'</span></div>';}).join("");
   return wealthHead(ymLabel(b.month)||"This month","Spending","Where this month's money is going.")+
-    scopeBar()+
+    head+
     dashCard("wbudget","This month","Spent",aud(allocate)+" still to allocate."+(estimate?" "+miniChip("Net estimate"):""),statTrio(["Income",aud(income),""],["Spent",aud(spent),""],["To allocate",aud(allocate),""]),spendBars(cats),'<div class="legend"><span><i class="rb-swatch wealth"></i>Spent</span></div>')+
     '<section class="card pad"><div class="eb">Coming in</div><h2 style="margin-bottom:12px">'+aud(income)+'</h2>'+incomeRows(sources)+'</section>'+
     '<section class="card pad"><div class="eb">By category</div><h2 style="margin-bottom:12px">Where it went</h2><div class="stack">'+rows+'</div></section>'+
@@ -3928,6 +4064,11 @@ function bind(r){
   r.querySelectorAll("[data-logball]").forEach(b=>b.onclick=()=>openQuickAdd("Basketball",b.dataset.logball));
   r.querySelectorAll("[data-logrun]").forEach(b=>b.onclick=()=>openQuickAdd("Run",b.dataset.logrun));
   r.querySelectorAll("[data-scope]").forEach(b=>b.onclick=()=>{UI.scope=b.dataset.scope;try{localStorage.setItem("dt-scope",UI.scope);}catch(e){}render();});
+  r.querySelectorAll("[data-budview]").forEach(b=>b.onclick=()=>{UI.budView=b.dataset.budview==="expenses"?"expenses":"plan"; if(UI.tab!=="budget") setTab("budget"); else render();});
+  r.querySelectorAll("[data-expm]").forEach(b=>b.onclick=()=>{if(b.disabled) return; const months=expenseMonths(expenseDoc()); const pick=expensePicked(months); const idx=Math.max(0,Math.min(months.length-1,pick.idx+(+b.dataset.expm||0))); UI.expMonth=months[idx]?months[idx].month:""; UI.expAvg=false; render();});
+  r.querySelectorAll("[data-expavg]").forEach(b=>b.onclick=()=>{UI.expAvg=!UI.expAvg; render();});
+  r.querySelectorAll("[data-expinc]").forEach(b=>b.onclick=()=>{UI.expAll=!UI.expAll; render();});
+  r.querySelectorAll("[data-expmonth]").forEach(b=>b.onclick=()=>{UI.expMonth=b.dataset.expmonth; UI.expAvg=false; render();});
   r.querySelectorAll("[data-goal]").forEach(b=>b.onclick=()=>openGoalSheet(b.dataset.goal));
 }
 let rq=0,pend=false;const typing=()=>{const a=document.activeElement;return !!(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName));};
