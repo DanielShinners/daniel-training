@@ -982,16 +982,19 @@ const KZ={easy:"st",recovery:"rec",long:"st",threshold:"lt2",quality:"vo2",race:
 function sessZone(d){if(d.kind==="quality"&&/\{R\}/.test(d.detail||""))return "sp";return KZ[d.kind]||"x";}
 const KLABEL={easy:"Easy",recovery:"Recovery",long:"Long run",threshold:"Tempo",quality:"Reps",race:"Time trial",rest:"Rest",cross:"Other",strength:"Gym"};
 const RUN_KINDS={easy:1,recovery:1,long:1,threshold:1,quality:1,race:1};
+function isGymPlan(d){
+  if(!d)return false;
+  return String(d.kind||"")==="strength"||/\bgym\b/i.test(String(d.title||""));
+}
 function catOf(x){
   if(!x)return "other";
-  const title=String(x.title||x.name||""), extra=String(x.extra||""), type=String(x.type||""), kind=x.kind||"";
+  const title=String(x.title||x.name||""), type=String(x.type||""), kind=x.kind||"";
   if(RUN_KINDS[kind]||(isRun(x)&&+x.km>0))return "run";
-  if(/gym/i.test(title)||kind==="strength")return "gym";
+  if(isGymPlan(x))return "gym";
   if(/basketball/i.test(title)||/basketball/i.test(type))return "ball";
-  if(/gym/i.test(extra)&&!RUN_KINDS[kind])return "gym";
   if(/soccer/i.test(title))return "other";
   if(kind==="rest")return "rest";
-  if(/weight|strength|gym/i.test(type+" "+title))return "gym";
+  if(/\bgym\b|weight|strength/i.test(type+" "+title))return "gym";
   if(/steam/i.test(title))return "other";
   return "other";
 }
@@ -1103,7 +1106,7 @@ function gridParts(d){
   if(!d)return {mode:"one",acts:["rest"]};
   const title=String(d.title||"").trim(), kind=d.kind||"";
   const ball=/basketball/i.test(title);
-  const gym=kind==="strength"||(kind==="cross"&&/\bgym\b/i.test(title));
+  const gym=isGymPlan(d);
   const run=!!GRID_RUN[kind];
   if(/\bor\b/i.test(title)&&ball&&gym){
     const bi=title.search(/basketball/i), gi=title.search(/\bgym\b/i);
@@ -1807,7 +1810,7 @@ function dayPlanCard(){
     ["Tue","Basketball at night","Leftover steak wrap with salad","Air-fried chicken schnitzel with rice and salad"],
     ["Wed","Gym - Full Body, then steam","Takeaway sushi: salmon or chicken rolls or sashimi plus edamame","Lean or chicken sausages with mash and veg"],
     ["Thu","Quality run or soccer","Leftover schnitzel wrap","Steak stir-fry with rice and veg"],
-    ["Fri","AM pickup basketball, then Gym - Lower and steam","Tuna wrap with salad","Egg-and-sausage fried rice with frozen veg"],
+    ["Fri","AM: Pickup basketball","Banana and a coffee beforehand. Wrap with salad after.","Air-fried chicken schnitzel with rice and salad"],
     ["Sat","Long run","After the run: eggs and short-cut bacon on toast with fruit","Treat meal (a pub parma counts), with 2–4 beers across the weekend"],
     ["Sun","Rest","Omelette with 4 eggs, tomato, mushroom and spring onion","Steak or a chicken schnitzel with salad (no rice or potatoes, since it's a rest day)"]
   ];
@@ -1843,7 +1846,7 @@ function vMeals(){
   ];
   const around=[
     "Bacon grilled or short cut, sausages lean or chicken, schnitzel air-fried, each 2–3 times a week.",
-    "Night basketball or soccer: a proper lunch with rice or a wrap, then a banana or mango and a coffee 60–90 min before.",
+    "Basketball: a banana and a coffee before a morning pickup, or a proper lunch with rice or a wrap, then a banana or mango and a coffee 60–90 min before a night game. Water with electrolytes after. Not a gym day, so no steam.",
     "Saturday long run: a banana and a coffee 30–60 min before, carrying a Hyro for 10–12 km on hot days.",
     "Within an hour after: a shake and fruit, or eggs and bacon with toast."
   ];
