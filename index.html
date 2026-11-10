@@ -132,6 +132,13 @@ h2{font-size:22px;font-weight:400;letter-spacing:-.03em;line-height:var(--space-
 .ring.wealth .ring-seg.on,.ring.wealth .ring-check,.ring.wealth .ring-q.on{stroke:var(--wealth)}
 .ring.wealth .ring-q{stroke:var(--ring-track, #D5D8E0);fill:none;stroke-linecap:butt}
 button.goal{width:100%;text-align:left;color:inherit}
+.ring .ring-ico{color:var(--ink2)}
+.ring .ring-ico *{fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.gicons{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.gicons button{height:48px;border-radius:14px;border:1px solid var(--line);display:grid;place-items:center;color:var(--ink2);background:transparent}
+.gicons button[aria-pressed="true"]{background:#72F476;color:#000;border-color:#72F476}
+.gicons svg{width:22px;height:22px;display:block}
+.gicons svg *{fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .goal .amt{font-variant-numeric:tabular-nums;font-weight:500;color:var(--accent)}
 .goal{display:grid;grid-template-columns:72px minmax(0,1fr) auto;gap:var(--space-gap);align-items:center;background:var(--card);border:1px solid var(--line);border-radius:var(--space-radius);padding:var(--space-pad-y) var(--space-pad-x)}
 .signin .areas{margin-bottom:14px}
@@ -2536,15 +2543,25 @@ function openGoalSheet(id){
     '<div class="field"><label for="gSaved">Saved so far</label><input id="gSaved" type="number" inputmode="decimal" min="0" step="0.01" value="'+(cur&&cur.saved!=null?esc(cur.saved):"")+'" placeholder="Optional"></div></div>'+
     '<div class="grid2"><div class="field"><label for="gDate">Target date</label><input id="gDate" type="date" value="'+esc(cur&&cur.targetDate||"")+'"></div>'+
     '<div class="field"><label for="gPf">$ per fortnight</label><input id="gPf" type="number" inputmode="decimal" min="0" step="0.01" value="'+(cur&&cur.perFortnight!=null?esc(cur.perFortnight):"")+'" placeholder="Optional"></div></div>'+
+    '<div class="field"><div class="eb">Icon</div><div class="gicons" id="gIcons"></div></div>'+
     '<button class="btn" type="submit" id="gSave">Save</button>'+(editing?'<button class="btn ghost" type="button" id="gDel">Delete</button>':"")+'<div class="sub" id="gMsg"></div></form>';
   $("#sheetRoot").innerHTML='<div class="scrim" id="scrim"><div class="sheet" role="dialog" aria-modal="true" aria-label="'+(editing?"Edit goal":"Add a goal")+'">'+x+'</div></div>';
   $("#scrim").onclick=e=>{if(e.target.id==="scrim")closeSheet();}; $("#shX").onclick=closeSheet;
+  const stored=cur&&GOAL_ICONS[cur.icon]?cur.icon:"";
+  const auto0=goalIconFor(cur&&cur.name);
+  let manual=!!(stored&&stored!==auto0), picked=stored||auto0;
+  const paintIcons=()=>{
+    $("#gIcons").innerHTML=GOAL_ICON_KEYS.map(k=>'<button type="button" data-ico="'+k+'" aria-pressed="'+(k===picked)+'" aria-label="'+k+'">'+goalIconSvg(k)+'</button>').join("");
+    $("#gIcons").querySelectorAll("[data-ico]").forEach(b=>b.onclick=()=>{manual=true; picked=b.dataset.ico; paintIcons();});
+  };
+  paintIcons();
+  $("#gName").addEventListener("input",()=>{if(manual)return; picked=goalIconFor($("#gName").value); paintIcons();});
   const read=()=>{
     const name=$("#gName").value.trim();
     if(!name){$("#gMsg").textContent="Add a name."; return null;}
     const target=goalNum($("#gTarget").value), saved=goalNum($("#gSaved").value), pf=goalNum($("#gPf").value);
     if($("#gTarget").value.trim()&&target==null||$("#gSaved").value.trim()&&saved==null||$("#gPf").value.trim()&&pf==null){$("#gMsg").textContent="Use numbers for the amounts."; return null;}
-    const item={...(editing?cur:{}), id:(editing&&cur.id)||("goal-"+Date.now().toString(36)), name, target, saved};
+    const item={...(editing?cur:{}), id:(editing&&cur.id)||("goal-"+Date.now().toString(36)), name, target, saved, icon:picked};
     const date=$("#gDate").value;
     if(date) item.targetDate=date; else delete item.targetDate;
     if(pf!=null) item.perFortnight=pf; else delete item.perFortnight;
@@ -3076,9 +3093,9 @@ const WEALTH_EXAMPLE={
     {date:"2026-11-01",name:"Example Pay",category:"Income",amount:4100,scope:"personal"}
   ]},
   goals:{emergency:{saved:8400,monthlyExpenses:2800},items:[
-    {id:"goal-trip",name:"Example trip",target:3000,saved:300},
-    {id:"goal-fund",name:"Example fund",target:1000,saved:400},
-    {id:"goal-deposit",name:"Example deposit",target:10000,saved:8000},
+    {id:"goal-watch",name:"Garmin watch",target:800,saved:80},
+    {id:"goal-tattoo",name:"Tattoos",target:2000,saved:800},
+    {id:"goal-trip",name:"Example trip",target:3000,saved:2400},
     {id:"goal-kit",name:"Example kit",target:500,saved:500},
     {id:"goal-wish",name:"Example wish",target:null,saved:null}
   ]},
@@ -3143,8 +3160,57 @@ function exampleChip(){return wealthLive?"":'<span class="chip ex">Example data<
 function miniChip(label){return '<span class="chip">'+esc(label)+'</span>';}
 function audBar(n){const v=Math.round(+n||0), abs=Math.abs(v); return (v<0?"−":"")+"$"+abs.toLocaleString("en-AU");}
 function wealthHead(eb,title,lede){return '<div class="head cat-wealth"><div class="ch"><div><div class="eb acc">'+esc(eb)+'</div><h1>'+esc(title)+'</h1>'+(lede?'<div class="lede">'+esc(lede)+'</div>':'')+'</div>'+exampleChip()+'</div></div>';}
-function progressRing(pct){
-  const has=pct!=null&&isFinite(+pct), p=has?Math.max(0,Math.min(1,+pct)):0;
+const GOAL_ICONS={
+  watch:'<circle cx="12" cy="12" r="5"/><path d="M12 9.4V12l1.8 1.1M9.4 6.4l.8-2.2h3.6l.8 2.2M9.4 17.6l.8 2.2h3.6l.8-2.2"/>',
+  tattoo:'<path d="M12 3.6c2 2.8 4 5 4 7.8a4 4 0 0 1-8 0c0-2.8 2-5 4-7.8z"/>',
+  plane:'<path d="M10.2 12.2 3.2 14.4l.5-2L10 10.6V5.2a2 2 0 0 1 4 0v5.4l6.3 1.8.5 2-6.8-2.2 1.1 6.6h-2.2z"/>',
+  house:'<path d="M4 11.2 12 4.2l8 7"/><path d="M6.5 10.2V19.5h11V10.2M10.5 19.5v-4.6h3V19.5"/>',
+  car:'<path d="M4.2 14.2 6.2 9.6h11.6l2 4.6"/><path d="M3.4 14.2h17.2v3.2H17a1.5 1.5 0 0 1-3 0H10a1.5 1.5 0 0 1-3 0H3.4z"/><circle cx="7.4" cy="17.4" r="1.1"/><circle cx="16.6" cy="17.4" r="1.1"/>',
+  gift:'<rect x="4" y="10" width="16" height="9.5" rx="1.2"/><path d="M3.5 10h17M12 10v9.5"/><path d="M12 10c-1.6-3.6-5.4-2.6-3.6.2C9.4 11.2 12 10 12 10s2.6 1.2 3.6-.2C17.4 7.4 13.6 6.4 12 10z"/>',
+  piggy:'<ellipse cx="11.5" cy="13" rx="6.2" ry="4.4"/><path d="M16.2 11.6h3.2v2.6h-3.2M9.2 8.4 10.2 5.8M14.2 8.4 13.2 5.8M9.2 17.2v1.6M13.6 17.2v1.6"/><circle cx="9.2" cy="12.4" r=".55"/>',
+  shield:'<path d="M12 3.4 19 6.1v5.5c0 3.5-2.7 6.4-7 8.2-4.3-1.8-7-4.7-7-8.2V6.1z"/>',
+  grad:'<path d="M3 10.2 12 5.6 21 10.2 12 14.8z"/><path d="M7.2 12.2v3.8c0 .3 2.1 2.2 4.8 2.2s4.8-1.9 4.8-2.2v-3.8M21 10.2v5"/>',
+  ring:'<circle cx="12" cy="14.2" r="4.6"/><path d="M12 9.6 13.3 6.4h-2.6z"/>',
+  phone:'<rect x="7.2" y="3.4" width="9.6" height="17.2" rx="2"/><path d="M11 18.6h2"/>',
+  laptop:'<rect x="5" y="5" width="14" height="9" rx="1.2"/><path d="M3.4 16.2h17.2l-1.4 2.4H4.8z"/>',
+  basketball:'<circle cx="12" cy="12" r="8"/><path d="M4.2 12h15.6M12 4.2c2.2 2.4 2.2 13.2 0 15.6M12 4.2c-2.2 2.4-2.2 13.2 0 15.6"/>',
+  dumbbell:'<path d="M6.5 8.5v7M17.5 8.5v7M3.5 10v4M20.5 10v4M6.5 12h11"/>',
+  kid:'<circle cx="12" cy="8" r="2.5"/><path d="M7.4 19.6v-1.1c0-2.5 2-4.2 4.6-4.2s4.6 1.7 4.6 4.2v1.1"/>',
+  star:'<path d="M12 3.6 14.3 8.8l5.7.5-4.3 3.7 1.4 5.5L12 16 6.9 18.5 8.3 13 4 9.3l5.7-.5z"/>'
+};
+const GOAL_ICON_KEYS=Object.keys(GOAL_ICONS);
+const GOAL_ICON_RULES=[
+  [["apple watch","fitbit","garmin","watch","watches"],"watch"],
+  [["tattoo","tattoos","ink"],"tattoo"],
+  [["japan","bali","flight","flights","trip","travel","travels","holiday","holidays","plane","vacation","vacations"],"plane"],
+  [["deposit","house","home","reno","renovation","mortgage"],"house"],
+  [["wedding","engagement","ring","rings"],"ring"],
+  [["school","uni","university","course","courses","college","graduation","degree"],"grad"],
+  [["christmas","birthday","present","presents","gift","gifts"],"gift"],
+  [["rainy day","emergency","buffer","shield"],"shield"],
+  [["rego","tyre","tyres","tire","tires","car","cars","ute"],"car"],
+  [["macbook","laptop","computer","tech"],"laptop"],
+  [["iphone","phone","phones","mobile"],"phone"],
+  [["baby","kid","kids","child","children","ivy","dom","romeo"],"kid"],
+  [["gym","weight","weights","dumbbell","dumbbells"],"dumbbell"],
+  [["basketball","shoe","shoes"],"basketball"],
+  [["piggy","savings"],"piggy"]
+];
+function goalWordEq(w,k){return w===k||w===k+"s"||w===k+"es"||(k.endsWith("y")&&w===k.slice(0,-1)+"ies");}
+function goalIconFor(name, explicit){
+  if(explicit&&GOAL_ICONS[explicit]) return explicit;
+  const text=String(name||"").toLowerCase();
+  const words=text.replace(/[^a-z0-9]+/g," ").trim().split(/\s+/).filter(Boolean);
+  let best="", bestLen=0;
+  GOAL_ICON_RULES.forEach(([keys,icon])=>{keys.forEach(k=>{
+    const hit=k.includes(" ")?text.includes(k):words.some(w=>goalWordEq(w,k));
+    if(hit&&k.length>bestLen){best=icon; bestLen=k.length;}
+  });});
+  return best||"star";
+}
+function goalIconSvg(key){return '<svg viewBox="0 0 24 24" aria-hidden="true">'+(GOAL_ICONS[key]||GOAL_ICONS.star)+'</svg>';}
+function progressRing(pct, iconKey){
+  const has=pct!=null&&isFinite(+pct), p=has?Math.max(0,Math.min(1,+pct)):0, done=has&&p>=1;
   const c=18, r=13.2, circ=2*Math.PI*r, gap=10, seg=90-gap;
   let arcs="";
   for(let i=0;i<4;i++){
@@ -3153,8 +3219,9 @@ function progressRing(pct){
     arcs+='<circle class="ring-q" cx="'+c+'" cy="'+c+'" r="'+r+'" stroke-width="3.4" stroke-linecap="butt" stroke-dasharray="'+full.toFixed(2)+" "+(circ-full).toFixed(2)+'"'+spin+'/>';
     if(frac>0) arcs+='<circle class="ring-q on" cx="'+c+'" cy="'+c+'" r="'+r+'" stroke-width="3.4" stroke-linecap="butt" stroke-dasharray="'+(full*frac).toFixed(2)+" "+(circ-full*frac).toFixed(2)+'"'+spin+'/>';
   }
-  const check=has&&p>=1?'<path class="ring-check" d="M11.6 18.2 l3.2 3.2 7.4-7.6" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>':"";
-  return '<div class="ring wealth'+(has&&p>=1?" full":"")+'" aria-hidden="true"><svg viewBox="0 0 36 36">'+arcs+check+'</svg></div>';
+  const check=done?'<path class="ring-check" d="M11.6 18.2 l3.2 3.2 7.4-7.6" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>':"";
+  const ico=!done&&GOAL_ICONS[iconKey]?'<g class="ring-ico" transform="translate(18 18) scale(.38) translate(-12 -12)">'+(GOAL_ICONS[iconKey])+'</g>':"";
+  return '<div class="ring wealth'+(done?" full":"")+'" data-icon="'+(done?"":esc(iconKey||""))+'" aria-hidden="true"><svg viewBox="0 0 36 36">'+arcs+ico+check+'</svg></div>';
 }
 function budgetTone(spent,budget){if((budget<=0&&spent>0)||spent>budget)return "over"; if(spent<budget)return "under"; return "even";}
 function budgetPct(spent,budget){if(budget<=0)return spent>0?100:0; return Math.min(100,Math.round(spent/budget*100));}
@@ -3217,7 +3284,7 @@ function goalCards(items){
     if(x.targetDate) bits.push(fD(x.targetDate));
     if(acct) bits.push(acct.name);
     const paceHtml=pace?'<div class="s gl '+pace.cls+'">'+pace.label+'</div>':"";
-    return '<button type="button" class="goal" data-goal="'+esc(raw.id||"")+'">'+progressRing(x.ratio)+'<div class="move-n"><b>'+esc(raw.name||"Goal")+'</b><span>'+bits.join(" · ")+'</span>'+paceHtml+'</div><div class="amt">'+(x.hasT?(x.done?"Done":x.pct+"%"):"")+'</div></button>';
+    return '<button type="button" class="goal" data-goal="'+esc(raw.id||"")+'">'+progressRing(x.ratio, x.done?"":goalIconFor(raw.name, raw.icon))+'<div class="move-n"><b>'+esc(raw.name||"Goal")+'</b><span>'+bits.join(" · ")+'</span>'+paceHtml+'</div><div class="amt">'+(x.hasT?(x.done?"Done":x.pct+"%"):"")+'</div></button>';
   }).join("")+'</div>';
 }
 function billDue(b){return String(b&&b.due||"").slice(0,10);}
