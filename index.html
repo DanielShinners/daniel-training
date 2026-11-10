@@ -3591,6 +3591,59 @@ function portfolioPie(){
   const rows=mixRows(parts.map(b=>({name:b.name,v:b.value,color:b.color})));
   return '<button type="button" class="card pad pie-card" data-tab="invest" aria-label="Portfolio '+aud(total)+'. Open investments."><div class="ch"><div><div class="eb">Portfolio</div><h2>'+aud(total)+'</h2><div class="lede">Super, Vanguard, shares and savings.</div></div></div>'+pieSvg(rows)+pieLegend(rows)+'</button>';
 }
+const SLICE_COLOR={Super:"#2A56F6",Vanguard:"#8E9AAB",Shares:"#72F476",Savings:"#D8F34A",Property:"#F97316","ETF/fund":"#1296A3",Other:"#7A5AF0"};
+const SLICE_EXTRA=["#6CB6FF","#E0A31A","#5B6B8A","#3DCFC4","#C5C9D3","#D4A0C8","#A78BFA"];
+function sliceColors(items){
+  const used={};
+  return items.map(it=>{
+    let color=SLICE_COLOR[it.type]||SLICE_COLOR.Other;
+    if(used[color]) color=SLICE_EXTRA.find(c=>!used[c])||color;
+    used[color]=true;
+    return {name:it.name,v:it.v,color};
+  });
+}
+function assetPie(eb, items, missing){
+  const valued=items.filter(i=>i.v>0.005).sort((a,b)=>b.v-a.v||a.name.localeCompare(b.name));
+  const note=missing.length?'<div class="sub" style="margin-top:10px">No value yet: '+esc(missing.join(", "))+".</div>":"";
+  if(!valued.length) return '<section class="card pad"><div class="eb">'+esc(eb)+'</div><div class="empty">Nothing with a value yet.</div>'+note+'</section>';
+  const rows=mixRows(sliceColors(valued));
+  const total=valued.reduce((s,i)=>s+i.v,0);
+  return '<section class="card pad"><div class="ch"><div><div class="eb">'+esc(eb)+'</div><h2>'+aud(total)+'</h2></div></div>'+pieSvg(rows)+pieLegend(rows)+note+'</section>';
+}
+function holdingSliceType(h){
+  if(isVanguardHold(h)) return "Vanguard";
+  if(h.group==="Shares") return "Shares";
+  if(h.group==="ETF/fund") return "ETF/fund";
+  return "Other";
+}
+function investPie(inv){
+  const items=[], missing=[];
+  (inv.holdings||[]).forEach(h=>{
+    if(h.excludeFromWorth) return;
+    if(!(h.value>0)){ if(h.name) missing.push(h.name); return; }
+    items.push({name:h.name,v:h.value,type:holdingSliceType(h)});
+  });
+  (inv.properties||[]).forEach(p=>{
+    if(p.excludeFromWorth) return;
+    if(!(p.value>0)){ if(p.name) missing.push(p.name); return; }
+    items.push({name:p.name,v:p.value,type:"Property"});
+  });
+  return assetPie("Holdings", items, missing);
+}
+function worthSliceType(line){
+  const k=String(line.kind||"");
+  if(/^super$/i.test(k)) return "Super";
+  if(isVanguardHold(line)||k==="Vanguard") return "Vanguard";
+  if(k==="Shares"||/share/i.test(k)) return "Shares";
+  if(k==="Property") return "Property";
+  if(k==="ETF/fund"||/etf|fund/i.test(k)) return "ETF/fund";
+  if(savingsKind(k)) return "Savings";
+  return "Other";
+}
+function worthPie(w){
+  const items=(w.lines||[]).filter(l=>l&&!l.liability&&l.amount>0.005).map(l=>({name:l.name,v:l.amount,type:worthSliceType(l)}));
+  return assetPie("Owned", items, []);
+}
 const SPEND_ICONS={
   bag:'<path d="M6.5 8.5h11l-.8 11H7.3z"/><path d="M9 8.5V6.8a3 3 0 0 1 6 0v1.7"/>',
   fork:'<path d="M8 4.5v6M10.5 4.5v6M13 4.5c1.6 1.4 1.6 4.2 0 6M8 7.2h2.5M10.7 10.5V19.5"/>',
@@ -3802,6 +3855,7 @@ function vWorth(){
   }).join("");
   return wealthHead("Snapshot","Net worth","What you own, minus what you owe.")+
     scopeBar()+
+    worthPie(w)+
     dashCard("wnet","Trend",aud(w.net),since,statTrio(["Assets",aud(w.assetSum),""],["Liabilities",aud(w.debtSum),""],["Net worth",aud(w.net),""]),bars,'<div class="legend"><span><i class="rb-swatch wealth"></i>Total</span></div>'+worthNote(w))+
     superCard()+
     '<section class="card pad"><div class="eb">Accounts</div><h2 style="margin-bottom:12px">Balances</h2><div class="stack">'+rows+'</div></section>';
@@ -3848,6 +3902,7 @@ function vInvest(){
     return '<section class="card pad"><div class="eb">Property</div><h2>'+esc(p.name)+'</h2>'+(p.asAt?'<div class="lede">Valued as at '+esc(fD(p.asAt))+'</div>':"")+'<div class="metrics dash-stats" style="margin-top:12px">'+statTrio(["Value",aud(p.value),""],["Mortgage",aud(p.mortgage),""],["Equity",eq,""])+'</div>'+(extra?'<div class="sub" style="margin-top:8px">'+esc(extra)+'</div>':"")+'<div class="sub" style="margin-top:8px">LVR '+(lvr||"—")+'</div></section>';
   }).join("");
   return wealthHead("Portfolio","Invest","Shares, funds and the home.")+
+    investPie(inv)+
     '<section class="card pad"><div class="ch"><div><div class="eb">Together</div><h2>'+aud(inv.value)+'</h2><div class="lede">'+gainHtml(inv,true)+'</div></div>'+(inv.partial&&gainKnown(inv)?miniChip("Partial"):"")+'</div><div class="metrics dash-stats">'+statTrio(["Value",aud(inv.value),""],["Cost",gainKnown(inv)?aud(inv.cost):'<span class="sub">Unknown</span>',""],["Gain",gainHtml(inv,false),""])+'</div></div>'+allocBars(inv,w.superSum)+'</section>'+
     groups+props;
 }
