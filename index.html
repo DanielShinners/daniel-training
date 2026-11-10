@@ -1715,11 +1715,10 @@ function movemberProjection(){
 }
 function movemberCard(){
   const logged=movemberLogged(), proj=movemberProjection();
-  const officialRaw=(S.adjust||{})["movember-2026"], official=officialRaw&&officialRaw.official!=null&&officialRaw.official!==""&&isFinite(+officialRaw.official)?+officialRaw.official:null;
-  const done=official==null?logged:official, left=Math.max(0,60-done), pct=Math.max(0,Math.min(100,done/60*100));
+  const left=Math.max(0,60-logged), pct=Math.max(0,Math.min(100,logged/60*100));
   const daysLeft=TODAY>"2026-11-30"?0:TODAY<"2026-11-01"?dBetween("2026-11-01","2026-11-30")+1:dBetween(TODAY,"2026-11-30");
-  const km=n=>{const s=(Math.round(n*100)/100).toFixed(2);return s.replace(/(\.\d)0$/,"$1");};
-  return '<section class="card pad" id="movember"><div class="eb">Movember Move</div><h2>'+km(done)+' <span class="sub">km done</span></h2><div class="sub">'+km(left)+' km left · '+daysLeft+' day'+(daysLeft===1?"":"s")+' left'+(official==null?"":" · Mo Space")+'. Runs in the app: '+km(logged)+' km. Basketball is not counted.</div><div class="minibar" style="margin-top:10px"><span style="display:block;height:100%;width:'+pct+'%;background:var(--cat-run)"></span></div><div class="sub" style="margin-top:10px">Projected '+km(proj.projected)+' km if the rest of November is run'+(proj.cross?". Passes 60 km on "+fD(proj.cross,true)+".":".")+'</div><form id="movF" class="grid2" style="margin-top:12px;align-items:end"><div class="field" style="margin-top:0"><label for="movKm">Official Mo Space total</label><input id="movKm" type="number" inputmode="decimal" step="0.01" min="0" value="'+(official==null?"":official)+'" placeholder="Mo Space km"></div><button class="btn" type="submit">Save</button></form></section>';
+  const km=n=>(Math.round((+n||0)*10)/10).toFixed(1);
+  return '<section class="card pad" id="movember"><div class="eb">Movember Move</div><h2>'+km(logged)+' <span class="sub">km done</span></h2><div class="sub">'+km(left)+' km left · '+daysLeft+' day'+(daysLeft===1?"":"s")+' left. From runs in the app. Basketball is not counted.</div><div class="minibar" style="margin-top:10px"><span style="display:block;height:100%;width:'+pct+'%;background:var(--cat-run)"></span></div><div class="sub" style="margin-top:10px">Projected '+km(proj.projected)+' km if the rest of November is run'+(proj.cross?". Passes 60 km on "+fD(proj.cross,true)+".":".")+'</div></section>';
 }
 const WEIGHT_GOAL=92;
 function pastWeeks(){return Object.entries(S.pastweeks||{}).map(([id,w])=>({id,...(w||{})})).filter(w=>w.start).sort((a,b)=>String(a.start).localeCompare(String(b.start)));}
@@ -4652,7 +4651,6 @@ function bind(r){
     const hist=(S.settings.history||[]).slice(); if(v!==+S.settings.vdot)hist.push({date:TODAY,vdot:+S.settings.vdot});
     const next={...S.settings,vdot:v,lthr:L,maxHr:M,history:hist,updated:new Date().toISOString()};
     sv.disabled=true;try{await S.db.doc("settings/main").set(next);S.settings=next;toast("Inputs saved");commitPaint();}catch(e){toast("Couldn't save. Try again.");}finally{sv.disabled=false;}};
-  const mf=$("#movF",r); if(mf)mf.onsubmit=async e=>{e.preventDefault();const raw=$("#movKm",r).value.trim();if(!S.db){toast("Saving is unavailable right now");return;}const doc={updated:new Date().toISOString()};if(raw==="")doc.official=null;else{const km=parseFloat(raw);if(!(km>=0)){toast("Enter kilometres");return;}doc.official=km;}try{await S.db.collection("adjust").doc("movember-2026").set(doc);toast(doc.official==null?"Using runs in the app":"Mo Space total saved");render();}catch(err){toast("Couldn't save");}};
   const wf=$("#wtF",r); if(wf)wf.onsubmit=async e=>{e.preventDefault();const kg=parseFloat($("#wtKg",r).value);const date=($("#wtD",r)&&$("#wtD",r).value)||TODAY;if(!(kg>40&&kg<200)){toast("Enter a weight in kg");return;}if(!/^\d{4}-\d{2}-\d{2}$/.test(date)){toast("Choose a date");return;}if(!S.db){toast("Saving is unavailable right now");return;}try{await S.db.collection("weights").doc(date).set({date,kg,updated:new Date().toISOString()});toast("Weigh-in saved");render();}catch(err){toast("Couldn't save");}};
   const sf=$("#salF",r); if(sf){
     const g=$("#salGross",r), y=$("#salYear",r), n=$("#salNet",r); let lock=false;
