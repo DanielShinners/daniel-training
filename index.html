@@ -146,10 +146,10 @@ button.exp-jump span:last-child{color:var(--ink3);font-size:18px}
 .exp-nav{display:flex;align-items:center;gap:8px;margin-top:12px}
 .exp-nav .chev{width:36px;height:36px;border-radius:999px;border:1px solid var(--line);font-size:18px;color:var(--ink)}
 .exp-nav .chev:disabled{opacity:.35}
-.exp-nav .lab{flex:1;text-align:center;font-weight:500}
-.exp-nav .avg,.exp-inc{border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:13px;font-weight:500;color:var(--ink2)}
-.exp-nav .avg[aria-pressed="true"],.exp-inc[aria-pressed="true"]{background:#72F476;color:#000;border-color:#72F476}
-.exp-inc{margin-top:10px}
+.exp-nav .lab{flex:1;min-width:0;text-align:center;font-weight:500;line-height:1.25}
+.exp-nav .avg{white-space:nowrap;flex:none}
+.exp-nav .avg{border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:13px;font-weight:500;color:var(--ink2)}
+.exp-nav .avg[aria-pressed="true"]{background:#72F476;color:#000;border-color:#72F476}
 .pie{width:180px;height:180px;display:block;margin:14px auto 2px}
 .pie-row{display:flex;align-items:center;gap:8px}
 .pie-row .pie{margin:0;flex:none}
@@ -160,15 +160,26 @@ button.exp-jump span:last-child{color:var(--ink3);font-size:18px}
 .eq-cap b{display:block;font-size:22px;font-weight:400;letter-spacing:-.03em}
 .eq-lab{text-align:center;margin-top:4px}
 .loan-sec{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+.pie-layout{display:block}
+.pie-fig{display:flex;flex-direction:column;align-items:center}
 .pie-leg{display:grid;gap:8px;margin-top:14px}
-.pie-leg > span{display:grid;grid-template-columns:10px minmax(0,1fr) auto auto;gap:8px;align-items:center;color:var(--ink);font-size:14px;font-weight:500}
-.pie-leg i{width:10px;height:10px;border-radius:99px}
-.pie-leg .amt,.pie-leg .pct{font-variant-numeric:tabular-nums}
-.pie-leg .pct{color:var(--ink3);min-width:48px;text-align:right}
-.pie-leg .nm{display:flex;align-items:center;gap:6px;min-width:0;flex-wrap:wrap}
-.pie-leg .nm .gain{flex-basis:100%;font-size:12px;font-weight:500;color:var(--ink2)}
+.pie-line{display:flex;align-items:center;gap:8px;color:var(--ink);font-size:14px;font-weight:500;min-width:0}
+.pie-line i{width:10px;height:10px;border-radius:99px;flex:none}
+.pie-line .nm{display:flex;align-items:center;gap:6px;min-width:0;flex-wrap:wrap}
+.pie-line .nm .gain{flex-basis:100%;font-size:12px;font-weight:500;color:var(--ink2)}
+.pie-line .leader{flex:1;border-bottom:1px dotted color-mix(in srgb, var(--ink) 25%, transparent);min-width:16px;height:0}
+.pie-line .amt{font-variant-numeric:tabular-nums;color:var(--ink)}
+.pie-line .pct{font-variant-numeric:tabular-nums;min-width:46px;text-align:right;font-weight:500}
+.pie-share{height:4px;margin-top:4px;border-radius:99px;background:var(--sunken);overflow:hidden}
+.pie-share i{display:block;height:100%;border-radius:99px}
 .pie-leg .nm svg{width:16px;height:16px;flex:none;color:var(--ink2)}
 .pie-leg .nm svg *{fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+@media (min-width:880px){
+  .pie-layout{display:flex;align-items:flex-start;gap:24px}
+  .pie-layout>.pie,.pie-layout>.ov-donut,.pie-layout>.pie-fig{margin:0;flex:none}
+  .pie-layout .pie{margin:0}
+  .pie-layout .pie-leg{margin-top:4px;flex:1 1 auto;max-width:480px}
+}
 button.ov{width:100%;display:block;text-align:left;color:inherit}
 .ov-h{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .ov-go{color:var(--ink3);font-size:18px;line-height:1}
@@ -238,7 +249,8 @@ button.ov{width:100%;display:block;text-align:left;color:inherit}
 .dash-stats .v{font-size:22px;font-weight:400;letter-spacing:-.03em;color:var(--accent);line-height:1.1}
 .dash-stats .v small{font-size:11px;font-weight:400;color:var(--ink3);letter-spacing:0}
 .rb-scroll{display:flex;gap:var(--space-gap);overflow-x:auto;align-items:flex-end;margin-top:var(--space-gap);padding-bottom:4px}
-.rb{flex:0 0 64px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:4px;background:none;border:0;color:inherit;padding:0;cursor:pointer;min-height:188px}
+.rb{flex:0 0 64px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:4px;background:none;border:0;color:inherit;padding:0;cursor:default;min-height:188px}
+button.rb{cursor:pointer}
 .rb-val{font-size:12px;font-weight:500;color:var(--ink);min-height:16px;font-variant-numeric:tabular-nums;line-height:1.2}
 .rb-bar{width:100%;border-radius:10px 10px 4px 4px;background:var(--cat-run);min-height:28px;box-shadow:inset 0 3px 0 transparent}
 .rb-bar.ball{background:var(--cat-ball)}
@@ -916,7 +928,7 @@ function applyGate(){
 
 const S={chat:[],weeks:{},pastweeks:{},runs:{},log:{},lifts:{},notes:[],weights:{},adjust:{},basketball:{},settings:{},db:null,loaded:false};
 function hasVdot(){const v=S.settings&&S.settings.vdot;return v!=null&&v!==""&&isFinite(+v)&&+v>0;}
-const UI={tab:"today",area:"health",sel:null,openWeek:null,recipe:4,showPast:false,budView:"plan",expMonth:"",expAvg:false,expAll:false,budMonth:"",invView:"holdings"};
+const UI={tab:"today",area:"health",sel:null,openWeek:null,recipe:4,showPast:false,budView:"plan",expMonth:"",expAvg:false,budMonth:"",invView:"holdings"};
 try{const t=localStorage.getItem("dt-tab"); if(t) UI.tab=t; const a=localStorage.getItem("dt-area"); if(a==="health"||a==="wealth") UI.area=a; localStorage.removeItem("dt-scope");}catch(e){}
 
 /* utils */
@@ -1968,7 +1980,8 @@ function dashBar(o){
   const sub=(mark?'<i class="wl '+mark.toLowerCase()+'"></i>':"")+(o.sub?esc(o.sub):"");
   const act=o.tab?' data-tab="'+esc(o.tab)+'"':(o.exp?' data-expmonth="'+esc(o.exp)+'"':(o.date?' data-day="'+o.date+'"':""));
   const label=o.label!=null?esc(o.label):(o.date?esc(fD(o.date)):"");
-  return '<button type="button" class="'+cls+'"'+act+' aria-label="'+esc(o.aria||"")+'"><span class="rb-val">'+o.val+'</span><span class="'+bar+'" style="height:'+Math.round(o.h)+'px"></span><span class="rb-date">'+label+'</span><span class="rb-sub'+(o.tone?' '+o.tone:'')+'">'+sub+'</span></button>';
+  const tag=act?"button":"div";
+  return '<'+tag+(act?' type="button"':' role="img"')+' class="'+cls+'"'+act+' aria-label="'+esc(o.aria||"")+'"><span class="rb-val">'+o.val+'</span><span class="'+bar+'" style="height:'+Math.round(o.h)+'px"></span><span class="rb-date">'+label+'</span><span class="rb-sub'+(o.tone?' '+o.tone:'')+'">'+sub+'</span></'+tag+'>';
 }
 function dashScale(values){const nums=values.filter(v=>v>0);const max=Math.max(1,...nums);return v=>v>0?36+((v/max)*(112-36)):36;}
 function dashLegend(accent,extra){
@@ -2122,10 +2135,41 @@ function gymCoachCard(){
   if(tday&&HARD.includes(tday.kind)&&lowerToday)h+='<div class="sub" style="margin-top:12px;color:var(--warn,#d9a441)">Heavy legs today and '+esc(tday.title)+' tomorrow. Keep tomorrow honest on effort and move heavy legs to after key days.</div>';
   h+='<div class="row" style="margin-top:12px;gap:8px;display:flex"><button class="btn ghost" type="button" data-gymopen="'+esc(last.id)+'">Open session</button><button class="btn ghost" type="button" data-gymtab="1">Gym tab</button></div>';
   return h+'</section>';}
+function luluPay(){
+  return ((wealthDoc("budget").incomeSources)||[]).find(s=>s&&(s.id==="lulu"||/lululemon/i.test(s.name||"")))||null;
+}
+function payField(n){if(n==null||n==="")return ""; const v=+n; return isFinite(v)?String(Math.round(v*100)/100):"";}
+let salaryNote="";
+function salaryCard(){
+  if(!wealthLive) return "";
+  const pay=luluPay();
+  if(!pay) return '<section class="card pad" id="salary"><div class="eb">Salary</div><div class="empty">Lululemon pay isn\'t in the budget yet.</div></section>';
+  const gross=payField(pay.gross), net=payField(pay.net), year=gross?payField((+gross)*26):"";
+  return '<section class="card pad" id="salary"><div class="eb">Salary</div><h2>Daniel</h2><div class="sub">Lululemon. Gross stays on this page.</div><form id="salF" class="stack" style="margin-top:12px"><div class="field" style="margin-top:0"><label for="salGross">Gross per fortnight</label><input id="salGross" type="number" inputmode="decimal" min="0" step="any" value="'+esc(gross)+'"></div><div class="field"><label for="salYear">Gross a year</label><input id="salYear" type="number" inputmode="decimal" min="0" step="any" value="'+esc(year)+'" placeholder="Optional"></div><div class="field"><label for="salNet">Take-home per fortnight</label><input id="salNet" type="number" inputmode="decimal" min="0" step="any" value="'+esc(net)+'"></div><button class="btn" type="submit" id="salSave">Save salary</button><div class="sub" id="salMsg">'+esc(salaryNote)+'</div></form></section>';
+}
+async function persistLuluPay(gross, net){
+  if(!signedIn()){toast("Sign in to save"); return false;}
+  if(!wealthLive||!wealthStore||!wealthStore.budget){toast("Budget isn't loaded yet"); return false;}
+  const current=wealthStore.budget;
+  let found=false;
+  const sources=(current.incomeSources||[]).map(s=>{
+    if(!s||!(s.id==="lulu"||/lululemon/i.test(s.name||""))) return s;
+    found=true;
+    return {...s, gross, net};
+  });
+  if(!found){toast("Lululemon pay isn't in the budget yet"); return false;}
+  const data={...current, incomeSources:sources};
+  const {error}=await SB.from("wealth_docs").upsert({id:"budget",data,updated_at:new Date().toISOString()},{onConflict:"id"});
+  if(error){toast("Couldn't save. Try again."); return false;}
+  wealthEpoch++;
+  wealthStore.budget=data; wealthLive=true;
+  commitPaint();
+  return true;
+}
 function vProfile(){
   const name=(S.settings.setup||{}).name||"";
   const email=SESSION&&SESSION.user&&SESSION.user.email||"";
-  return head("You","Profile",name?name+".":"Body weight lives here, not on a session.")+weightCard()+'<section class="card pad"><div class="eb">Account</div><h2>'+esc(email||"Signed in")+'</h2><div class="sub" style="margin-top:4px">Signs this browser out. Health and Wealth both need the same account.</div><button class="btn ghost" id="signOut" type="button" style="margin-top:12px">Sign out</button></section>';
+  return head("You","Profile",name?name+".":"Body weight lives here, not on a session.")+weightCard()+salaryCard()+'<section class="card pad"><div class="eb">Account</div><h2>'+esc(email||"Signed in")+'</h2><div class="sub" style="margin-top:4px">Signs this browser out. Health and Wealth both need the same account.</div><button class="btn ghost" id="signOut" type="button" style="margin-top:12px">Sign out</button></section>';
 }
 function vCoach(){
   let h=head("Coach","Talk to your coach","Ask anything, report how you feel, flag a niggle. Replies here use your plan and logs. Anything that changes the plan gets picked up and built in.");
@@ -3669,7 +3713,7 @@ function incomeRows(sources){
     const once=isOnce(s.cadence), basis=sourceBasis(s), acct=s.from?accountById(s.from):null;
     const when=once?(s.date?fD(String(s.date).slice(0,10)):""):(s.nextPay?"next "+fD(String(s.nextPay).slice(0,10)):"");
     const tags=[once?"Once":(s.cadence||""), acct?acct.name:"", when].filter(Boolean);
-    const chip=basis==="gross"&&!once?" "+miniChip("Gross"):(!once?" "+miniChip("Take-home"):(s.isEstimate?" "+miniChip("Net estimate"):""));
+    const chip=!once?" "+miniChip("Take-home"):(s.isEstimate?" "+miniChip("Net estimate"):"");
     const side=once?aud(s.amount,true):aud(monthlyEquiv(+s.amount||0,s.cadence));
     return '<div class="wrow" style="grid-template-columns:minmax(0,1fr) auto"><span><div class="t">'+esc(s.name||"Pay")+'</div><div class="s">'+esc(tags.join(" · "))+chip+'</div></span><span class="amt">'+side+(once?"":'<div class="s">/ month</div>')+'</span></div>';
   }).join("")+'</div>';
@@ -3732,8 +3776,31 @@ function pieSvg(rows){
   const label=rows.map(s=>s.name+" "+aud(s.v)+(s.gain?" "+s.gain:"")+" "+pctTxt(s.pct)).join(", ");
   return rows.length?'<svg class="pie" viewBox="0 0 100 100" role="img" aria-label="'+esc(label)+'">'+shapes+'</svg>':"";
 }
+function legendInk(hex){
+  const raw=String(hex||"").replace("#","");
+  if(raw.length<6) return "#111111";
+  let r=parseInt(raw.slice(0,2),16), g=parseInt(raw.slice(2,4),16), b=parseInt(raw.slice(4,6),16);
+  const lin=c=>{c/=255; return c<=0.03928?c/12.92:Math.pow((c+0.055)/1.055,2.4);};
+  const lum=(rr,gg,bb)=>0.2126*lin(rr)+0.7152*lin(gg)+0.0722*lin(bb);
+  const ok=L=>(1.05)/(L+0.05)>=4.5;
+  if(ok(lum(r,g,b))) return "#"+raw.slice(0,6);
+  for(let i=0;i<18;i++){
+    r=Math.max(0,Math.round(r*0.84)); g=Math.max(0,Math.round(g*0.84)); b=Math.max(0,Math.round(b*0.84));
+    if(ok(lum(r,g,b))) return "#"+[r,g,b].map(n=>n.toString(16).padStart(2,"0")).join("");
+  }
+  return "#1a1a1a";
+}
 function pieLegend(rows){
-  return '<div class="pie-leg">'+rows.map(s=>'<span><i style="background:'+s.color+'"></i><span class="nm">'+(s.icon||"")+esc(s.name)+(s.gain?'<span class="gain">'+esc(s.gain)+'</span>':'')+'</span><span class="amt">'+aud(s.v)+'</span><span class="pct">'+pctTxt(s.pct)+'</span></span>').join("")+'</div>';
+  const max=rows.reduce((m,s)=>Math.max(m,+s.v||0),0)||1;
+  return '<div class="pie-leg">'+rows.map(s=>{
+    const share=Math.max(0,Math.min(100,(+s.v||0)/max*100));
+    return '<div class="leg"><div class="pie-line"><i style="background:'+s.color+'"></i><span class="nm">'+(s.icon||"")+esc(s.name)+(s.gain?'<span class="gain">'+esc(s.gain)+'</span>':'')+'</span><span class="leader" aria-hidden="true"></span><span class="amt">'+aud(s.v)+'</span><span class="pct" style="color:'+legendInk(s.color)+'">'+pctTxt(s.pct)+'</span></div><div class="pie-share" aria-hidden="true"><i style="width:'+share.toFixed(1)+'%;background:'+s.color+'"></i></div></div>';
+  }).join("")+'</div>';
+}
+function pieBlock(rows, beside){
+  if(!rows||!rows.length) return "";
+  const fig=beside?'<div class="pie-fig">'+pieSvg(rows)+beside+'</div>':pieSvg(rows);
+  return '<div class="pie-layout">'+fig+pieLegend(rows)+'</div>';
 }
 function portfolioRows(){
   const sums=pieModel();
@@ -3749,7 +3816,7 @@ function portfolioRows(){
 }
 function portfolioPie(){
   const {rows,total}=portfolioRows();
-  return '<button type="button" class="card pad pie-card" data-tab="invest" aria-label="Portfolio '+aud(total)+'. Open investments."><div class="ch"><div><div class="eb">Portfolio</div><h2>'+aud(total)+'</h2><div class="lede">Super, Vanguard, shares, savings and property equity.</div></div></div>'+pieSvg(rows)+pieLegend(rows)+'</button>';
+  return '<button type="button" class="card pad pie-card" data-tab="invest" aria-label="Portfolio '+aud(total)+'. Open investments."><div class="ch"><div><div class="eb">Portfolio</div><h2>'+aud(total)+'</h2><div class="lede">Super, Vanguard, shares, savings and property equity.</div></div></div>'+pieBlock(rows)+'</button>';
 }
 function vanguardGainLabel(){
   const hs=(investModel().holdings||[]).filter(h=>isVanguardHold(h)&&h.cost!=null&&h.costIsApprox);
@@ -3774,8 +3841,7 @@ function assetPie(eb, items, missing, beside){
   if(!valued.length) return '<section class="card pad"><div class="eb">'+esc(eb)+'</div><div class="empty">Nothing with a value yet.</div>'+note+'</section>';
   const rows=mixRows(sliceColors(valued));
   const total=valued.reduce((s,i)=>s+i.v,0);
-  const pie=beside?'<div class="pie-row">'+pieSvg(rows)+beside+'</div>':pieSvg(rows);
-  return '<section class="card pad"><div class="ch"><div><div class="eb">'+esc(eb)+'</div><h2>'+aud(total)+'</h2></div></div>'+pie+pieLegend(rows)+note+'</section>';
+  return '<section class="card pad"><div class="ch"><div><div class="eb">'+esc(eb)+'</div><h2>'+aud(total)+'</h2></div></div>'+pieBlock(rows, beside)+note+'</section>';
 }
 function holdingSliceType(h){
   if(isVanguardHold(h)) return "Vanguard";
@@ -3867,8 +3933,7 @@ function expenseDoc(){
 function expenseMonths(doc){
   return (doc.months||[]).filter(m=>m&&/^\d{4}-\d{2}$/.test(String(m.month))).slice().sort((a,b)=>String(a.month).localeCompare(String(b.month)));
 }
-function expenseSkip(doc, include){
-  if(include) return new Set();
+function expenseSkip(doc){
   return new Set((doc.excludeFromSpend||[]).map(spendKey).filter(Boolean));
 }
 function expensePartialId(doc){return String(doc&&doc.partialMonth||"").slice(0,7);}
@@ -3893,8 +3958,8 @@ function expensePartialLabel(doc, monthId){
   if(/^\d{4}-\d{2}-\d{2}$/.test(asAt)){const d=pISO(asAt); return "Partial · to "+d.getDate()+" "+MON[d.getMonth()];}
   return "Partial";
 }
-function expenseCats(month, doc, include){
-  const skip=expenseSkip(doc, include), map={};
+function expenseCats(month, doc){
+  const skip=expenseSkip(doc), map={};
   ((month&&month.categories)||[]).forEach(c=>{
     if(!c||!c.name||!isFamily(c)) return;
     const name=String(c.name).trim(), key=spendKey(name);
@@ -3921,37 +3986,41 @@ function expensePicked(months, doc){
   if(idx<0) idx=expenseDefaultIdx(months, doc);
   return {idx, avg:!!UI.expAvg};
 }
-function expenseAverageCats(doc, months, include){
-  const pool=expenseFullMonths(doc, months), n=pool.length||1, map={};
-  pool.forEach(m=>expenseCats(m, doc, include).forEach(c=>{const key=spendKey(c.name); if(!map[key]) map[key]={name:c.name, v:0}; map[key].v+=c.v;}));
+function expenseAvgWindow(doc, months){
+  return expenseFullMonths(doc, months).slice(-12);
+}
+function expenseAverageCats(doc, months){
+  const pool=expenseAvgWindow(doc, months), n=pool.length||1, map={};
+  pool.forEach(m=>expenseCats(m, doc).forEach(c=>{const key=spendKey(c.name); if(!map[key]) map[key]={name:c.name, v:0}; map[key].v+=c.v;}));
   return Object.keys(map).map(k=>({name:map[k].name, v:map[k].v/n})).sort((a,b)=>b.v-a.v||a.name.localeCompare(b.name));
 }
 function expenseLink(){
   const doc=expenseDoc(), months=expenseMonths(doc);
   if(!months.length) return "";
   const month=months[expenseDefaultIdx(months, doc)];
-  const total=expenseCats(month, doc, false).reduce((s,c)=>s+c.v,0);
+  const total=expenseCats(month, doc).reduce((s,c)=>s+c.v,0);
   return '<button type="button" class="exp-jump" data-budview="expenses"><span>'+esc(doc.source||"Expenses")+' · '+esc(monthShort(month.month))+' · '+aud(total)+'</span><span aria-hidden="true">›</span></button>';
 }
 function vExpenses(){
   const doc=expenseDoc(), months=expenseMonths(doc);
   if(!months.length) return '<section class="card pad"><div class="empty">No expenses yet.</div></section>';
-  const pick=expensePicked(months, doc), month=months[pick.idx], include=!!UI.expAll;
-  const cats=pick.avg?expenseAverageCats(doc, months, include):expenseCats(month, doc, include);
+  const pick=expensePicked(months, doc), month=months[pick.idx];
+  const windowMonths=expenseAvgWindow(doc, months);
+  const range=windowMonths.length?ymLabel(windowMonths[0].month)+" – "+ymLabel(windowMonths[windowMonths.length-1].month):"";
+  const cats=pick.avg?expenseAverageCats(doc, months):expenseCats(month, doc);
   const rows=expenseSlices(cats);
   const total=cats.reduce((s,c)=>s+c.v,0);
   const note=pick.avg?"":expensePartialLabel(doc, month.month);
-  const label=pick.avg?"Average":ymLabel(month.month);
+  const label=pick.avg?range:ymLabel(month.month);
   const partial=expensePartialId(doc);
   const trend=months.slice(-12);
-  const totals=trend.map(m=>({month:m.month,total:expenseCats(m,doc,include).reduce((s,c)=>s+c.v,0),faint:m.month===partial}));
+  const totals=trend.map(m=>({month:m.month,total:expenseCats(m,doc).reduce((s,c)=>s+c.v,0),faint:m.month===partial}));
   const scale=dashScale(totals.map(t=>t.total));
-  const anchor=pick.avg?expenseFullMonths(doc, months).slice(-1)[0].month:month.month;
+  const anchor=pick.avg?"":month.month;
   const bars=totals.map(t=>dashBar({label:monthShort(t.month),accent:"wealth",h:t.total>0?scale(t.total):36,val:audBar(t.total),exp:t.month,anchor,faint:t.faint,sub:t.faint?"Partial":"",aria:ymLabel(t.month)+" "+audBar(t.total)+(t.faint?" partial":"")})).join("");
-  const excluded=(doc.excludeFromSpend||[]).filter(Boolean);
-  const nav='<div class="exp-nav"><button type="button" class="chev" data-expm="-1" aria-label="Previous month"'+(pick.idx<=0?" disabled":"")+'>‹</button><div class="lab">'+esc(label)+(note?' <span class="chip exp-partial">'+esc(note)+'</span>':"")+'</div><button type="button" class="chev" data-expm="1" aria-label="Next month"'+(pick.idx>=months.length-1?" disabled":"")+'>›</button><button type="button" class="avg" data-expavg="1" aria-pressed="'+(pick.avg?"true":"false")+'">Average</button></div>';
-  const tog=excluded.length?'<button type="button" class="exp-inc" data-expinc="1" aria-pressed="'+(include?"true":"false")+'">Include investing & mortgage</button>':"";
-  return '<section class="card pad exp-card"><div class="ch"><div><div class="eb">Expenses</div><h2>'+aud(total)+'</h2></div></div>'+nav+tog+pieSvg(rows)+pieLegend(rows)+'<div class="eb" style="margin-top:16px">Last 12 months</div><div class="rb-scroll">'+bars+'</div></section>';
+  const headTitle=pick.avg?"Average a month · last 12 months":"Expenses";
+  const nav='<div class="exp-nav"><button type="button" class="chev" data-expm="-1" aria-label="Previous month"'+(pick.idx<=0?" disabled":"")+'>‹</button><div class="lab">'+esc(label)+(note?' <span class="chip exp-partial">'+esc(note)+'</span>':"")+'</div><button type="button" class="chev" data-expm="1" aria-label="Next month"'+(pick.idx>=months.length-1?" disabled":"")+'>›</button><button type="button" class="avg" data-expavg="1" aria-pressed="'+(pick.avg?"true":"false")+'">12-mo average</button></div>';
+  return '<section class="card pad exp-card"><div class="ch"><div><div class="eb">'+esc(headTitle)+'</div><h2>'+aud(total)+'</h2></div></div>'+nav+pieBlock(rows)+'<div class="eb" style="margin-top:16px">Last 12 months</div><div class="rb-scroll">'+bars+'</div></section>';
 }
 function insuranceCard(){
   const doc=wealthLive&&wealthStore?(wealthStore.insurance||{items:[]}):(WEALTH_EXAMPLE.insurance||{items:[]});
@@ -3983,7 +4052,7 @@ function spendPick(which){
   return {doc, months, idx, month:months[idx]};
 }
 function spendTotal(month, doc){
-  const cats=month?expenseCats(month, doc, false):[];
+  const cats=month?expenseCats(month, doc):[];
   return {cats, total:cats.reduce((s,c)=>s+c.v,0)};
 }
 function toDateChip(doc, monthId){
@@ -3994,18 +4063,10 @@ function toDateChip(doc, monthId){
 }
 function incomeBasis(){
   const {pack}=budgetModel();
-  if(pack.people.some(s=>payLandings(s).some(a=>/ing/i.test(a.account||"")))) return "Take-home into ING";
-  const recurring=pack.people;
-  if(recurring.length&&recurring.every(s=>sourceBasis(s)==="gross")) return "Gross";
-  return "";
+  return pack.people.length?"Take-home":"";
 }
 function incomePeople(people){
-  return (people||[]).map(s=>{
-    const who=whoPay(s);
-    const gross=s.gross==null||s.gross===""?who+" · gross · Not provided":who+" · gross · "+aud(fortnightToMonth(s.gross));
-    const net=s.net!=null&&s.net!==""?who+" · take-home · "+aud(fortnightToMonth(s.net)):"";
-    return '<div class="sub">'+esc(gross)+'</div>'+(net?'<div class="sub">'+esc(net)+'</div>':"");
-  }).join("");
+  return (people||[]).filter(s=>s.net!=null&&s.net!=="").map(s=>'<div class="sub">'+esc(whoPay(s))+" · "+aud(fortnightToMonth(s.net))+'</div>').join("");
 }
 function leftOverLine(income, spent){
   const left=Math.round((income-spent)*100)/100;
@@ -4036,9 +4097,8 @@ function vWealthOverview(){
   const gain=vanguardGainLabel();
   const upcoming=bills.soon.slice(0,3);
   const worth=ovCard('data-tab="worth" aria-label="Net worth"',"Net worth",'<h2 class="net-debt">'+aud(w.net)+'</h2><div class="metrics ov-metrics"><div class="m"><div class="k">Assets</div><div class="v">'+aud(w.assetSum)+'</div></div><div class="m"><div class="k">Liabilities</div><div class="v">'+aud(w.debtSum)+'</div></div></div>');
-  const port=ovCard('data-tab="invest" aria-label="Portfolio"',"Portfolio",'<h2>'+aud(total)+'</h2><div class="ov-split">'+ovDonut(rows)+'<div class="ov-leg">'+rows.map(s=>'<span><span class="nm"><i style="background:'+s.color+'"></i>'+esc(s.name)+(s.name==="Property"&&s.gain?'<span class="gain">'+esc(s.gain)+'</span>':"")+'</span><b>'+aud(s.v)+'</b></span>').join("")+'</div></div>');
-  const grossBit=money.pack.danielGrossMonth!=null?'<div class="sub">gross '+audBar(money.pack.danielGrossMonth)+'</div>':"";
-  const budBody='<h2>'+aud(money.income)+'</h2><div class="lede">Take-home'+(pick.month?" · "+esc(monthName(pick.month.month))+" spent "+aud(spent.total):"")+'</div>'+grossBit+top.map(c=>'<div class="ov-line"><span>'+esc(c.name)+'</span><b>'+aud(c.v)+'</b></div>').join("")+(pick.month?leftOverLine(money.income, spent.total):"")+(partial?'<div class="sub">Partial month · '+esc(monthShort(partial))+'</div>':"");
+  const port=ovCard('data-tab="invest" aria-label="Portfolio"',"Portfolio",'<h2>'+aud(total)+'</h2><div class="pie-layout">'+ovDonut(rows)+pieLegend(rows)+'</div>');
+  const budBody='<h2>'+aud(money.income)+'</h2><div class="lede">Take-home'+(pick.month?" · "+esc(monthName(pick.month.month))+" spent "+aud(spent.total):"")+'</div>'+top.map(c=>'<div class="ov-line"><span>'+esc(c.name)+'</span><b>'+aud(c.v)+'</b></div>').join("")+(pick.month?leftOverLine(money.income, spent.total):"")+(partial?'<div class="sub">Partial month · '+esc(monthShort(partial))+'</div>':"");
   const bud=ovCard('data-budview="expenses" aria-label="Budget"',"Budget",budBody);
   const goalBody=goals.length?'<div class="ov-goals">'+goals.map(g=>{const x=goalBits(g); return '<div class="ov-goal">'+progressRing(x.ratio, goalIconFor(g.name, g.icon)).replace('class="ring','class="ring sm')+'<span><b>'+esc(g.name||"Goal")+'</b><span class="sub">'+(x.hasT?aud(x.saved||0)+" of "+aud(x.target):"No target yet")+'</span></span><span class="amt">'+(x.hasT?x.pct+"%":"")+'</span></div>';}).join("")+(extra?'<div class="ov-more">+'+extra+' more</div>':"")+'</div>':'<div class="sub">No goals yet.</div>';
   const goal=ovCard('data-tab="goals" aria-label="Goals"',"Goals",goalBody);
@@ -4063,21 +4123,14 @@ function landingLines(s){
 }
 function incomeCard(s){
   const who=whoPay(s);
-  const gross=s.gross==null||s.gross===""?"Not provided":aud(s.gross,true);
-  const grossMonth=s.gross==null||s.gross===""?"":'<div class="sub">'+aud(fortnightToMonth(s.gross))+' a month</div>';
-  const ded=s.deductions!=null&&s.deductions!==""?'<div class="ov-line"><span>Tax and deductions</span><b>'+aud(s.deductions,true)+'</b></div>':"";
   const net=s.net!=null&&s.net!==""?aud(s.net,true):"—";
-  const netMonth=s.net!=null&&s.net!==""?'<div class="sub">'+aud(fortnightToMonth(s.net))+' a month</div>':"";
-  const sac=s.salarySacrifice?'<div class="sub">Salary sacrifice '+aud(s.salarySacrifice,true)+' a fortnight</div>':"";
-  const sup=s.superSG?'<div class="sub">Super on top '+aud(s.superSG,true)+' a fortnight · not income</div>':"";
   const emp=s.employer?'<div class="lede">'+esc(s.employer)+'</div>':"";
-  const src=s.source?'<div class="sub">'+esc(s.source)+'</div>':"";
-  return '<section class="card pad"><div class="eb">'+esc(who)+'</div><h2>'+(s.net!=null&&s.net!==""?aud(fortnightToMonth(s.net)):"—")+'</h2>'+emp+'<div class="sub">Take-home a month</div><div class="ov-line"><span>Gross</span><b>'+gross+'</b></div>'+grossMonth+ded+'<div class="ov-line"><span>Take-home</span><b>'+net+'</b></div>'+netMonth+'<div class="eb" style="margin-top:12px">Where it lands</div>'+landingLines(s)+sup+sac+src+'</section>';
+  return '<section class="card pad"><div class="eb">'+esc(who)+'</div><h2>'+(s.net!=null&&s.net!==""?aud(fortnightToMonth(s.net)):"—")+'</h2>'+emp+'<div class="sub">Take-home a month · '+net+' a fortnight</div><div class="eb" style="margin-top:12px">Where it lands</div>'+landingLines(s)+'</section>';
 }
 function incomeView(){
   const pack=incomePack();
   if(!pack.people.length) return '<section class="card pad"><div class="empty">No salary yet.</div></section>';
-  const total='<section class="card pad"><div class="eb">Family</div><h2>'+aud(pack.jointMonth)+'</h2><div class="lede">Take-home into ING joint</div><div class="sub">'+aud(pack.jointFn,true)+' a fortnight</div>'+(pack.superFn?'<div class="sub">Super on top '+aud(pack.superFn,true)+' a fortnight · not income</div>':"")+'</section>';
+  const total='<section class="card pad"><div class="eb">Family</div><h2>'+aud(pack.jointMonth)+'</h2><div class="lede">Take-home into ING joint</div><div class="sub">'+aud(pack.jointFn,true)+' a fortnight</div></section>';
   return total+pack.people.map(incomeCard).join("");
 }
 function vBudget(){
@@ -4111,7 +4164,7 @@ function splurgeLine(){
   if(!months.length) return "";
   const month=months[expenseDefaultIdx(months, doc)];
   if(!month) return "";
-  const skip=expenseSkip(doc, false);
+  const skip=expenseSkip(doc);
   let total=0;
   (month.categories||[]).forEach(c=>{
     if(!c||!c.name||String(c.scope||"").trim().toLowerCase()!=="personal") return;
@@ -4281,7 +4334,7 @@ function propertyFlow(p){
   const avg=nets.reduce((s,n)=>s+n,0)/nets.length;
   const cols=months.map(m=>{
     const rent=+m.rentIn||0, interest=+m.interestAndFees||0, net=rent-interest;
-    const bar=(v, cls, label)=>'<button type="button" class="rb" aria-label="'+esc(ymLabel(m.month)+" "+label+" "+aud(v))+'"><span class="rb-val">'+audBar(v)+'</span><span class="rb-bar '+cls+'" style="height:'+Math.round(v>0?scale(v):36)+'px"></span></button>';
+    const bar=(v, cls, label)=>'<div class="rb" role="img" aria-label="'+esc(ymLabel(m.month)+" "+label+" "+aud(v))+'"><span class="rb-val">'+audBar(v)+'</span><span class="rb-bar '+cls+'" style="height:'+Math.round(v>0?scale(v):36)+'px"></span></div>';
     return '<div class="rb-month">'+bar(rent,"wealth","rent")+bar(interest,"neutral","interest")+'<div class="rb-date">'+esc(monthShort(m.month))+'</div><div class="net">'+signedAud(net)+'</div></div>';
   }).join("");
   return '<section class="card pad"><div class="eb">Each month</div><h2>'+signedAud(avg)+'</h2><div class="lede">Average, rent minus interest.</div><div class="rb-scroll">'+cols+'</div><div class="legend"><span><i class="rb-swatch wealth"></i>Rent</span><span><i class="rb-swatch" style="background:#8E9AAB"></i>Interest</span></div><div class="sub" style="margin-top:8px">Rates, insurance and strata are not included yet.</div></section>';
@@ -4606,6 +4659,21 @@ function bind(r){
     sv.disabled=true;try{await S.db.doc("settings/main").set(next);S.settings=next;toast("Inputs saved");commitPaint();}catch(e){toast("Couldn't save. Try again.");}finally{sv.disabled=false;}};
   const mf=$("#movF",r); if(mf)mf.onsubmit=async e=>{e.preventDefault();const raw=$("#movKm",r).value.trim();if(!S.db){toast("Saving is unavailable right now");return;}const doc={updated:new Date().toISOString()};if(raw==="")doc.official=null;else{const km=parseFloat(raw);if(!(km>=0)){toast("Enter kilometres");return;}doc.official=km;}try{await S.db.collection("adjust").doc("movember-2026").set(doc);toast(doc.official==null?"Using runs in the app":"Mo Space total saved");render();}catch(err){toast("Couldn't save");}};
   const wf=$("#wtF",r); if(wf)wf.onsubmit=async e=>{e.preventDefault();const kg=parseFloat($("#wtKg",r).value);const date=($("#wtD",r)&&$("#wtD",r).value)||TODAY;if(!(kg>40&&kg<200)){toast("Enter a weight in kg");return;}if(!/^\d{4}-\d{2}-\d{2}$/.test(date)){toast("Choose a date");return;}if(!S.db){toast("Saving is unavailable right now");return;}try{await S.db.collection("weights").doc(date).set({date,kg,updated:new Date().toISOString()});toast("Weigh-in saved");render();}catch(err){toast("Couldn't save");}};
+  const sf=$("#salF",r); if(sf){
+    const g=$("#salGross",r), y=$("#salYear",r), n=$("#salNet",r); let lock=false;
+    const setYear=()=>{if(lock)return; const v=+g.value; if(g.value.trim()&&v>0){lock=true; y.value=String(Math.round(v*26*100)/100); lock=false;}};
+    const setGross=()=>{if(lock)return; const v=+y.value; if(y.value.trim()&&v>0){lock=true; g.value=String(Math.round(v/26*100)/100); lock=false;}};
+    g.addEventListener("input", setYear); y.addEventListener("input", setGross);
+    const clearNote=()=>{salaryNote="";};
+    g.addEventListener("input", clearNote); y.addEventListener("input", clearNote); n.addEventListener("input", clearNote);
+    sf.onsubmit=async e=>{e.preventDefault(); const msg=$("#salMsg",r); const gs=g.value.trim(), ns=n.value.trim(), ys=y.value.trim(); const gv=+gs, nv=+ns, yv=+ys;
+      if(!gs||!(gv>0)||!ns||!(nv>0)){salaryNote=""; msg.textContent="Use a positive number for gross and take-home."; return;}
+      if(ys&&!(yv>0)){salaryNote=""; msg.textContent="The yearly figure needs to be a positive number, or left blank."; return;}
+      salaryNote="Saved.";
+      const ok=await persistLuluPay(gv, nv);
+      if(ok) toast("Salary saved");
+      else {salaryNote=""; const live=$("#salMsg",r); if(live) live.textContent="Couldn't save. Try again.";}};
+  }
   const so=$("#signOut",r); if(so)so.onclick=async()=>{so.disabled=true;try{await SB.auth.signOut();}catch(e){so.disabled=false;toast("Couldn't sign out. Try again.");}};
   r.querySelectorAll("[data-logball]").forEach(b=>b.onclick=()=>openQuickAdd("Basketball",b.dataset.logball));
   r.querySelectorAll("[data-logrun]").forEach(b=>b.onclick=()=>openQuickAdd("Run",b.dataset.logrun));
@@ -4615,7 +4683,6 @@ function bind(r){
   r.querySelectorAll("[data-expm]").forEach(b=>b.onclick=()=>{if(b.disabled) return; const doc=expenseDoc(), months=expenseMonths(doc); const pick=expensePicked(months, doc); const idx=Math.max(0,Math.min(months.length-1,pick.idx+(+b.dataset.expm||0))); UI.expMonth=months[idx]?months[idx].month:""; UI.expAvg=false; render();});
   r.querySelectorAll("[data-budm]").forEach(b=>b.onclick=()=>{if(b.disabled) return; const pick=spendPick("plan"); const idx=Math.max(0,Math.min(pick.months.length-1,pick.idx+(+b.dataset.budm||0))); UI.budMonth=pick.months[idx]?pick.months[idx].month:""; render();});
   r.querySelectorAll("[data-expavg]").forEach(b=>b.onclick=()=>{UI.expAvg=!UI.expAvg; render();});
-  r.querySelectorAll("[data-expinc]").forEach(b=>b.onclick=()=>{UI.expAll=!UI.expAll; render();});
   r.querySelectorAll("[data-expmonth]").forEach(b=>b.onclick=()=>{UI.expMonth=b.dataset.expmonth; UI.expAvg=false; render();});
   r.querySelectorAll("[data-goal]").forEach(b=>b.onclick=()=>openGoalSheet(b.dataset.goal));
 }
