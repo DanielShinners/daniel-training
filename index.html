@@ -748,6 +748,7 @@ input[type=date],input[type=time]{min-height:44px;-webkit-appearance:none;appear
 .pagelinks button{min-height:32px;padding:4px 0;font-size:13px;font-weight:500;color:var(--accent)}
 a.ball-next{display:block;color:inherit;text-decoration:none}
 button.sess-t{display:block;width:100%;text-align:left}
+.tapday{cursor:pointer}
 .tline .sess-t{width:auto;flex:1;min-width:0}
 .wg-legend{display:flex;flex-wrap:wrap;gap:8px 14px;margin-top:12px;font-size:12px;font-weight:500;color:var(--ink)}
 .wg-legend span{display:inline-flex;align-items:center;gap:6px}
@@ -928,8 +929,8 @@ function applyGate(){
 
 const S={chat:[],weeks:{},pastweeks:{},runs:{},log:{},lifts:{},notes:[],weights:{},adjust:{},basketball:{},settings:{},db:null,loaded:false};
 function hasVdot(){const v=S.settings&&S.settings.vdot;return v!=null&&v!==""&&isFinite(+v)&&+v>0;}
-const UI={tab:"today",area:"health",sel:null,openWeek:null,recipe:4,showPast:false,budView:"plan",expMonth:"",expAvg:false,budMonth:"",invView:"holdings"};
-try{const t=localStorage.getItem("dt-tab"); if(t) UI.tab=t; const a=localStorage.getItem("dt-area"); if(a==="health"||a==="wealth") UI.area=a; localStorage.removeItem("dt-scope");}catch(e){}
+const UI={tab:"home",area:"health",sel:null,openWeek:null,recipe:4,showPast:false,budView:"plan",expMonth:"",expAvg:false,budMonth:"",invView:"holdings"};
+try{const t=localStorage.getItem("dt-tab"); if(t) UI.tab=t==="today"||t==="plan"?"home":t; const a=localStorage.getItem("dt-area"); if(a==="health"||a==="wealth") UI.area=a; localStorage.removeItem("dt-scope");}catch(e){}
 
 /* utils */
 const $=(s,r=document)=>r.querySelector(s);
@@ -1217,7 +1218,7 @@ function lineChart(points,opts){ // points [{x:date,y:secPerKm}] faster is up
 }
 
 /* Views */
-function head(eb,title,lede,cat){const plan=UI.area!=="wealth"&&UI.tab!=="plan"?'<button type="button" class="btn ghost" data-tab="plan">Plan</button>':'';return '<div class="head'+(cat?' cat-'+cat:'')+'"><div class="ch"><div><div class="eb acc">'+eb+'</div><h1>'+esc(title)+'</h1>'+(lede?'<div class="lede">'+esc(lede)+'</div>':'')+'</div>'+plan+'</div></div>';}
+function head(eb,title,lede,cat){return '<div class="head'+(cat?' cat-'+cat:'')+'"><div class="ch"><div><div class="eb acc">'+eb+'</div><h1>'+esc(title)+'</h1>'+(lede?'<div class="lede">'+esc(lede)+'</div>':'')+'</div></div></div>';}
 function catCls(cat){return cat==="gym"||cat==="ball"||cat==="run"||cat==="rest"?" c-"+cat:"";}
 function catMark(cat,text){return '<span class="cl-'+cat+'">'+text+'</span>';}
 function pageType(){return UI.tab==="ball"||UI.tab==="gym"||UI.tab==="run"?UI.tab:"";}
@@ -1481,7 +1482,7 @@ function sessionCard(d,w,label){
   const game=cat==="ball"?gameOn(d.date):null;
   const score=scoreHtml(game);
   if(cat==="ball"&&!score){const tip=fixtureWhen(d.date); if(tip)bits.push(tip);}
-  const shell=cat==="gym"?'<section class="card pad gymsess">':'<section class="dk pad z-'+z+'">';
+  const shell=(cat==="gym"?'<section class="card pad gymsess tapday"':'<section class="dk pad tapday z-'+z+'"')+' data-day="'+d.date+'">';
   const how=cat==="gym"?(parsed?gymTrackerHtml(d,parsed):(d.detail?'<div class="how"><b>How to do it.</b> '+fill(d.detail)+'</div>':'')):(d.detail?'<div class="how"><b>'+(cat==="run"?"How to run it.":"How to do it.")+'</b> '+fill(d.detail)+'</div>':'');
   const logBtn=(cat!=="gym"&&gk&&d.date<=TODAY?'<button class="btn ghost" data-liftstart="G'+gk+'">Log gym</button>':'')+(cat==="gym"&&!parsed&&gk&&d.date<=TODAY?'<button class="btn ghost" data-liftstart="G'+gk+'">Log gym</button>':'')+(cat==="ball"&&d.date<=TODAY?'<button class="btn ghost" data-logball="'+d.date+'">Log basketball</button>':'')+(cat==="run"&&d.date<=TODAY?'<button class="btn ghost" data-logrun="'+d.date+'">Log run</button>':'');
   const chip=pageType()===cat?"":'<span class="chip'+catCls(cat)+'">'+esc(CAT_NAME[cat]||d.kind)+'</span>';
@@ -1492,7 +1493,7 @@ function sessionCard(d,w,label){
     (d.extra?'<div class="bul"><div><span><b>'+esc(d.extra.split(":")[0])+'.</b> '+esc(d.extra.split(":").slice(1).join(":").trim())+'</span></div></div>':'')+
     (d.pm?'<div class="bul"><div><span><b>Double.</b> Second run very easy, at least 6 hours later.</span></div></div>':'')+
     (read&&cat==="run"?'<div style="margin-top:14px" class="coach"><span class="eb">Coach read</span><span>'+esc(read.text)+'</span></div>':'')+
-    '<div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap"><button class="btn" data-log="'+d.date+'">Log session</button>'+logBtn+(UI.tab!=="today"?'':'<button class="btn ghost" data-tab="plan">Full plan</button>')+'</div></section>';
+    '<div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap"><button class="btn" data-log="'+d.date+'">Log session</button>'+logBtn+'</div></section>';
 }
 
 function doneCard(d){
@@ -1502,8 +1503,7 @@ function doneCard(d){
   return '<section class="card pad donecard"><div class="ch"><span class="eb">Today · '+fD(d.date,true)+'</span><span class="donetag">Done ✓</span></div>'+
     '<div class="done-t">'+esc(d.title)+(a&&a.tone?' <span class="vchip tone-'+a.tone+'">'+esc(a.head)+'</span>':'')+'</div>'+
     (km?'<div class="done-m mono"><span><b>'+km.toFixed(1)+'</b> km</span><span><b>'+fP(sec/km)+'</b> /km</span>'+(hr?'<span><b>'+hr+'</b> bpm</span>':'')+'<span><b>'+fHM(sec)+'</b>'+(rs[0]&&+rs[0].el>sec+29?' <small>('+fHM(+rs[0].el)+' elapsed)</small>':'')+'</span></div>':'')+
-    (others.length?'<div class="sub" style="margin-top:6px">Also: '+others.map(o=>esc(CAT_NAME[catOf(o)]||SPORT_LBL[sportKind(o)]||o.type)+' '+fHM(o.sec)).join(", ")+'</div>':'')+
-    '<button class="linkrow" type="button" data-day="'+d.date+'"><span>Session details</span><span aria-hidden="true">›</span></button></section>';}
+    (others.length?'<div class="sub" style="margin-top:6px">Also: '+others.map(o=>esc(CAT_NAME[catOf(o)]||SPORT_LBL[sportKind(o)]||o.type)+' '+fHM(o.sec)).join(", ")+'</div>':'')+'</section>';}
 
 function vSetup(){
   const g=S.settings.setup||{}; const v=k=>esc(g[k]||"");
@@ -1528,7 +1528,7 @@ function vSetup(){
   '<button class="btn" type="submit">'+(g.done?"Update":"Save and build my plan")+'</button></form>';}
 function bindSetup(r){const f=$("#setupF",r);if(!f)return;f.onsubmit=async e=>{e.preventDefault();const fd=new FormData(f);const o={};for(const [k,val] of fd.entries()){if(["runDays","gymDays","offDays"].includes(k))(o[k]=o[k]||[]).push(val);else o[k]=String(val).trim();}
   o.done=true;o.updated=new Date().toISOString();const b=f.querySelector("button");b.disabled=true;
-  try{await S.db.doc("settings/main").set({...S.settings,setup:o});await S.db.doc("chat/"+new Date().toISOString().replace(/\D/g,"").slice(0,14)+"-u").set({ts:new Date().toISOString().slice(0,19),role:"user",text:"Setup done. Please build my plan.",handled:false});toast("Saved. Your coach is building your plan.");UI.tab="today";render();}catch(err){toast("Could not save: "+err.message);b.disabled=false;}};}
+  try{await S.db.doc("settings/main").set({...S.settings,setup:o});await S.db.doc("chat/"+new Date().toISOString().replace(/\D/g,"").slice(0,14)+"-u").set({ts:new Date().toISOString().slice(0,19),role:"user",text:"Setup done. Please build my plan.",handled:false});toast("Saved. Your coach is building your plan.");UI.tab="home";render();}catch(err){toast("Could not save: "+err.message);b.disabled=false;}};}
 function activityMeta(r){
   const sport=r.type||(isRun(r)?"Run":"Activity");
   const parts=[];
@@ -1680,7 +1680,7 @@ function catLine(days){const b=weekBreakdown(days);return catMark("gym","Gym "+b
 function catBoard(days){
   const b=weekBreakdown(days);
   const cell=(tab,cls,k,v)=>'<div class="m '+cls+'"><button type="button" data-tab="'+tab+'"><div class="k">'+k+'</div><div class="v">'+v+'</div></button></div>';
-  return '<section class="card pad"><div class="eb">Gym, basketball, run</div><div class="metrics" style="grid-template-columns:repeat(3,minmax(0,1fr))">'+
+  return '<section class="card pad" id="week-counts"><div class="eb">This week</div><div class="metrics" style="grid-template-columns:repeat(3,minmax(0,1fr))">'+
     cell("gym","c-gym","Gym",b.gymDone+'<small>/ '+b.planned.gym+'</small>')+
     cell("ball","c-ball","Basketball",b.ballDone+'<small>/ '+b.planned.ball+'</small>')+
     cell("run","c-run","Run",b.runKm.toFixed(1)+'<small>/ '+(Math.round(b.planned.runKm*10)/10)+' km</small>')+
@@ -1735,52 +1735,31 @@ function weightCard(){
   if(avg.length>1)g+='<path d="'+avg.map((a,i)=>(i?"L":"M")+X(xs[i]).toFixed(1)+" "+Y(a.y).toFixed(1)).join(" ")+'" fill="none" stroke="var(--ink)" stroke-width="2"/>';
   return h+'<svg class="bars" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Weight toward 92 kg">'+g+'</svg></section>';
 }
-function vToday(){
-  if(S.loaded&&!(S.settings.setup&&S.settings.setup.done))return vSetup();
-  const ws=weekList(); if(!ws.length){
-    const name=esc((S.settings.setup||{}).name||"");
-    let h=head("Today","Today",S.loaded?"Thanks "+name+". Your coach is building your plan. You can log gym sessions and sports in the meantime.":"");
-    if(!S.loaded)return h+'<div class="card pad"><div class="empty">Loading your plan</div></div>';
-    const all=loggedActivities(), today=all.filter(r=>r.date===TODAY), older=all.filter(r=>r.date!==TODAY);
-    h+='<div class="stack">'+movemberCard();
-    if(today.length)h+='<section class="dk pad"><div class="ch"><span class="eb">Logged · '+fD(TODAY,true)+'</span><span class="chip'+catCls(catOf(today[0]))+'">'+esc(CAT_NAME[catOf(today[0])]||"")+'</span></div>'+today.map(r=>{const a=activityMeta(r);return '<div class="sess-t">'+esc(a.title)+'</div><div class="sess-m">'+esc((CAT_NAME[catOf(r)]||a.sport)+(a.detail?" · "+a.detail:""))+'</div>';}).join("")+'<button class="linkrow" type="button" data-day="'+TODAY+'"><span>Session details</span><span aria-hidden="true">›</span></button></section>';
-    h+=loggedSection(older,"Earlier");
-    h+='<div class="card pad"><div class="empty">Plan coming soon.<div style="display:flex;gap:8px;justify-content:center;margin-top:12px"><button class="btn" type="button" data-log="'+TODAY+'">Log a session</button><button class="btn ghost" type="button" data-setup="1">Edit setup</button></div></div></div></div>';
-    return h;
-  }
-  const idx=dayIndex(); let date=UI.sel&&idx[UI.sel]?UI.sel:TODAY; let w=weekOf(date);
-  if(!w){w=date<ws[0].start?ws[0]:ws[ws.length-1];date=w.days[0].date;}
-  const d=idx[date]?idx[date].d:w.days[0];
-  const P=wPlan(w),A=wAct(w); const qual=w.days.filter(x=>["threshold","quality","race","long"].includes(x.kind));
-  const qd=qual.filter(x=>status(x)==="done").length;
-  const next=w.days.find(x=>x.date>=TODAY&&["threshold","quality","race","long"].includes(x.kind)&&status(x)!=="done");
-  const total=weekList().length;
-  let h=head("Week "+w.n+" of "+total+" · "+esc(w.phase),date===TODAY?"Today":fD(date,true),w.focus);
-  h+=catBoard(w.days||[])+movemberCard();
-  let hero=sessionCard(d,w,date===TODAY?"Today":"Selected"), heroDate=null;
-  if(date===TODAY&&!UI.sel&&(+d.km||d.kind==="cross")&&status(d)==="done"){
-    const nx=Object.values(idx).map(x=>x.d).filter(x=>x.date>TODAY&&(+x.km||["cross","strength"].includes(x.kind))).sort((a,b)=>a.date.localeCompare(b.date))[0];
-    heroDate=nx?nx.date:null;hero=doneCard(d)+(nx?sessionCard(nx,weekOf(nx.date),nx.date===addD(TODAY,1)?"Tomorrow":"Next up"):"");}
-  h+='<div class="cols two"><div class="stack">'+hero;
-  if(next&&next.date!==d.date&&next.date!==heroDate)h+='<section class="card pad z-'+sessZone(next)+'" style="border-left:3px solid var(--zc)"><div class="eb acc">Next key session · '+fD(next.date,true)+'</div><h2>'+esc(next.title)+'</h2><div class="sub mono" style="margin-top:4px">'+next.km+' km</div><button class="btn ghost" style="margin-top:12px" data-day="'+next.date+'">View session</button></section>';
-  h+='</div><div class="stack">';
-  const days7=w.days.length>7?w.days.slice(dayPos(w),dayPos(w)+7):w.days;
-  {const dts=days7.map(x=>x.date); const {t}=weekTotals(dts); const tot=Object.values(t).reduce((q,s2)=>({n:q.n+s2.n,sec:q.sec+s2.sec,tss:q.tss+s2.tss}),{n:0,sec:0,tss:0}); const runWeek=P>0||A>0; const ft=lastFoot(dts);
-  h+='<section class="card pad wkcard"><div class="ch"><div><div class="eb">'+fD(days7[0].date)+' to '+fD(days7[days7.length-1].date)+'</div><h2>This week</h2></div><div class="wk-big">'+(runWeek?A.toFixed(1)+'<span class="sub"> / '+km1(P)+' km</span>':fHM(tot.sec)+'<span class="sub"> trained</span>')+'</div></div>'+
-    weekMinChart(dts,"wkday")+weekChips(dts)+
-    '<div class="wk-read">'+esc(weekRead(dts))+'</div>'+
-    '<div class="metrics"><div class="m"><div class="k">Sessions</div><div class="v">'+tot.n+'</div></div><div class="m"><div class="k">Load</div><div class="v">'+Math.round(tot.tss)+'<small>TSS</small></div></div>'+
-    (runWeek?'<div class="m"><div class="k">Key sessions</div><div class="v">'+qd+'<small>/ '+qual.length+'</small></div></div>':'')+
-    '<div class="m"><div class="k">Elevation</div><div class="v">'+Math.round(dts.reduce((q,dd)=>q+Object.values(S.runs).filter(r=>r.date===dd&&isRun(r)).reduce((a,r)=>a+(+r.elev||+r.ascent||0),0),0))+'<small>m</small></div></div>'+
-    '</div><button class="linkrow" type="button" data-wkopen="'+days7[0].date+'"><span>Week detail</span><span aria-hidden="true">›</span></button></section>';}
-  h+='<section><div class="days">'+days7.map(x=>dayRow(x)).join("")+'</div></section>';
-  const shown=new Set((w.days||[]).map(x=>x.date));
-  h+=loggedSection(loggedActivities().filter(r=>!shown.has(r.date)),"Logged");
-  h+=paceCard(true);
-  if(S.notes[0])h+='<section class="card pad"><div class="eb acc">From Claude · '+esc(S.notes[0].date?fD(S.notes[0].date):"")+'</div><h2>'+esc(S.notes[0].title||"")+'</h2><div class="prose"><p>'+esc((S.notes[0].body||"").split("\n")[0])+'</p></div><button class="btn ghost" style="margin-top:12px" data-tab="coach">All updates</button></section>';
-  h+='</div></div>';
-  return h;
+function coachUpdate(){
+  if(!S.notes[0]) return "";
+  const n=S.notes[0];
+  return '<section class="card pad" id="home-notes"><div class="eb acc">From Claude · '+esc(n.date?fD(n.date):"")+'</div><h2>'+esc(n.title||"")+'</h2><div class="prose"><p>'+esc((n.body||"").split("\n")[0])+'</p></div><button class="btn ghost" style="margin-top:12px" data-tab="coach">All updates</button></section>';
 }
+function todaySession(){
+  const hit=dayIndex()[TODAY];
+  if(hit) return sessionCard(hit.d, hit.w, "Today");
+  return '<section class="card pad tapday" id="home-today" data-day="'+TODAY+'"><div class="eb">Today · '+fD(TODAY,true)+'</div><h2>Nothing planned</h2><button class="btn" type="button" data-log="'+TODAY+'" style="margin-top:12px">Log session</button></section>';
+}
+function vHome(){
+  if(S.loaded&&!(S.settings.setup&&S.settings.setup.done))return vSetup();
+  const ws=weekList();
+  if(!S.loaded) return head("Today","Home","")+ '<div class="card pad"><div class="empty">Loading your plan</div></div>';
+  if(!ws.length){
+    const name=(S.settings.setup||{}).name||"";
+    return head("Today","Home","Thanks "+name+". Your coach is building your plan. You can log gym sessions and sports in the meantime.")+
+      todaySession()+
+      '<div class="card pad"><div class="empty">The plan appears here once loaded.<div style="margin-top:12px"><button class="btn ghost" type="button" data-setup="1">Edit setup</button></div></div></div>'+
+      coachUpdate();
+  }
+  const w=weekOf(TODAY)||ws[ws.length-1];
+  return head("Today","Home",w.focus||"")+todaySession()+catBoard(w.days||[])+planSection()+coachUpdate();
+}
+function vToday(){return vHome();}
 
 function pastSection(){
   const ws=pastWeeks(); if(!ws.length)return "";
@@ -1801,13 +1780,13 @@ function pastSection(){
       '<div class="acts">'+sessions.map(s=>{const c=pastCat(s.type);return '<div class="act"><span class="chip'+catCls(c)+'">'+esc(CAT_NAME[c]||"Other")+'</span><span class="act-a"><b>'+esc(s.title||s.type||"Session")+'</b><span class="sub">'+esc([s.day,s.date?fD(s.date):"",s.planned_summary,s.done?"Done":"",s.rpe?"RPE "+s.rpe:""].filter(Boolean).join(" · "))+'</span></span></div>';}).join("")+'</div></details>';
   }).join("")+'</div>';
 }
-function vPlan(){
+function planSection(){
   const all=weekList(); const ws=visiblePlanWeeks(); const past=UI.showPast?pastSection():"";
-  if(!all.length)return head("Plan","The block")+weekGrid(ws)+past+'<div class="card pad"><div class="empty">The plan appears here once loaded.</div></div>';
+  if(!all.length)return '<div id="home-plan">'+weekGrid(ws)+past+'<div class="card pad"><div class="empty">The plan appears here once loaded.</div></div></div>';
   const cur=weekOf(melbourneToday()); if(UI.openWeek==null)UI.openWeek=cur?cur.n:(ws[0]?ws[0].n:-1);
   const cats=ws.reduce((o,w)=>{const b=weekBreakdown(w.days||[]);o.gym+=b.planned.gym;o.ball+=b.planned.ball;o.run+=b.planned.runKm;return o;},{gym:0,ball:0,run:0});
   const span=planBounds();
-  let h=head("The block · "+span.n+" weeks","Gym, basketball and running",fD(span.start)+" to "+fD(span.end)+". Completed kilometres are laid over the plan.");
+  let h='<div id="home-plan"><div class="head"><div class="eb acc">The block · '+span.n+' weeks</div><h2>Gym, basketball and running</h2><div class="lede">'+fD(span.start)+' to '+fD(span.end)+'. Completed kilometres are laid over the plan.</div></div>';
   h+=weekGrid(ws);
   h+=past;
   h+='<section class="card pad dash" id="dose"><div class="ch"><div><div class="eb">Plan</div><h2>Training dose</h2><div class="lede">Days each week. Later weeks are hatched.</div></div><div class="metrics dash-stats">'+statTrio(["Gym",cats.gym,"days"],["Basketball",cats.ball,"days"],["Run",km1(cats.run),"km"])+'</div></div>'+doseChart(ws)+'</section>';
@@ -1816,9 +1795,10 @@ function vPlan(){
     h+='<button class="weekhead'+(cur&&cur.n===w.n?' cur':'')+'" data-week="'+w.n+'" aria-expanded="'+open+'"><span class="w">W'+w.n+'</span><span style="flex:1;min-width:0"><span style="display:block;font-weight:500">'+esc(w.phase)+'</span><span class="sub" style="display:block">'+fD(w.start)+' · '+catLine(w.days||[])+(a?' · '+a.toFixed(0)+' km done':'')+'</span>'+(a&&p?'<span class="minibar" style="display:block"><span style="display:block;height:100%;width:'+Math.min(100,a/p*100)+'%;background:var(--cat-run)"></span></span>':'')+'</span><span class="sub">'+(open?'Hide':'Show')+'</span></button>';
     if(open)h+='<div style="padding:0 0 16px">'+(w.focus?'<div class="coach" style="margin-bottom:10px"><span class="eb">Focus</span><span>'+esc(w.focus)+'</span></div>':'')+'<div class="days">'+w.days.map(x=>dayRow(x)).join("")+'</div></div>';
   });
-  h+='</section>';
+  h+='</section></div>';
   return h;
 }
+function vPlan(){return vHome();}
 
 function dayPlanCard(){
   const today=DOW[new Date().getDay()];
@@ -2551,15 +2531,15 @@ function runFold(date){
 }
 function openDay(date, opts){
   if(!(opts&&opts.quiet)&&location.hash!=="#day/"+date){
-    const tab=(UI.tab&&{today:1,gym:1,ball:1,run:1,meals:1,plan:1,coach:1,profile:1}[UI.tab])?UI.tab:"today";
-    writeHash(tab,date,false);
+    const tab=(UI.tab&&{home:1,today:1,plan:1,gym:1,ball:1,run:1,meals:1,coach:1,profile:1}[UI.tab])?UI.tab:"home";
+    writeHash(tab==="today"||tab==="plan"?"home":tab,date,false);
   }
   const it=dayIndex()[date]; const lg=S.log[date]||{};
   const kind=dayLogKind(date);
   const sc=(name,from,to,val,last)=>{let b="";for(let i=from;i<=to;i++)b+='<button type="button" data-'+name+'="'+i+'" aria-pressed="'+(val===i)+'">'+(i===to&&last?last:i)+'</button>';return '<div class="scale" id="'+name+'S">'+b+'</div>';};
   const typeTab=kind==="ball"?"ball":kind==="gym"?"gym":kind==="run"?"run":"";
   let x='<div class="sheet-top"><span class="eb">'+fD(date,true)+'</span><button class="btn ghost" id="shX" type="button">Close</button></div>';
-  x+='<div class="pagelinks"><button type="button" data-tab="plan">Plan</button>'+(typeTab?'<button type="button" data-tab="'+typeTab+'">'+esc(CAT_NAME[typeTab])+'</button>':'')+'</div>';
+  x+='<div class="pagelinks"><button type="button" data-tab="home">Home</button>'+(typeTab?'<button type="button" data-tab="'+typeTab+'">'+esc(CAT_NAME[typeTab])+'</button>':'')+'</div>';
   if(it)x+=sessionCard(it.d,it.w,"Session").replace(/<button class="btn" data-log[^>]*>Log session<\/button>/,"");
   x+=moveChips(date);
   const shown=actsForKind(date, kind);
@@ -4440,11 +4420,10 @@ function listenWealth(){
 }
 
 /* Shell */
-const TABS=[["today","Today"],["gym","Gym"],["ball","Basketball"],["run","Run"],["meals","Meals"],["plan","Plan"],["coach","Coach"]];
+const TABS=[["home","Home"],["gym","Gym"],["ball","Basketball"],["run","Run"],["meals","Meals"],["coach","Coach"]];
 const WEALTH_TABS=[["overview","Overview"],["budget","Budget"],["goals","Goals"],["invest","Invest"],["worth","Worth"],["bills","Bills"]];
 const NAV_ICON={
-  today:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 10.5 12 4.5l7.5 6V20a.5.5 0 0 1-.5.5h-4.5V14h-5v6.5H5a.5.5 0 0 1-.5-.5z"/></svg>',
-  plan:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3.5V7M16 3.5V7M4 10h16"/></svg>',
+  home:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 10.5 12 4.5l7.5 6V20a.5.5 0 0 1-.5.5h-4.5V14h-5v6.5H5a.5.5 0 0 1-.5-.5z"/></svg>',
   fitness:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 13.5c1.8-5 3.6-5.2 5.4-.4 1.6 4.4 3.2 4.6 5 .2 1.8-4.4 3.4-4.8 5.6.2"/></svg>',
   gym:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 8.5v7M17.5 8.5v7M3.5 10v4M20.5 10v4M6.5 12h11"/></svg>',
   run:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="15" cy="4.8" r="1.35"/><path d="M7.5 20.5 10 15l2.4 1.2 1.6-3.4-2.8-1.5 1.3-2.4 3.8 1.8 1.1-2.2"/></svg>',
@@ -4464,7 +4443,7 @@ function paintArea(){
 }
 function render(){
   if(UI.area==="wealth"&&!signedIn()){applyGate();return;}
-  const y=scrollY; const v={today:vToday,plan:vPlan,gym:vGym,ball:vBall,run:vRuns,runs:vRuns,meals:vMeals,coach:vCoach,fitness:vFitness,profile:vProfile,overview:vWealthOverview,budget:vBudget,goals:vGoals,invest:vInvest,worth:vWorth,bills:vBills}[UI.tab]||(UI.area==="wealth"?vWealthOverview:vToday);
+  const y=scrollY; const v={home:vHome,today:vHome,plan:vHome,gym:vGym,ball:vBall,run:vRuns,runs:vRuns,meals:vMeals,coach:vCoach,fitness:vFitness,profile:vProfile,overview:vWealthOverview,budget:vBudget,goals:vGoals,invest:vInvest,worth:vWorth,bills:vBills}[UI.tab]||(UI.area==="wealth"?vWealthOverview:vHome);
   $("#app").innerHTML=v();
   if(S.db)passwordPrompt();
   const tabs=UI.area==="wealth"?WEALTH_TABS:TABS;
@@ -4486,23 +4465,26 @@ function render(){
     if(r.day&&!$("#scrim"))openDay(r.day,{quiet:true});
   }
 }
-const TABS_OK={today:1,gym:1,ball:1,run:1,meals:1,plan:1,coach:1,profile:1};
+const TABS_OK={home:1,today:1,plan:1,gym:1,ball:1,run:1,meals:1,coach:1,profile:1};
+function canonTab(t){return t==="today"||t==="plan"?"home":t;}
 const WEALTH_OK={overview:1,budget:1,goals:1,invest:1,worth:1,bills:1,wealth:1};
 function routeFromHash(){
   const raw=(location.hash||"").replace(/^#\/?/,"");
   const bits=raw.split("/"), a=bits[0], b=bits[1]||"";
   if(a==="day"&&/^\d{4}-\d{2}-\d{2}$/.test(b)){
-    const it=dayIndex()[b]; let tab="today";
+    const it=dayIndex()[b]; let tab="home";
     if(it){const c=catOf(it.d); if(c==="gym"||c==="ball"||c==="run")tab=c;}
     return {tab,day:b,area:"health"};
   }
   if(a==="wealth")return {tab:"overview",day:"",area:"wealth"};
   if(WEALTH_OK[a])return {tab:a,day:"",area:"wealth"};
-  if(TABS_OK[a])return {tab:a,day:"",area:a==="profile"?UI.area:"health"};
-  return {tab:TABS_OK[UI.tab]?UI.tab:(UI.area==="wealth"?"overview":"today"),day:"",area:UI.area};
+  if(a==="today"||a==="plan"||a==="home")return {tab:"home",day:"",area:"health"};
+  if(TABS_OK[a])return {tab:canonTab(a),day:"",area:a==="profile"?UI.area:"health"};
+  return {tab:TABS_OK[UI.tab]?canonTab(UI.tab):(UI.area==="wealth"?"overview":"home"),day:"",area:UI.area};
 }
 let hashLock=false;
 function writeHash(tab, day, replace){
+  tab=canonTab(tab);
   const next=day?"#day/"+day:(tab==="overview"?"#wealth":"#"+tab);
   if(location.hash===next)return;
   hashLock=true;
@@ -4514,7 +4496,7 @@ function writeHash(tab, day, replace){
 function setArea(a){
   UI.area=a==="wealth"?"wealth":"health";
   try{localStorage.setItem("dt-area",UI.area);}catch(e){}
-  const t=UI.area==="wealth"?(WEALTH_OK[UI.tab]&&UI.tab!=="wealth"?UI.tab:"overview"):(TABS_OK[UI.tab]&&UI.tab!=="profile"?UI.tab:"today");
+  const t=UI.area==="wealth"?(WEALTH_OK[UI.tab]&&UI.tab!=="wealth"?UI.tab:"overview"):canonTab(TABS_OK[UI.tab]&&UI.tab!=="profile"?UI.tab:"home");
   if(!signedIn()){
     UI.tab=t;
     try{localStorage.setItem("dt-tab",t);}catch(e){}
@@ -4525,6 +4507,7 @@ function setArea(a){
   setTab(t);
 }
 function setTab(t){
+  t=canonTab(t);
   if(WEALTH_OK[t]) UI.area="wealth";
   else if(t!=="profile") UI.area="health";
   UI.tab=WEALTH_OK[t]&&t==="wealth"?"overview":t; UI.sel=null;
@@ -4533,14 +4516,17 @@ function setTab(t){
   writeHash(UI.tab,"",false);
   render(); scrollTo(0,0);
 }
-window.addEventListener("popstate",()=>{
-  if(hashLock)return;
+function applyRoute(){
+  const raw=(location.hash||"").replace(/^#\/?/,"").split("/")[0];
+  if(raw==="today"||raw==="plan"){writeHash("home","",true);}
   const r=routeFromHash();
   UI.tab=r.tab; if(r.area) UI.area=r.area;
-  try{localStorage.setItem("dt-tab",r.tab);localStorage.setItem("dt-area",UI.area);}catch(e){}
+  try{localStorage.setItem("dt-tab",UI.tab);localStorage.setItem("dt-area",UI.area);}catch(e){}
   $("#sheetRoot").innerHTML="";
   render();
-});
+}
+window.addEventListener("popstate",()=>{if(!hashLock)applyRoute();});
+window.addEventListener("hashchange",()=>{if(!hashLock)applyRoute();});
 document.addEventListener("click",e=>{
   const fold=e.target.closest(".foldbtn");
   if(fold){
@@ -4626,7 +4612,7 @@ function bind(r){
   r.querySelectorAll("[data-week]").forEach(b=>b.onclick=()=>{const n=+b.dataset.week;UI.openWeek=UI.openWeek===n?-1:n;render();});
   r.querySelectorAll("[data-showpast]").forEach(b=>b.onclick=()=>{UI.showPast=!UI.showPast;render();});
   r.querySelectorAll(".rb-scroll").forEach(sc=>{const el=sc.querySelector(".rb.is-next");if(el)sc.scrollLeft=Math.max(0,el.offsetLeft-sc.clientWidth/2+el.offsetWidth/2);});
-  r.querySelectorAll("[data-day]").forEach(b=>b.onclick=()=>openDay(b.dataset.day));
+  r.querySelectorAll("[data-day]").forEach(b=>b.onclick=e=>{const inner=e.target.closest("button, a, input, textarea, select, label"); if(inner&&inner!==b) return; openDay(b.dataset.day);});
   r.querySelectorAll("[data-log]").forEach(b=>b.onclick=()=>openDay(b.dataset.log));
   const cf=$("#chatF",r);
   if(cf){const box=$("#chat",r);box.scrollTop=0;cf.onsubmit=e=>{e.preventDefault();sendChat($("#chatIn",r).value.trim());};
@@ -4691,9 +4677,8 @@ function sched(){cancelAnimationFrame(rq);rq=requestAnimationFrame(()=>{if(typin
 function commitPaint(){cancelAnimationFrame(rq);pend=false;render();}
 document.addEventListener("focusout",()=>setTimeout(()=>{if(pend&&!typing()&&!$("#scrim"))sched();},60));
 new MutationObserver(()=>{if(pend&&!$("#scrim"))sched();}).observe($("#sheetRoot"),{childList:true});
-if(!location.hash){const t=UI.area==="wealth"?(WEALTH_OK[UI.tab]?UI.tab:"overview"):(TABS_OK[UI.tab]?UI.tab:"today"); UI.tab=t; writeHash(t,"",true);}
-else {const r=routeFromHash(); UI.tab=r.tab; if(r.area) UI.area=r.area;}
-render();
+if(!location.hash){const t=UI.area==="wealth"?(WEALTH_OK[UI.tab]?UI.tab:"overview"):(TABS_OK[UI.tab]?canonTab(UI.tab):"home"); UI.tab=t; writeHash(t,"",true); render();}
+else applyRoute();
 function startData(){
   if(S.db)return; hideSignin();
   const db=makeDb(SB); S.db=db;
