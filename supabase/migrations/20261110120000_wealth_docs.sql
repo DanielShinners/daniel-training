@@ -22,7 +22,7 @@ create table if not exists public.wealth_docs (
 );
 
 comment on table public.wealth_docs is
-  'Private wealth docs. ids: budget, goals, networth, bills. Same id+data shape as dt_docs, without a collection column.';
+  'Private wealth docs. ids: budget, goals, networth, bills, investments, insurance. Same id+data shape as dt_docs, without a collection column.';
 
 alter table public.wealth_docs enable row level security;
 

@@ -188,6 +188,9 @@ h2{font-size:22px;font-weight:400;letter-spacing:-.03em;line-height:var(--space-
 .dash-stats .v.gl.down{color:#EF4444}
 .alloc{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 12px;align-items:center}
 .alloc .wtrack{grid-column:1/-1;margin-top:0}
+.scopes{display:flex;gap:2px;background:var(--sunken);border-radius:999px;padding:3px}
+.scopes button{flex:1;min-height:36px;border-radius:999px;font-size:13px;font-weight:500;color:var(--ink2)}
+.scopes button[aria-pressed="true"]{background:var(--wealth);color:#000}
 #topbar:not([hidden]) ~ #app{padding-bottom:calc(156px + env(safe-area-inset-bottom,0px))}
 #topbar:not([hidden]) ~ #fab{bottom:calc(88px + env(safe-area-inset-bottom,0px))}
 #topbar:not([hidden]) ~ #toastRoot .toast{bottom:calc(92px + env(safe-area-inset-bottom,0px))}
@@ -801,8 +804,8 @@ function applyGate(){
 
 const S={chat:[],weeks:{},pastweeks:{},runs:{},log:{},lifts:{},notes:[],weights:{},adjust:{},basketball:{},settings:{},db:null,loaded:false};
 function hasVdot(){const v=S.settings&&S.settings.vdot;return v!=null&&v!==""&&isFinite(+v)&&+v>0;}
-const UI={tab:"today",area:"health",sel:null,openWeek:null,recipe:4,showPast:false};
-try{const t=localStorage.getItem("dt-tab"); if(t) UI.tab=t; const a=localStorage.getItem("dt-area"); if(a==="health"||a==="wealth") UI.area=a;}catch(e){}
+const UI={tab:"today",area:"health",scope:"all",sel:null,openWeek:null,recipe:4,showPast:false};
+try{const t=localStorage.getItem("dt-tab"); if(t) UI.tab=t; const a=localStorage.getItem("dt-area"); if(a==="health"||a==="wealth") UI.area=a; const sc=localStorage.getItem("dt-scope"); if(sc==="all"||sc==="personal"||sc==="family") UI.scope=sc;}catch(e){}
 
 /* utils */
 const $=(s,r=document)=>r.querySelector(s);
@@ -2990,42 +2993,69 @@ function gymCtx(){const a=liftAgg(addD(TODAY,-27),TODAY);if(!a.n)return "GYM: no
 
 /* Wealth: example figures until wealth_docs has rows. Never written back. */
 const WEALTH_EXAMPLE={
-  budget:{month:"2026-11",income:8200,categories:[
-    {name:"Rent",budget:2400,spent:2400},{name:"Groceries",budget:700,spent:640},{name:"Eating out",budget:250,spent:310},{name:"Transport",budget:150,spent:88},{name:"Fun",budget:200,spent:120},{name:"Fees",budget:0,spent:15}
+  budget:{month:"2026-11",incomeSources:[
+    {id:"pay-salary",name:"Example salary",amount:3800,cadence:"Fortnightly",nextPay:"2026-11-18",scope:"personal",basis:"gross",isEstimate:false,from:"acct-day"},
+    {id:"pay-side",name:"Example side",amount:400,cadence:"Monthly",nextPay:"2026-11-28",scope:"personal",basis:"net",isEstimate:true,from:"acct-day"},
+    {id:"pay-house",name:"Example household",amount:500,cadence:"Weekly",nextPay:"2026-11-13",scope:"family",basis:"net",isEstimate:false,from:"acct-day"},
+    {id:"pay-bonus",name:"Example bonus",amount:1000,cadence:"once",date:"2026-12-15",scope:"personal",basis:"gross",isEstimate:false,from:"acct-day"}
+  ],categories:[
+    {id:"cat-rent",name:"Rent",budget:2400,spent:2400,scope:"family"},
+    {id:"cat-groceries",name:"Groceries",budget:700,spent:640,scope:"family"},
+    {id:"cat-eat",name:"Eating out",budget:250,spent:310,scope:"personal"},
+    {id:"cat-transport",name:"Transport",budget:150,spent:88,scope:"family"},
+    {id:"cat-fun",name:"Fun",budget:200,spent:120,scope:"personal"},
+    {id:"cat-fees",name:"Fees",budget:0,spent:15,scope:"personal"}
   ],transactions:[
-    {date:"2026-11-09",name:"Example Grocer",category:"Groceries",amount:-84.2},
-    {date:"2026-11-08",name:"Example Cafe",category:"Eating out",amount:-18.5},
-    {date:"2026-11-07",name:"Example Transit",category:"Transport",amount:-9.2},
-    {date:"2026-11-06",name:"Example Cinema",category:"Fun",amount:-32},
-    {date:"2026-11-05",name:"Example refund",category:"Groceries",amount:12.5},
-    {date:"2026-11-01",name:"Example Pay",category:"Income",amount:4100}
+    {date:"2026-11-09",name:"Example Grocer",category:"Groceries",amount:-84.2,scope:"family"},
+    {date:"2026-11-08",name:"Example Cafe",category:"Eating out",amount:-18.5,scope:"personal"},
+    {date:"2026-11-07",name:"Example Transit",category:"Transport",amount:-9.2,scope:"family"},
+    {date:"2026-11-06",name:"Example Cinema",category:"Fun",amount:-32,scope:"personal"},
+    {date:"2026-11-05",name:"Example refund",category:"Groceries",amount:12.5,scope:"family"},
+    {date:"2026-11-01",name:"Example Pay",category:"Income",amount:4100,scope:"personal"}
   ]},
-  goals:{items:[
-    {name:"Emergency fund",target:10000,saved:4200},{name:"Holiday",target:3000,saved:1800},{name:"House deposit",target:40000,saved:12000},{name:"Buffer",target:400,saved:500}
+  goals:{emergency:{saved:8400,monthlyExpenses:2800},items:[
+    {name:"Emergency fund",target:16800,saved:8400},
+    {name:"Holiday",target:3000,saved:1800,targetDate:"2027-06-01",perFortnight:60,linkedAccount:"acct-save"},
+    {name:"House deposit",target:40000,saved:12000,targetDate:"2030-01-01",perFortnight:400,linkedAccount:"acct-save"},
+    {name:"Buffer",target:400,saved:500}
   ]},
   networth:{accounts:[
-    {name:"Everyday",kind:"Cash",balance:4200},{name:"Saver",kind:"Savings",balance:12800},{name:"Super",kind:"Super",balance:64000}
+    {id:"acct-day",name:"Everyday",kind:"Cash",balance:4200,scope:"family"},
+    {id:"acct-save",name:"Saver",kind:"Savings",balance:12800,scope:"family",ratePa:4.5,rateType:"variable"},
+    {id:"acct-super",name:"Example super",kind:"Super",balance:64000,scope:"personal",super:{fund:"Example super fund",employerSG:1200,concessionalYTD:18000,nonConcessionalYTD:0,carryForward:5000,insuranceInside:250000,asAt:"2026-10-31"}},
+    {id:"acct-hecs",name:"Example study loan",kind:"HECS-HELP",balance:8500,scope:"personal",indexationDate:"2027-06-01"},
+    {id:"acct-lump",name:"Example Aus lump",kind:"Investments",balance:10800,scope:"personal",linkedTo:"hold-exa"},
+    {id:"acct-old",name:"Example closed",kind:"Cash",balance:100,scope:"personal",excludeFromWorth:true}
   ],history:[
-    {month:"2026-11",total:99500},{month:"2026-06",total:91000},{month:"2026-09",total:96300},{month:"2026-07",total:92800},{month:"2026-10",total:98400},{month:"2026-08",total:94100}
+    {month:"2026-06",total:300000},{month:"2026-07",total:305000},{month:"2026-08",total:310000},{month:"2026-09",total:314000},{month:"2026-10",total:318000},{month:"2026-11",total:322700}
   ]},
   bills:{items:[
-    {name:"Example power",amount:60,due:"2026-11-02",cadence:"Monthly"},
-    {name:"Phone",amount:55,due:"2026-11-12",cadence:"Monthly"},
-    {name:"Example pass",amount:20,due:"2026-11-14",cadence:"Weekly"},
-    {name:"Streaming",amount:18,due:"2026-11-18",cadence:"Monthly"},
-    {name:"Gym membership",amount:89,due:"2026-11-20",cadence:"Monthly"},
-    {name:"Insurance",amount:140,due:"2026-11-28",cadence:"Monthly"},
-    {name:"Example cover",amount:120,due:"2026-11-30",cadence:"Yearly"},
-    {name:"Rent",amount:2400,due:"2026-12-01",cadence:"Monthly"},
-    {name:"Example levy",amount:90,due:"2026-12-15",cadence:"Quarterly"}
+    {id:"bill-power",name:"Example power",amount:60,due:"2026-11-02",cadence:"Monthly",scope:"family",status:"active",paidFrom:"acct-day"},
+    {id:"bill-phone",name:"Phone",amount:55,due:"2026-11-12",cadence:"Monthly",scope:"personal",status:"active",paidFrom:"acct-day"},
+    {id:"bill-pass",name:"Example pass",amount:20,due:"2026-11-14",cadence:"Weekly",scope:"personal",status:"active"},
+    {id:"bill-stream",name:"Streaming",amount:18,due:"2026-11-18",cadence:"Monthly",scope:"family",status:"trial",trialEnds:"2026-11-20"},
+    {id:"bill-gym",name:"Gym membership",amount:89,due:"2026-11-20",cadence:"Monthly",scope:"personal",status:"active"},
+    {id:"bill-ins",name:"Insurance",amount:140,due:"2026-11-28",cadence:"Monthly",scope:"family",status:"active"},
+    {id:"bill-cover",name:"Example cover",amount:120,due:"2026-11-30",cadence:"Yearly",scope:"family",status:"active"},
+    {id:"bill-rent",name:"Rent",amount:2400,due:"2026-12-01",cadence:"Monthly",scope:"family",status:"active",paidFrom:"acct-day"},
+    {id:"bill-levy",name:"Example levy",amount:90,due:"2026-12-15",cadence:"Quarterly",scope:"family",status:"active"},
+    {id:"bill-cancel",name:"Example extra",amount:12,due:"2026-11-16",cadence:"Monthly",scope:"personal",status:"cancelled",accessUntil:"2026-12-01"},
+    {id:"bill-usd",name:"Example overseas",amount:15,due:"2026-11-22",cadence:"Monthly",scope:"personal",status:"active",currency:"USD"},
+    {id:"bill-import",name:"Example import",amount:10,due:"2026-11-25",cadence:"Monthly",scope:"personal",status:"active",currency:"USD",audAmount:16}
   ]},
   investments:{holdings:[
-    {name:"Example Aus shares ETF",ticker:"EXA",type:"etf",platform:"Example broker",units:120,value:10800,cost:9000,asAt:"2026-11-01"},
-    {name:"Example global ETF",ticker:"EXG",type:"fund",platform:"Example broker",units:80,value:9600,cost:10000,asAt:"2026-11-01"},
-    {name:"Example company",ticker:"EXC",type:"share",platform:"Example broker",units:50,value:2500,cost:2000,asAt:"2026-10-15"},
-    {name:"Example term",type:"other",value:800,cost:800,asAt:"2026-09-01"}
+    {id:"hold-exa",name:"Example Aus shares ETF",ticker:"EXA",type:"etf",platform:"Example broker",units:120,price:90,value:10800,cost:9000,asAt:"2026-11-01",scope:"personal"},
+    {id:"hold-exg",name:"Example global ETF",ticker:"EXG",type:"fund",platform:"Example broker",units:80,price:120,value:9600,cost:10000,asAt:"2026-11-01",scope:"personal"},
+    {id:"hold-exc",name:"Example company",ticker:"EXC",type:"share",platform:"Example broker",units:50,price:48,value:2500,cost:2000,asAt:"2026-10-15",scope:"personal"},
+    {id:"hold-term",name:"Example term",type:"other",value:800,cost:800,asAt:"2026-09-01",scope:"personal"},
+    {id:"hold-unk",name:"Example unlisted",type:"other",value:1500,asAt:"2026-11-08",scope:"personal"}
   ],properties:[
-    {name:"Home",value:650000,mortgage:420000,asAt:"2026-10-01"}
+    {id:"prop-home",name:"Home",value:650000,mortgage:420000,asAt:"2026-07-15",scope:"family",offsetBalance:15000,redrawAvailable:8000,ratePa:6.1,repayment:2800,repaymentCadence:"Monthly"},
+    {id:"prop-lot",name:"Example lot",value:20000,mortgage:25000,asAt:"2026-11-01",scope:"personal"}
+  ]},
+  insurance:{items:[
+    {id:"ins-home",type:"Home",insurer:"Example cover",premium:140,cadence:"Monthly",renewal:"2026-11-28"},
+    {id:"ins-life",type:"Life",insurer:"Example life",premium:45,cadence:"Monthly",renewal:"2027-03-01"}
   ]}
 };
 let wealthStore=null, wealthLive=false;
@@ -3047,6 +3077,8 @@ function audTxn(n){const v=+n||0, body=aud(Math.abs(v)).replace(/^−/,""); retu
 function ymLabel(ym){const p=String(ym||"").split("-"); const m=+p[1]; return m?MON[m-1]+" "+p[0]:"";}
 function monthShort(ym){const m=+String(ym||"").split("-")[1]; return m?MON[m-1]:"";}
 function exampleChip(){return wealthLive?"":'<span class="chip ex">Example data</span>';}
+function miniChip(label){return '<span class="chip">'+esc(label)+'</span>';}
+function audBar(n){const v=Math.round(+n||0), abs=Math.abs(v); return (v<0?"−":"")+"$"+abs.toLocaleString("en-AU");}
 function wealthHead(eb,title,lede){return '<div class="head cat-wealth"><div class="ch"><div><div class="eb acc">'+esc(eb)+'</div><h1>'+esc(title)+'</h1>'+(lede?'<div class="lede">'+esc(lede)+'</div>':'')+'</div>'+exampleChip()+'</div></div>';}
 function progressRing(pct){
   const n=8, c=18, r=13.2, circ=2*Math.PI*r, gap=Math.min(26,360/n*0.24), seg=(360/n)-gap;
@@ -3061,57 +3093,116 @@ function progressRing(pct){
 }
 function budgetTone(spent,budget){if((budget<=0&&spent>0)||spent>budget)return "over"; if(spent<budget)return "under"; return "even";}
 function budgetPct(spent,budget){if(budget<=0)return spent>0?100:0; return Math.min(100,Math.round(spent/budget*100));}
+function scopeOf(item){const s=String(item&&item.scope||"").trim().toLowerCase(); return s==="family"?"family":"personal";}
+function inScope(item){if(!UI.scope||UI.scope==="all")return true; return scopeOf(item)===UI.scope;}
+function scopeBar(){
+  const b=(id,label)=>'<button type="button" data-scope="'+id+'" aria-pressed="'+(UI.scope===id)+'">'+label+'</button>';
+  return '<div class="scopes" role="group" aria-label="Whose money">'+b("all","All")+b("personal","Personal")+b("family","Family")+'</div>';
+}
+function scopeWord(item){return scopeOf(item)==="family"?"Family":"Personal";}
 function budgetModel(){
-  const b=wealthDoc("budget"), cats=(b.categories||[]).filter(c=>c&&c.name);
+  const b=wealthDoc("budget"), cats=(b.categories||[]).filter(c=>c&&c.name&&inScope(c));
   const spent=cats.reduce((a,c)=>a+(+c.spent||0),0), budget=cats.reduce((a,c)=>a+(+c.budget||0),0);
-  const income=+b.income||0;
-  return {b,cats,spent,budget,income,allocate:income-budget};
+  const sources=(b.incomeSources||[]).filter(s=>s&&inScope(s));
+  const recurring=sources.filter(s=>!isOnce(s.cadence));
+  const income=sources.length?recurring.reduce((a,s)=>a+monthlyEquiv(+s.amount||0,s.cadence),0):(+b.income||0);
+  const estimate=recurring.some(s=>sourceBasis(s)==="gross"||s.isEstimate);
+  const grossOnly=recurring.length>0&&recurring.every(s=>sourceBasis(s)==="gross");
+  const today=melbourneToday();
+  const next=(recurring.filter(s=>s.nextPay&&String(s.nextPay)>=today).sort((a,c)=>String(a.nextPay).localeCompare(String(c.nextPay)))[0])||null;
+  return {b,cats,spent,budget,income,allocate:income-budget,sources,next,estimate,grossOnly};
 }
 function goalBits(g){
   const saved=+g.saved||0, target=+g.target||0, over=saved>target;
   const done=target<=0?saved>0:saved>=target;
   const pct=target>0?Math.min(100,Math.round(saved/target*100)):(saved>0?100:0);
   const ratio=target>0?Math.min(1,saved/target):(saved>0?1:0);
-  return {saved,target,over,done,pct,ratio};
+  return {saved,target,over,done,pct,ratio,targetDate:String(g.targetDate||"").slice(0,10),perFortnight:g.perFortnight,linkedAccount:g.linkedAccount||""};
+}
+function goalPace(g){
+  if(!g.targetDate||g.done||g.perFortnight==null||g.perFortnight==="") return null;
+  const days=dBetween(melbourneToday(), g.targetDate);
+  if(!(days>0)) return {label:"Behind", cls:"down"};
+  const need=Math.max(0,g.target-g.saved)/(days/14);
+  const ok=+g.perFortnight+0.01>=need;
+  return {label:ok?"On track":"Behind", cls:ok?"up":"down"};
+}
+function emergencyModel(){
+  const e=(wealthDoc("goals")||{}).emergency; if(!e) return null;
+  const saved=+e.saved||0, monthly=+e.monthlyExpenses||0;
+  return {saved, monthly, months:monthly>0?saved/monthly:null};
+}
+function monthsTxt(n){
+  if(n==null||!isFinite(n)) return "—";
+  const r=Math.round(n*10)/10, abs=Math.abs(r);
+  const body=Math.abs(abs-Math.round(abs))<0.05?String(Math.round(abs)):abs.toFixed(1);
+  return body+" month"+(Math.abs(abs-1)<0.05?"":"s")+" covered";
 }
 function goalCards(items){
-  return '<div class="stack">'+items.map(g=>{
-    const x=goalBits(g);
-    const sub=aud(x.saved)+" of "+aud(x.target)+(x.over?" · Over by "+aud(x.saved-x.target):"");
-    return '<article class="goal">'+progressRing(x.ratio)+'<div class="move-n"><b>'+esc(g.name||"Goal")+'</b><span>'+sub+'</span></div><div class="amt">'+(x.done?"Done":x.pct+"%")+'</div></article>';
+  return '<div class="stack">'+items.map(raw=>{
+    const x=goalBits(raw);
+    const pace=goalPace(x);
+    const acct=x.linkedAccount?accountById(x.linkedAccount):null;
+    const bits=[aud(x.saved)+" of "+aud(x.target)];
+    if(x.over) bits.push("Over by "+aud(x.saved-x.target));
+    if(x.perFortnight!=null&&x.perFortnight!=="") bits.push(aud(x.perFortnight)+" / fortnight");
+    if(x.targetDate) bits.push(fD(x.targetDate));
+    if(acct) bits.push(acct.name);
+    const paceHtml=pace?'<div class="s gl '+pace.cls+'">'+pace.label+'</div>':"";
+    return '<article class="goal">'+progressRing(x.ratio)+'<div class="move-n"><b>'+esc(raw.name||"Goal")+'</b><span>'+bits.join(" · ")+'</span>'+paceHtml+'</div><div class="amt">'+(x.done?"Done":x.pct+"%")+'</div></article>';
   }).join("")+'</div>';
 }
 function billDue(b){return String(b&&b.due||"").slice(0,10);}
+function isOnce(cadence){return /^once$|^one-?off$/i.test(String(cadence||"").trim());}
 function monthlyEquiv(amount,cadence){
   const c=String(cadence||"").trim().toLowerCase(), n=+amount||0;
+  if(isOnce(c)) return 0;
   if(/fortnight|bi-?weekly/.test(c)) return n*26/12;
   if(/week/.test(c)) return n*52/12;
   if(/quarter/.test(c)) return n/3;
   if(/year|annual/.test(c)) return n/12;
   return n;
 }
+function sourceBasis(s){return String(s&&s.basis||"net").toLowerCase()==="gross"?"gross":"net";}
 function inBudget(name){
   const want=String(name||"").trim().toLowerCase(); if(!want)return false;
   return (wealthDoc("budget").categories||[]).some(c=>String(c.name||"").trim().toLowerCase()===want);
 }
+function billStatus(b){return String(b&&b.status||"active").toLowerCase();}
+function billMoney(b){
+  const cur=String(b&&b.currency||"AUD").trim().toUpperCase()||"AUD";
+  if(cur==="AUD") return {amount:+b.amount||0, aud:true, label:""};
+  if(b.audAmount!=null&&b.audAmount!==""&&isFinite(+b.audAmount)) return {amount:+b.audAmount, aud:true, label:cur+" "+b.amount};
+  return {amount:+b.amount||0, aud:false, label:cur};
+}
+function billCounts(b){return billStatus(b)!=="cancelled"&&billMoney(b).aud;}
 function billModel(){
   const today=melbourneToday(), month=today.slice(0,7);
-  const items=(wealthDoc("bills").items||[]).filter(Boolean).slice().sort((a,b)=>billDue(a).localeCompare(billDue(b))||String(a.name||"").localeCompare(String(b.name||"")));
-  const dueMonth=items.filter(b=>billDue(b).slice(0,7)===month);
-  const face=dueMonth.reduce((a,b)=>a+(+b.amount||0),0);
-  const equiv=items.reduce((a,b)=>a+monthlyEquiv(b.amount,b.cadence),0);
-  const next=items.find(b=>billDue(b)>=today)||null;
-  return {items,today,month,face,equiv,next};
+  const items=(wealthDoc("bills").items||[]).filter(b=>b&&inScope(b)).slice().sort((a,b)=>billDue(a).localeCompare(billDue(b))||String(a.name||"").localeCompare(String(b.name||"")));
+  const counted=items.filter(billCounts);
+  const dueMonth=counted.filter(b=>billDue(b).slice(0,7)===month);
+  const face=dueMonth.reduce((a,b)=>a+billMoney(b).amount,0);
+  const equiv=counted.reduce((a,b)=>a+monthlyEquiv(billMoney(b).amount,b.cadence),0);
+  const foreign=items.filter(b=>billStatus(b)!=="cancelled"&&!billMoney(b).aud);
+  const next=counted.find(b=>billDue(b)>=today)||null;
+  return {items,today,month,face,equiv,next,foreign};
 }
 function billRows(items){
   return '<div class="stack">'+items.map(b=>{
     const due=billDue(b), dd=/^\d{4}-\d{2}-\d{2}$/.test(due)?pISO(due):null;
     const tile=dd?'<span class="tile"><span class="a">'+DOW[dd.getDay()].toUpperCase()+'</span><span class="b">'+dd.getDate()+'</span><span class="a">'+MON[dd.getMonth()].toUpperCase()+'</span></span>':'<span class="tile"></span>';
-    const note=[b.cadence||"",inBudget(b.name)?"Also in budget":""].filter(Boolean).join(" · ");
-    return '<div class="wrow">'+tile+'<span style="min-width:0"><div class="t">'+esc(b.name||"Bill")+'</div><div class="s">'+esc(note)+'</div></span><span class="amt">'+aud(b.amount,true)+'</span></div>';
+    const money=billMoney(b), st=billStatus(b), acct=b.paidFrom?accountById(b.paidFrom):null;
+    const note=[b.cadence||"",scopeWord(b),b.trialEnds?"Trial ends "+fD(String(b.trialEnds).slice(0,10)):"",b.accessUntil&&st==="cancelled"?"Until "+fD(String(b.accessUntil).slice(0,10)):"",inBudget(b.name)?"Also in budget":"",acct?acct.name:"",money.aud&&money.label?money.label:""].filter(Boolean).join(" · ");
+    const chips=[st==="cancelled"?miniChip("Cancelled"):"",st==="trial"?miniChip("Trial"):"",!money.aud?miniChip(money.label):""].filter(Boolean).join(" ");
+    const amt=money.aud?aud(money.amount,true):aud(money.amount,true);
+    return '<div class="wrow">'+tile+'<span style="min-width:0"><div class="t">'+esc(b.name||"Bill")+'</div><div class="s">'+esc(note)+(chips?" "+chips:"")+'</div></span><span class="amt">'+amt+'</span></div>';
   }).join("")+'</div>';
 }
-function isLiability(a){return /^liabilit/i.test(String(a&&a.kind||"").trim());}
+function isLiability(a){const k=String(a&&a.kind||"").trim(); return /^liabilit/i.test(k)||/^hecs/i.test(k);}
+function accountById(id){return (wealthDoc("networth").accounts||[]).find(a=>a&&a.id===id)||null;}
+function ageDays(iso){iso=String(iso||"").slice(0,10); if(!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return null; return dBetween(iso, melbourneToday());}
+function costKnown(v){return v!=null&&v!==""&&isFinite(+v);}
+const SUPER_CAP=30000;
 function normName(s){return String(s||"").trim().toLowerCase();}
 function holdGroup(type){
   const t=String(type||"").toLowerCase();
@@ -3134,43 +3225,57 @@ function investDoc(){
 function investModel(){
   const doc=investDoc()||{};
   const holdings=(doc.holdings||[]).filter(h=>h&&h.name).map(h=>{
-    const value=+h.value||0, cost=+h.cost||0;
-    return {name:h.name, ticker:h.ticker||"", platform:h.platform||"", units:h.units, value, cost, gain:value-cost, group:holdGroup(h.type), asAt:String(h.asAt||"").slice(0,10)};
+    const value=+h.value||0, known=costKnown(h.cost), cost=known?+h.cost:null;
+    const units=h.units!=null&&h.units!==""&&isFinite(+h.units)?+h.units:null;
+    const price=h.price!=null&&h.price!==""&&isFinite(+h.price)?+h.price:null;
+    const asAt=String(h.asAt||"").slice(0,10), age=ageDays(asAt);
+    const implied=units!=null&&price!=null?units*price:null;
+    const priceOff=implied!=null&&value>0&&Math.abs(implied-value)/value>0.01;
+    return {id:h.id||"", name:h.name, ticker:h.ticker||"", platform:h.platform||"", units, price, value, cost, gain:known?value-cost:null, group:holdGroup(h.type), asAt, age, stale:age!=null&&age>30, priceOff, implied, scope:h.scope, linkedTo:h.linkedTo||"", excludeFromWorth:!!h.excludeFromWorth};
   });
   const properties=(doc.properties||[]).filter(p=>p&&p.name).map(p=>{
-    const value=+p.value||0, mortgage=Math.abs(+p.mortgage||0);
-    return {name:p.name, value, mortgage, equity:value-mortgage, asAt:String(p.asAt||"").slice(0,10)};
+    const value=+p.value||0, mortgage=Math.abs(+p.mortgage||0), offset=Math.abs(+p.offsetBalance||0);
+    const asAt=String(p.asAt||"").slice(0,10), age=ageDays(asAt);
+    return {id:p.id||"", name:p.name, value, mortgage, offset, redraw:+p.redrawAvailable||0, ratePa:p.ratePa, repayment:p.repayment, repaymentCadence:p.repaymentCadence||"", equity:value-mortgage, interestOn:Math.max(0,mortgage-offset), asAt, age, stale:age!=null&&age>90, scope:p.scope, linkedTo:p.linkedTo||"", excludeFromWorth:!!p.excludeFromWorth};
   });
-  const value=holdings.reduce((s,h)=>s+h.value,0), cost=holdings.reduce((s,h)=>s+h.cost,0);
+  const knownH=holdings.filter(h=>h.cost!=null);
+  const value=holdings.reduce((s,h)=>s+h.value,0);
+  const cost=knownH.reduce((s,h)=>s+h.cost,0);
+  const gain=knownH.reduce((s,h)=>s+(h.gain||0),0);
   const groups=["ETF/fund","Shares","Other"].map(name=>({name, value:holdings.filter(h=>h.group===name).reduce((s,h)=>s+h.value,0)}));
-  return {holdings, properties, value, cost, gain:value-cost, equity:properties.reduce((s,p)=>s+p.equity,0), groups};
+  return {holdings, properties, value, cost, gain, partial:knownH.length!==holdings.length, equity:properties.reduce((s,p)=>s+p.equity,0), groups};
 }
 function worthModel(){
   const inv=investModel();
   const accounts=(wealthDoc("networth").accounts||[]).filter(Boolean);
-  const holdNames=new Set(inv.holdings.map(h=>normName(h.name)));
-  const propNames=new Set(inv.properties.map(p=>normName(p.name)));
+  const holdIds=new Set(inv.holdings.map(h=>h.id).filter(Boolean));
+  const propIds=new Set(inv.properties.map(p=>p.id).filter(Boolean));
   const lines=[];
   accounts.forEach(a=>{
-    const n=normName(a.name);
-    if(holdNames.has(n)||propNames.has(n)) return;
-    if(isLiability(a)&&inv.properties.some(p=>p.mortgage>0&&(n===normName(p.name+" mortgage")||n==="mortgage"))) return;
+    if(a.excludeFromWorth) return;
+    if(a.linkedTo&&(holdIds.has(a.linkedTo)||propIds.has(a.linkedTo))) return;
+    if(a.id&&(inv.holdings.some(h=>h.linkedTo===a.id)||inv.properties.some(p=>p.linkedTo===a.id))) return;
+    if(!inScope(a)) return;
     const liability=isLiability(a);
-    lines.push({name:a.name||"Account", kind:a.kind||"Account", amount:liability?Math.abs(+a.balance||0):(+a.balance||0), liability});
+    lines.push({id:a.id||"", name:a.name||"Account", kind:a.kind||"Account", amount:liability?Math.abs(+a.balance||0):(+a.balance||0), liability, scope:a.scope, ratePa:a.ratePa, rateType:a.rateType, indexationDate:a.indexationDate, super:a.super});
   });
-  inv.holdings.forEach(h=>lines.push({name:h.name, kind:h.group, amount:h.value, liability:false}));
+  inv.holdings.forEach(h=>{
+    if(h.excludeFromWorth||!inScope(h)) return;
+    lines.push({id:h.id, name:h.name, kind:h.group, amount:h.value, liability:false, scope:h.scope});
+  });
   inv.properties.forEach(p=>{
-    lines.push({name:p.name, kind:"Property", amount:p.value, liability:false});
-    if(p.mortgage>0) lines.push({name:"Mortgage", kind:"Liability", amount:p.mortgage, liability:true, note:p.name});
+    if(p.excludeFromWorth||!inScope(p)) return;
+    lines.push({id:p.id, name:p.name, kind:"Property", amount:p.value, liability:false, scope:p.scope});
+    if(p.mortgage>0) lines.push({id:p.id+"-mortgage", name:p.name+" mortgage", kind:"Liability", amount:p.mortgage, liability:true, scope:p.scope});
   });
   const assetSum=lines.filter(l=>!l.liability).reduce((s,l)=>s+l.amount,0);
   const debtSum=lines.filter(l=>l.liability).reduce((s,l)=>s+l.amount,0);
   const net=assetSum-debtSum;
-  const superSum=lines.filter(l=>!l.liability&&/^super$/i.test(String(l.kind||""))).reduce((s,l)=>s+l.amount,0);
+  const superSum=(wealthDoc("networth").accounts||[]).filter(a=>a&&String(a.kind||"").toLowerCase()==="super"&&!a.excludeFromWorth).reduce((s,a)=>s+(+a.balance||0),0);
   const hist=(wealthDoc("networth").history||[]).filter(h=>h&&h.month).slice().sort((a,b)=>String(a.month).localeCompare(String(b.month)));
   const latest=hist.length?hist[hist.length-1]:null, prev=hist.length>1?hist[hist.length-2]:null;
   const change=latest&&prev?(+latest.total||0)-(+prev.total||0):null;
-  const stale=!!latest&&Math.abs((+latest.total||0)-net)>0.005;
+  const stale=!!(UI.scope==="all"||!UI.scope)&&!!latest&&Math.abs((+latest.total||0)-net)>0.005;
   return {lines,assetSum,debtSum,net,superSum,hist,latest,prev,change,since:prev?monthShort(prev.month):"",stale,hasDebt:lines.some(l=>l.liability),inv};
 }
 function worthNote(w){
@@ -3182,11 +3287,42 @@ function spendBars(cats,tab){
   const scale=dashScale(cats.map(c=>+c.spent||0));
   return cats.map(c=>{
     const tone=budgetTone(+c.spent||0,+c.budget||0);
-    return dashBar({label:c.name,accent:"wealth",h:(+c.spent||0)>0?scale(+c.spent||0):36,val:aud(c.spent),sub:tone,tone:tone==="even"?"":tone,tab:tab||"",aria:c.name+" "+aud(c.spent)+" of "+aud(c.budget)});
+    return dashBar({label:c.name,accent:"wealth",h:(+c.spent||0)>0?scale(+c.spent||0):36,val:audBar(c.spent),sub:tone,tone:tone==="even"?"":tone,tab:tab||"",aria:c.name+" "+audBar(c.spent)+" of "+aud(c.budget)});
+  }).join("");
+}
+function incomeRows(sources){
+  return '<div class="stack">'+sources.map(s=>{
+    const once=isOnce(s.cadence), basis=sourceBasis(s), acct=s.from?accountById(s.from):null;
+    const when=once?(s.date?fD(String(s.date).slice(0,10)):""):(s.nextPay?"next "+fD(String(s.nextPay).slice(0,10)):"");
+    const tags=[once?"Once":(s.cadence||""), basis, scopeWord(s), acct?acct.name:"", when].filter(Boolean);
+    const chip=((basis==="gross"&&!once)||s.isEstimate)?" "+miniChip("Net estimate"):"";
+    const side=once?aud(s.amount,true):aud(monthlyEquiv(+s.amount||0,s.cadence));
+    return '<div class="wrow" style="grid-template-columns:minmax(0,1fr) auto"><span><div class="t">'+esc(s.name||"Pay")+'</div><div class="s">'+esc(tags.join(" · "))+chip+'</div></span><span class="amt">'+side+(once?"":'<div class="s">/ month</div>')+'</span></div>';
+  }).join("")+'</div>';
+}
+function emergencyCard(){
+  const e=emergencyModel(); if(!e) return "";
+  return '<section class="card pad"><div class="eb">Spending cover</div><h2>'+monthsTxt(e.months)+'</h2><div class="lede">'+aud(e.saved)+' saved · '+aud(e.monthly)+' a month</div></section>';
+}
+function investShortcut(){
+  const inv=investModel(), gl=glMoney(inv.gain);
+  return '<section class="card pad"><div class="ch"><div><div class="eb">Portfolio</div><h2>'+aud(inv.value)+'</h2><div class="lede"><span class="'+(gl.c?"gl "+gl.c:"")+'">'+gl.t+'</span></div></div>'+(inv.partial?miniChip("Partial"):"")+'</div><button class="btn ghost" type="button" data-tab="invest">Open</button></section>';
+}
+function insuranceCard(){
+  const doc=wealthLive&&wealthStore?(wealthStore.insurance||{items:[]}):(WEALTH_EXAMPLE.insurance||{items:[]});
+  const items=(doc.items||[]).filter(Boolean); if(!items.length) return "";
+  const rows=items.map(i=>'<div class="wrow" style="grid-template-columns:minmax(0,1fr) auto"><span><div class="t">'+esc(i.type||"Policy")+'</div><div class="s">'+esc([i.insurer,i.cadence,i.renewal?"renews "+fD(String(i.renewal).slice(0,10)):""].filter(Boolean).join(" · "))+'</div></span><span class="amt">'+aud(i.premium,true)+'</span></div>').join("");
+  return '<section class="card pad"><div class="eb">Renewals</div><h2 style="margin-bottom:12px">Policies</h2><div class="stack">'+rows+'</div></section>';
+}
+function superCard(){
+  const accounts=(wealthDoc("networth").accounts||[]).filter(a=>a&&String(a.kind||"").toLowerCase()==="super"&&!a.excludeFromWorth&&inScope(a));
+  return accounts.map(a=>{
+    const s=a.super||{}, ytd=+s.concessionalYTD||0, pct=Math.max(0,Math.min(100,Math.round(ytd/SUPER_CAP*100)));
+    return '<section class="card pad"><div class="eb">Super</div><h2>'+esc(a.name||"Super")+'</h2><div class="lede">'+esc(s.fund||"")+(s.asAt?" · as at "+esc(fD(String(s.asAt).slice(0,10))):"")+'</div><div class="sub" style="margin-top:8px">Concessional '+aud(ytd)+' of '+aud(SUPER_CAP)+' · '+pct+'%</div><div class="wtrack"><i style="width:'+pct+'%"></i></div><div class="sub" style="margin-top:8px">Carry-forward '+aud(+s.carryForward||0)+' · insurance inside '+aud(+s.insuranceInside||0)+' · employer '+aud(+s.employerSG||0)+'</div></section>';
   }).join("");
 }
 function vWealthOverview(){
-  const {cats,spent,income,allocate}=budgetModel();
+  const {cats,spent,income,allocate,estimate}=budgetModel();
   const goals=(wealthDoc("goals").items||[]);
   const saved=goals.reduce((a,g)=>a+goalBits(g).saved,0), target=goals.reduce((a,g)=>a+(+g.target||0),0);
   const goalGap=target-saved;
@@ -3195,34 +3331,38 @@ function vWealthOverview(){
   const trend=w.hist.map(h=>dashBar({label:ymLabel(h.month).replace(" 20"," "),accent:"wealth",h:nScale(+h.total||0),val:kAud(h.total),tab:"worth",aria:ymLabel(h.month)+" "+aud(h.total)})).join("");
   const since=w.change==null?"—":aud(w.change)+" since "+w.since+".";
   const nextTxt=bills.next?"Next is "+esc(bills.next.name)+" on "+esc(fD(billDue(bills.next),true))+". ":"";
-  let h=wealthHead("Wealth","Overview","A private snapshot. Figures stay on your account once the table has rows.");
-  h+=dashCard("wspend","This month","Spending","Left to allocate is income minus the category budgets.",statTrio(["Income",aud(income),""],["Spent",aud(spent),""],["To allocate",aud(allocate),""]),spendBars(cats,"budget"),'<div class="legend"><span><i class="rb-swatch wealth"></i>Spent</span><span class="over">Over</span><span class="under">Under</span></div>');
+  let h=wealthHead("Wealth","Overview","Where things stand.");
+  h+=dashCard("wspend","This month","Spending",aud(allocate)+" still to allocate."+(estimate?" "+miniChip("Net estimate"):""),statTrio(["Income",aud(income),""],["Spent",aud(spent),""],["To allocate",aud(allocate),""]),spendBars(cats,"budget"),'<div class="legend"><span><i class="rb-swatch wealth"></i>Spent</span><span class="over">Over</span><span class="under">Under</span></div>');
+  h+=emergencyCard()+investShortcut();
   h+='<section class="card pad"><div class="ch"><div><div class="eb">Saving</div><h2>Goals</h2></div><div class="metrics dash-stats">'+statTrio(["Saved",aud(saved),""],["Target",aud(target),""],[goalGap<0?"Over":"Left",aud(Math.abs(goalGap)),""])+'</div></div>'+goalCards(goals)+'<button class="btn ghost" type="button" data-tab="goals" style="margin-top:12px">Open goals</button></section>';
   h+=dashCard("wworth","Snapshot","Net worth",since,statTrio(["Assets",aud(w.assetSum),""],["Liabilities",aud(w.debtSum),""],["Net worth",aud(w.net),""]),trend,'<div class="legend"><span><i class="rb-swatch wealth"></i>Total</span></div>'+worthNote(w));
   const soon=bills.items.slice(0,4), seen=new Set(soon.map(b=>billDue(b)+"|"+b.name));
   const shown=soon.concat(bills.items.filter(b=>inBudget(b.name)&&!seen.has(billDue(b)+"|"+b.name)));
-  h+='<section class="card pad"><div class="ch"><div><div class="eb">Coming up</div><h2>Bills</h2><div class="lede">'+nextTxt+'Due this month is the face amount. ~'+aud(bills.equiv)+' / month across every cadence.</div></div><div class="metrics dash-stats">'+statTrio(["Due this month",aud(bills.face,true),""],["Next",bills.next?aud(bills.next.amount,true):"—",""],["Per month",aud(bills.equiv),""])+'</div></div>'+billRows(shown)+'<button class="btn ghost" type="button" data-tab="bills" style="margin-top:12px">Open bills</button></section>';
+  h+='<section class="card pad"><div class="ch"><div><div class="eb">Coming up</div><h2>Bills</h2>'+(nextTxt?'<div class="lede">'+nextTxt.trim()+'</div>':"")+'</div><div class="metrics dash-stats">'+statTrio(["Due this month",aud(bills.face,true),""],["Next",bills.next?aud(bills.next.amount,true):"—",""],["Per month",aud(bills.equiv),""])+'</div></div>'+billRows(shown)+'<button class="btn ghost" type="button" data-tab="bills" style="margin-top:12px">Open bills</button></section>';
   return h;
 }
 function vBudget(){
-  const {b,cats,spent,income,allocate}=budgetModel();
+  const {b,cats,spent,income,allocate,sources,estimate}=budgetModel();
   const rows=cats.map(c=>{
     const spentN=+c.spent||0, bud=+c.budget||0, tone=budgetTone(spentN,bud), pct=budgetPct(spentN,bud);
     const gap=tone==="even"?"even":tone+" "+aud(Math.abs(bud<=0&&tone==="over"?spentN:bud-spentN));
-    return '<div class="wrow" style="grid-template-columns:minmax(0,1fr) auto"><span><div class="t">'+esc(c.name)+'</div><div class="s">'+aud(spentN)+' of '+aud(bud)+'</div><div class="wtrack"><i style="width:'+pct+'%"></i></div></span><span class="amt '+(tone==="even"?"":tone)+'">'+gap+'</span></div>';
+    return '<div class="wrow" style="grid-template-columns:minmax(0,1fr) auto"><span><div class="t">'+esc(c.name)+'</div><div class="s">'+esc(scopeWord(c))+' · '+aud(spentN)+' of '+aud(bud)+'</div><div class="wtrack"><i style="width:'+pct+'%"></i></div></span><span class="amt '+(tone==="even"?"":tone)+'">'+gap+'</span></div>';
   }).join("");
-  const tx=(b.transactions||[]).slice().sort((a,c)=>String(c.date||"").localeCompare(String(a.date||"")));
+  const tx=(b.transactions||[]).filter(t=>t&&inScope(t)).slice().sort((a,c)=>String(c.date||"").localeCompare(String(a.date||"")));
   const txRows=tx.map(t=>{const ds=String(t.date||"").slice(0,10), dd=/^\d{4}-\d{2}-\d{2}$/.test(ds)?pISO(ds):null; return '<div class="wrow">'+(dd?'<span class="tile"><span class="a">'+MON[dd.getMonth()].toUpperCase()+'</span><span class="b">'+dd.getDate()+'</span></span>':'<span class="tile"></span>')+'<span style="min-width:0"><div class="t">'+esc(t.name||"")+'</div><div class="s">'+esc(t.category||"")+'</div></span><span class="amt">'+audTxn(t.amount)+'</span></div>';}).join("");
-  return wealthHead(ymLabel(b.month)||"This month","Spending","Left to allocate is income minus the category budgets. Spent is what the categories already record.")+
-    dashCard("wbudget","This month","Spent",aud(allocate)+" still to allocate.",statTrio(["Income",aud(income),""],["Spent",aud(spent),""],["To allocate",aud(allocate),""]),spendBars(cats),'<div class="legend"><span><i class="rb-swatch wealth"></i>Spent</span></div>')+
+  return wealthHead(ymLabel(b.month)||"This month","Spending","Where this month's money is going.")+
+    scopeBar()+
+    dashCard("wbudget","This month","Spent",aud(allocate)+" still to allocate."+(estimate?" "+miniChip("Net estimate"):""),statTrio(["Income",aud(income),""],["Spent",aud(spent),""],["To allocate",aud(allocate),""]),spendBars(cats),'<div class="legend"><span><i class="rb-swatch wealth"></i>Spent</span></div>')+
+    '<section class="card pad"><div class="eb">Coming in</div><h2 style="margin-bottom:12px">'+aud(income)+'</h2>'+incomeRows(sources)+'</section>'+
     '<section class="card pad"><div class="eb">By category</div><h2 style="margin-bottom:12px">Where it went</h2><div class="stack">'+rows+'</div></section>'+
-    '<section class="card pad"><div class="eb">Recent</div><h2 style="margin-bottom:12px">Transactions</h2><div class="sub" style="margin:4px 0 12px">A plus is money in, including a refund. A minus is money out. This list is not added into Spent.</div><div class="stack">'+txRows+'</div></section>';
+    '<section class="card pad"><div class="eb">Recent</div><h2 style="margin-bottom:12px">Transactions</h2><div class="stack">'+txRows+'</div></section>';
 }
 function vGoals(){
   const items=(wealthDoc("goals").items||[]);
   const saved=items.reduce((a,g)=>a+goalBits(g).saved,0), target=items.reduce((a,g)=>a+(+g.target||0),0);
   const gap=target-saved;
-  return wealthHead("Saving","Goals","Each ring fills the same way a gym set ring does. The label stops at 100.")+
+  return wealthHead("Saving","Goals","What you're saving toward.")+
+    emergencyCard()+
     '<section class="card pad"><div class="ch"><div><div class="eb">Together</div><h2>'+aud(saved)+'</h2><div class="lede">of '+aud(target)+(gap<0?" · Over by "+aud(-gap):"")+'</div></div><div class="metrics dash-stats">'+statTrio(["Saved",aud(saved),""],["Target",aud(target),""],[gap<0?"Over":"Left",aud(Math.abs(gap)),""])+'</div></div>'+goalCards(items)+'</section>';
 }
 function vWorth(){
@@ -3231,24 +3371,43 @@ function vWorth(){
   const bars=w.hist.map(h=>dashBar({label:ymLabel(h.month),accent:"wealth",h:scale(+h.total||0),val:kAud(h.total),aria:ymLabel(h.month)+" "+aud(h.total)})).join("");
   const since=w.change==null?"—":aud(w.change)+" since "+w.since+".";
   const rows=w.lines.map(a=>{
-    const sub=[a.kind,a.note&&normName(a.note)!==normName(a.name)?a.note:""].filter(Boolean).join(" · ");
+    const rate=a.ratePa!=null?pctTxt(a.ratePa)+(a.rateType?" "+a.rateType:""):"";
+    const sub=[a.kind,scopeWord(a),rate,a.indexationDate?"Indexation "+fD(String(a.indexationDate).slice(0,10)):"",a.note&&normName(a.note)!==normName(a.name)?a.note:""].filter(Boolean).join(" · ");
     return '<div class="wrow" style="grid-template-columns:minmax(0,1fr) auto"><span><div class="t">'+esc(a.name||"")+'</div><div class="s">'+esc(sub)+'</div></span><span class="amt">'+aud(a.amount)+'</span></div>';
   }).join("");
-  return wealthHead("Snapshot","Net worth","Holdings and the home are included. A mortgage is a liability.")+
+  return wealthHead("Snapshot","Net worth","What you own, minus what you owe.")+
+    scopeBar()+
     dashCard("wnet","Trend",aud(w.net),since,statTrio(["Assets",aud(w.assetSum),""],["Liabilities",aud(w.debtSum),""],["Net worth",aud(w.net),""]),bars,'<div class="legend"><span><i class="rb-swatch wealth"></i>Total</span></div>'+worthNote(w))+
+    superCard()+
     '<section class="card pad"><div class="eb">Accounts</div><h2 style="margin-bottom:12px">Balances</h2><div class="stack">'+rows+'</div></section>';
 }
 function holdingRow(h){
-  const bits=[h.ticker,h.platform,h.units!=null&&h.units!==""?String(h.units)+" units":""].filter(Boolean);
+  const bits=[h.ticker,h.platform,h.units!=null?String(h.units)+" units":""].filter(Boolean);
   const when=h.asAt?"as at "+fD(h.asAt):"";
   const meta=[bits.join(" · "),when].filter(Boolean).join(" · ");
-  const gl=glMoney(h.gain), pct=h.cost?pctTxt(h.gain/h.cost*100):"";
-  return '<div class="wrow" style="grid-template-columns:minmax(0,1fr) auto"><span><div class="t">'+esc(h.name)+'</div>'+(meta?'<div class="s">'+esc(meta)+'</div>':"")+'<div class="s'+(gl.c?" gl "+gl.c:"")+'">'+gl.t+(pct?" · "+pct:"")+'</div></span><span class="amt">'+aud(h.value)+'</span></div>';
+  const gain=h.cost==null?'<div class="s">Cost unknown</div>':(function(){const gl=glMoney(h.gain), pct=h.cost?pctTxt(h.gain/h.cost*100):""; return '<div class="s'+(gl.c?" gl "+gl.c:"")+'">'+gl.t+(pct?" · "+pct:"")+'</div>';})();
+  const warns=[];
+  if(h.priceOff) warns.push("Units × price is "+aud(h.implied));
+  if(h.stale) warns.push("Valuation "+h.age+" days old");
+  return '<div class="wrow" style="grid-template-columns:minmax(0,1fr) auto"><span><div class="t">'+esc(h.name)+'</div>'+(meta?'<div class="s">'+esc(meta)+'</div>':"")+gain+(warns.length?'<div class="s">'+esc(warns.join(" · "))+'</div>':"")+'</span><span class="amt">'+aud(h.value)+'</span></div>';
+}
+function mixRows(slices){
+  const sum=slices.reduce((a,s)=>a+s.v,0)||1;
+  const rows=slices.map(s=>({...s, pct:Math.round(s.v/sum*1000)/10}));
+  if(!rows.length) return rows;
+  const drift=Math.round((100-rows.reduce((a,s)=>a+s.pct,0))*10)/10;
+  let i=0; rows.forEach((s,idx)=>{if(s.v>rows[i].v) i=idx;});
+  rows[i].pct=Math.round((rows[i].pct+drift)*10)/10;
+  return rows;
 }
 function allocBars(inv, superSum){
-  const slices=[].concat(inv.groups.map(g=>({name:g.name,v:g.value})),[{name:"Property equity",v:inv.equity},{name:"Super",v:superSum}]).filter(s=>s.v>0);
-  const sum=slices.reduce((a,s)=>a+s.v,0)||1;
-  return '<div class="stack">'+slices.map(s=>'<div class="alloc"><span class="t">'+esc(s.name)+'</span><span class="amt">'+aud(s.v)+'</span><div class="wtrack"><i style="width:'+Math.max(1,Math.round(s.v/sum*100))+'%"></i></div></div>').join("")+'</div>';
+  const posEq=inv.properties.filter(p=>p.equity>0).reduce((s,p)=>s+p.equity,0);
+  const negEq=inv.properties.filter(p=>p.equity<0).reduce((s,p)=>s+p.equity,0);
+  const slices=[].concat(inv.groups.filter(g=>g.value>0), posEq?[{name:"Property equity",value:posEq}]:[], superSum?[{name:"Super",value:superSum}]:[]).map(s=>({name:s.name,v:s.value}));
+  const rows=mixRows(slices);
+  let html='<div class="eb" style="margin-top:12px">Invested mix</div><div class="stack">'+rows.map(s=>'<div class="alloc"><span class="t">'+esc(s.name)+'</span><span class="amt">'+aud(s.v)+' · '+pctTxt(s.pct)+'</span><div class="wtrack"><i style="width:'+Math.max(1,Math.round(s.pct))+'%"></i></div></div>').join("");
+  if(negEq<0) html+='<div class="alloc"><span class="t gl down">Negative equity</span><span class="amt gl down">'+aud(negEq)+'</span></div>';
+  return html+'</div>';
 }
 function vInvest(){
   const inv=investModel(), w=worthModel(), gl=glMoney(inv.gain), pct=inv.cost?pctTxt(inv.gain/inv.cost*100):"";
@@ -3259,18 +3418,22 @@ function vInvest(){
   }).join("");
   const props=inv.properties.map(p=>{
     const lvr=p.value>0?pctTxt(p.mortgage/p.value*100):"—";
-    return '<section class="card pad"><div class="eb">Property</div><h2>'+esc(p.name)+'</h2>'+(p.asAt?'<div class="lede">Valued as at '+esc(fD(p.asAt))+'</div>':"")+'<div class="metrics dash-stats" style="margin-top:12px">'+statTrio(["Value",aud(p.value),""],["Mortgage",aud(p.mortgage),""],["Equity",aud(p.equity),""])+'</div><div class="sub" style="margin-top:8px">LVR '+(lvr||"—")+'</div></section>';
+    const eq=p.equity<0?'<span class="gl down">'+aud(p.equity)+'</span>':aud(p.equity);
+    const extra=[p.offset?"Offset "+aud(p.offset)+" · interest on "+aud(p.interestOn):"", p.ratePa!=null?pctTxt(p.ratePa):"", p.repayment!=null?aud(p.repayment)+(p.repaymentCadence?" / "+String(p.repaymentCadence).toLowerCase():""):"", p.redraw?"Redraw "+aud(p.redraw):"", p.stale?"Valuation "+p.age+" days old":""].filter(Boolean).join(" · ");
+    return '<section class="card pad"><div class="eb">Property</div><h2>'+esc(p.name)+'</h2>'+(p.asAt?'<div class="lede">Valued as at '+esc(fD(p.asAt))+'</div>':"")+'<div class="metrics dash-stats" style="margin-top:12px">'+statTrio(["Value",aud(p.value),""],["Mortgage",aud(p.mortgage),""],["Equity",eq,""])+'</div>'+(extra?'<div class="sub" style="margin-top:8px">'+esc(extra)+'</div>':"")+'<div class="sub" style="margin-top:8px">LVR '+(lvr||"—")+'</div></section>';
   }).join("");
-  return wealthHead("Portfolio","Invest","Entered by hand. A market feed can refresh prices later.")+
-    '<section class="card pad"><div class="ch"><div><div class="eb">Together</div><h2>'+aud(inv.value)+'</h2><div class="lede"><span class="'+(gl.c?"gl "+gl.c:"")+'">'+gl.t+(pct?" · "+pct:"")+'</span> against cost. Equity '+aud(inv.equity)+'.</div></div><div class="metrics dash-stats">'+statTrio(["Value",aud(inv.value),""],["Cost",aud(inv.cost),""],["Gain",'<span class="'+(gl.c?"gl "+gl.c:"")+'">'+gl.t+'</span>',""])+'</div></div>'+allocBars(inv,w.superSum)+'</section>'+
+  return wealthHead("Portfolio","Invest","Shares, funds and the home.")+
+    '<section class="card pad"><div class="ch"><div><div class="eb">Together</div><h2>'+aud(inv.value)+'</h2><div class="lede"><span class="'+(gl.c?"gl "+gl.c:"")+'">'+gl.t+(pct?" · "+pct:"")+'</span></div></div>'+(inv.partial?miniChip("Partial"):"")+'</div><div class="metrics dash-stats">'+statTrio(["Value",aud(inv.value),""],["Cost",aud(inv.cost),""],["Gain",'<span class="'+(gl.c?"gl "+gl.c:"")+'">'+gl.t+'</span>',""])+'</div></div>'+allocBars(inv,w.superSum)+'</section>'+
     groups+props;
 }
 function vBills(){
   const bills=billModel();
   const next=bills.next;
-  const lede=(next?"Next is "+esc(next.name)+" on "+esc(fD(billDue(next),true))+". ":"")+"Due this month uses face amounts. ~"+aud(bills.equiv)+" / month.";
-  return wealthHead("Coming up","Bills","Later dates stay in the list. The month total does not include them.")+
-    '<section class="card pad"><div class="ch"><div><div class="eb">Melbourne</div><h2>'+aud(bills.face,true)+'</h2><div class="lede">'+lede+'</div></div><div class="metrics dash-stats">'+statTrio(["Due this month",aud(bills.face,true),""],["Next",next?aud(next.amount,true):"—",""],["Per month",aud(bills.equiv),""])+'</div></div>'+billRows(bills.items)+'</section>';
+  const lede=next?"Next is "+esc(next.name)+" on "+esc(fD(billDue(next),true))+".":"";
+  return wealthHead("Coming up","Bills","What's due.")+
+    scopeBar()+
+    '<section class="card pad"><div class="ch"><div><div class="eb">Melbourne</div><h2>'+aud(bills.face,true)+'</h2><div class="lede">'+lede+'</div></div><div class="metrics dash-stats">'+statTrio(["Due this month",aud(bills.face,true),""],["Next",next?aud(next.amount,true):"—",""],["Per month",aud(bills.equiv),""])+'</div></div>'+billRows(bills.items)+'</section>'+
+    insuranceCard();
 }
 async function loadWealth(){
   if(!signedIn()){wealthStore=null;wealthLive=false;return;}
@@ -3502,6 +3665,7 @@ function bind(r){
   const so=$("#signOut",r); if(so)so.onclick=async()=>{so.disabled=true;try{await SB.auth.signOut();}catch(e){so.disabled=false;toast("Couldn't sign out. Try again.");}};
   r.querySelectorAll("[data-logball]").forEach(b=>b.onclick=()=>openQuickAdd("Basketball",b.dataset.logball));
   r.querySelectorAll("[data-logrun]").forEach(b=>b.onclick=()=>openQuickAdd("Run",b.dataset.logrun));
+  r.querySelectorAll("[data-scope]").forEach(b=>b.onclick=()=>{UI.scope=b.dataset.scope;try{localStorage.setItem("dt-scope",UI.scope);}catch(e){}render();});
 }
 let rq=0,pend=false;const typing=()=>{const a=document.activeElement;return !!(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName));};
 function sched(){cancelAnimationFrame(rq);rq=requestAnimationFrame(()=>{if(typing()||$("#scrim")){pend=true;return;}pend=false;render();});}
