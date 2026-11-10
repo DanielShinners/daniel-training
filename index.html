@@ -31,7 +31,7 @@
   --z-rec:#8E9AAB; --z-st:#1296A3; --z-mp:#E0A31A; --z-lt2:#F06A2F; --z-vo2:#E25060; --z-sp:#7A5AF0; --z-x:#C4C7D0;
   --good:#178A56; --warn:#B45309; --bad:#D64545;
   --cat-ball:#F97316; --cat-run:#D8F34A; --cat-run-ink:#17200A; --cat-gym:#FF0A27; --cat-gym-ink:#fff; --cat-ink:#1C1206; --cat-rest:#E4E6EB; --cat-rest-ink:#5C6270;
-  --wealth:#72F476; --wealth-ink:#000;
+  --wealth:#72F476; --wealth-ink:#000; --ring-track:#D5D8E0;
   --holo:linear-gradient(100deg,#8AF6FF 0%,#D8F34A 36%,#F7F7FF 58%,#D0B4FF 80%,#8AF6FF 100%);
   --shadow:0 1px 0 rgba(255,255,255,.75) inset, 0 10px 28px -20px rgba(22,30,48,.35);
   --space-gap:8px; --space-pad-y:10px; --space-pad-x:12px; --space-radius:22px; --space-line:1.25; --space-rhythm:8px;
@@ -48,7 +48,7 @@
   --mbase:#2A2E3A; --mline:#3C4252; --dark:#0C0E14; --dark2:#222633; --dline:rgba(255,255,255,.12);
   --z-rec:#B4BECC; --z-st:#3DCFC4; --z-mp:#F0B044; --z-lt2:#FF8A55; --z-vo2:#FF7A88; --z-sp:#A78BFA; --z-x:#8B909C;
   --good:#3DCA86; --warn:#F0A35A; --bad:#FF7B7B;
-  --wealth:#72F476; --wealth-ink:#000;
+  --wealth:#72F476; --wealth-ink:#000; --ring-track:rgba(243,244,248,.4);
   --shadow:0 1px 0 rgba(255,255,255,.05) inset, 0 14px 32px -22px rgba(0,0,0,.65);
   color-scheme:dark;
 }}
@@ -61,7 +61,7 @@
   --mbase:#2A2E3A; --mline:#3C4252; --dark:#0C0E14; --dark2:#222633; --dline:rgba(255,255,255,.12);
   --z-rec:#B4BECC; --z-st:#3DCFC4; --z-mp:#F0B044; --z-lt2:#FF8A55; --z-vo2:#FF7A88; --z-sp:#A78BFA; --z-x:#8B909C;
   --good:#3DCA86; --warn:#F0A35A; --bad:#FF7B7B;
-  --wealth:#72F476; --wealth-ink:#000;
+  --wealth:#72F476; --wealth-ink:#000; --ring-track:rgba(243,244,248,.4);
   --shadow:0 1px 0 rgba(255,255,255,.05) inset, 0 14px 32px -22px rgba(0,0,0,.65);
   color-scheme:dark;
 }
@@ -129,7 +129,9 @@ h2{font-size:22px;font-weight:400;letter-spacing:-.03em;line-height:var(--space-
 .wrow .amt.over{color:#EF4444}
 .wrow .amt.under{color:#22C55E}
 .ring.wealth{cursor:default}
-.ring.wealth .ring-seg.on,.ring.wealth .ring-check{stroke:var(--wealth)}
+.ring.wealth .ring-seg.on,.ring.wealth .ring-check,.ring.wealth .ring-q.on{stroke:var(--wealth)}
+.ring.wealth .ring-q{stroke:var(--ring-track, #D5D8E0);fill:none;stroke-linecap:butt}
+button.goal{width:100%;text-align:left;color:inherit}
 .goal .amt{font-variant-numeric:tabular-nums;font-weight:500;color:var(--accent)}
 .goal{display:grid;grid-template-columns:72px minmax(0,1fr) auto;gap:var(--space-gap);align-items:center;background:var(--card);border:1px solid var(--line);border-radius:var(--space-radius);padding:var(--space-pad-y) var(--space-pad-x)}
 .signin .areas{margin-bottom:14px}
@@ -596,6 +598,7 @@ textarea{min-height:64px;resize:vertical}
 .scrim{position:fixed;inset:0;z-index:30;background:rgba(12,14,20,.46);backdrop-filter:blur(3px);display:flex;align-items:flex-end;justify-content:center}
 @media (min-width:760px){.scrim{align-items:center}}
 .fab{position:fixed;right:18px;bottom:calc(18px + env(safe-area-inset-bottom,0px));width:56px;height:56px;border-radius:50%;border:0;background:var(--accent);color:#fff;font-size:30px;line-height:1;box-shadow:0 10px 28px rgba(42,86,246,.4);z-index:40;cursor:pointer;display:grid;place-items:center;padding:0 0 3px}
+.fab.wealth{background:var(--wealth);color:#000;box-shadow:0 10px 28px rgba(114,244,118,.28)}
 .fab:active{transform:scale(.94)}
 .qa-sp{display:flex;flex-wrap:wrap;gap:6px}.qa-sp button{font:inherit;font-size:13px;padding:8px 12px;border-radius:999px;border:1px solid var(--line);background:none;color:inherit;cursor:pointer}.qa-sp button[aria-pressed=true]{background:var(--lime)!important;border-color:var(--lime)!important;color:var(--lime-ink)!important}
 #sheetRoot:not(:empty)+.fab{display:none}
@@ -2508,7 +2511,66 @@ function openQuickAdd(preset,date){
     const id=date.replace(/-/g,"")+"T"+t+(sp[2]==="run"?"-"+Math.round(km*10):"-m"+min);
     $("#qaGo").disabled=true;try{await S.db.doc("runs/"+id).set(doc);toast(sp[0]+" logged · "+min+" min");closeSheet();}catch(err){msg.textContent="Couldn't save: "+err.message;$("#qaGo").disabled=false;}};
 }
-$("#fab").onclick=openCatLog;
+function goalPool(){
+  const live=wealthLive&&wealthStore&&wealthStore.goals;
+  if(live&&Array.isArray(live.items)) return {live:true, doc:live, items:live.items};
+  return {live:false, doc:null, items:((WEALTH_EXAMPLE.goals||{}).items||[])};
+}
+function goalNum(raw){const s=String(raw==null?"":raw).trim(); if(s==="") return null; const n=+s; return isFinite(n)?n:null;}
+async function persistGoals(data){
+  if(!signedIn()){toast("Sign in to save a goal"); return false;}
+  const {error}=await SB.from("wealth_docs").upsert({id:"goals",data,updated_at:new Date().toISOString()},{onConflict:"id"});
+  if(error){toast("Couldn't save. Try again."); return false;}
+  if(!wealthStore) wealthStore={};
+  wealthStore.goals=data; wealthLive=true;
+  return true;
+}
+function openGoalSheet(id){
+  const pool=goalPool();
+  const cur=id?pool.items.find(g=>g&&g.id===id)||null:null;
+  const editing=!!(cur&&pool.live);
+  const x='<div class="sheet-top"><span class="eb">'+(editing?"Edit goal":"Add a goal")+'</span><button class="btn ghost" id="shX" type="button">Close</button></div>'+
+    '<form id="goalF" class="stack" style="gap:14px;margin-top:6px">'+
+    '<div class="field"><label for="gName">Name</label><input id="gName" required value="'+esc(cur&&cur.name||"")+'" placeholder="Example trip"></div>'+
+    '<div class="grid2"><div class="field"><label for="gTarget">Target amount</label><input id="gTarget" type="number" inputmode="decimal" min="0" step="0.01" value="'+(cur&&cur.target!=null?esc(cur.target):"")+'" placeholder="Optional"></div>'+
+    '<div class="field"><label for="gSaved">Saved so far</label><input id="gSaved" type="number" inputmode="decimal" min="0" step="0.01" value="'+(cur&&cur.saved!=null?esc(cur.saved):"")+'" placeholder="Optional"></div></div>'+
+    '<div class="grid2"><div class="field"><label for="gDate">Target date</label><input id="gDate" type="date" value="'+esc(cur&&cur.targetDate||"")+'"></div>'+
+    '<div class="field"><label for="gPf">$ per fortnight</label><input id="gPf" type="number" inputmode="decimal" min="0" step="0.01" value="'+(cur&&cur.perFortnight!=null?esc(cur.perFortnight):"")+'" placeholder="Optional"></div></div>'+
+    '<button class="btn" type="submit" id="gSave">Save</button>'+(editing?'<button class="btn ghost" type="button" id="gDel">Delete</button>':"")+'<div class="sub" id="gMsg"></div></form>';
+  $("#sheetRoot").innerHTML='<div class="scrim" id="scrim"><div class="sheet" role="dialog" aria-modal="true" aria-label="'+(editing?"Edit goal":"Add a goal")+'">'+x+'</div></div>';
+  $("#scrim").onclick=e=>{if(e.target.id==="scrim")closeSheet();}; $("#shX").onclick=closeSheet;
+  const read=()=>{
+    const name=$("#gName").value.trim();
+    if(!name){$("#gMsg").textContent="Add a name."; return null;}
+    const target=goalNum($("#gTarget").value), saved=goalNum($("#gSaved").value), pf=goalNum($("#gPf").value);
+    if($("#gTarget").value.trim()&&target==null||$("#gSaved").value.trim()&&saved==null||$("#gPf").value.trim()&&pf==null){$("#gMsg").textContent="Use numbers for the amounts."; return null;}
+    const item={...(editing?cur:{}), id:(editing&&cur.id)||("goal-"+Date.now().toString(36)), name, target, saved};
+    const date=$("#gDate").value;
+    if(date) item.targetDate=date; else delete item.targetDate;
+    if(pf!=null) item.perFortnight=pf; else delete item.perFortnight;
+    return item;
+  };
+  $("#goalF").onsubmit=async e=>{
+    e.preventDefault();
+    const item=read(); if(!item) return;
+    if(cur&&!pool.live){$("#gMsg").textContent="Example goals aren't saved."; return;}
+    const base=pool.live?{...pool.doc}:{};
+    const items=pool.live?pool.items.map(g=>g.id===item.id?{...g,...item}:g):[];
+    if(!editing) items.push(item);
+    $("#gSave").disabled=true;
+    const ok=await persistGoals({...base, items});
+    if(ok){toast(editing?"Goal updated":"Goal added"); closeSheet();} else $("#gSave").disabled=false;
+  };
+  const del=$("#gDel");
+  if(del) del.onclick=async()=>{
+    if(!confirm("Delete this goal?")) return;
+    const items=pool.items.filter(g=>g.id!==cur.id);
+    del.disabled=true;
+    const ok=await persistGoals({...pool.doc, items});
+    if(ok){toast("Goal deleted"); closeSheet();} else del.disabled=false;
+  };
+}
+$("#fab").onclick=()=>{if(UI.area==="wealth"&&UI.tab==="goals")openGoalSheet();else openCatLog();};
 function closeSheet(){if(location.hash.indexOf("#day/")===0){history.back();return;}$("#sheetRoot").innerHTML="";}
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeSheet();});
 
@@ -3014,10 +3076,11 @@ const WEALTH_EXAMPLE={
     {date:"2026-11-01",name:"Example Pay",category:"Income",amount:4100,scope:"personal"}
   ]},
   goals:{emergency:{saved:8400,monthlyExpenses:2800},items:[
-    {name:"Emergency fund",target:16800,saved:8400},
-    {name:"Holiday",target:3000,saved:1800,targetDate:"2027-06-01",perFortnight:60,linkedAccount:"acct-save"},
-    {name:"House deposit",target:40000,saved:12000,targetDate:"2030-01-01",perFortnight:400,linkedAccount:"acct-save"},
-    {name:"Buffer",target:400,saved:500}
+    {id:"goal-trip",name:"Example trip",target:3000,saved:300},
+    {id:"goal-fund",name:"Example fund",target:1000,saved:400},
+    {id:"goal-deposit",name:"Example deposit",target:10000,saved:8000},
+    {id:"goal-kit",name:"Example kit",target:500,saved:500},
+    {id:"goal-wish",name:"Example wish",target:null,saved:null}
   ]},
   networth:{accounts:[
     {id:"acct-day",name:"Everyday",kind:"Cash",balance:4200,scope:"family"},
@@ -3081,15 +3144,17 @@ function miniChip(label){return '<span class="chip">'+esc(label)+'</span>';}
 function audBar(n){const v=Math.round(+n||0), abs=Math.abs(v); return (v<0?"−":"")+"$"+abs.toLocaleString("en-AU");}
 function wealthHead(eb,title,lede){return '<div class="head cat-wealth"><div class="ch"><div><div class="eb acc">'+esc(eb)+'</div><h1>'+esc(title)+'</h1>'+(lede?'<div class="lede">'+esc(lede)+'</div>':'')+'</div>'+exampleChip()+'</div></div>';}
 function progressRing(pct){
-  const n=8, c=18, r=13.2, circ=2*Math.PI*r, gap=Math.min(26,360/n*0.24), seg=(360/n)-gap;
-  const done=Math.max(0,Math.min(n,Math.round(Math.max(0,Math.min(1,pct))*n)));
+  const has=pct!=null&&isFinite(+pct), p=has?Math.max(0,Math.min(1,+pct)):0;
+  const c=18, r=13.2, circ=2*Math.PI*r, gap=10, seg=90-gap;
   let arcs="";
-  for(let i=0;i<n;i++){
-    const dash=circ*(seg/360), rest=circ-dash, rot=-90+i*(360/n)+gap/2;
-    arcs+='<circle class="ring-seg'+(i<done?" on":"")+'" cx="'+c+'" cy="'+c+'" r="'+r+'" stroke-width="3.4" stroke-linecap="round" stroke-dasharray="'+dash.toFixed(2)+" "+rest.toFixed(2)+'" transform="rotate('+rot.toFixed(2)+" "+c+" "+c+')"/>';
+  for(let i=0;i<4;i++){
+    const rot=-90+i*90+gap/2, full=circ*(seg/360), frac=has?Math.max(0,Math.min(1,(p-i*0.25)/0.25)):0;
+    const spin=' transform="rotate('+rot.toFixed(2)+" "+c+" "+c+')"';
+    arcs+='<circle class="ring-q" cx="'+c+'" cy="'+c+'" r="'+r+'" stroke-width="3.4" stroke-linecap="butt" stroke-dasharray="'+full.toFixed(2)+" "+(circ-full).toFixed(2)+'"'+spin+'/>';
+    if(frac>0) arcs+='<circle class="ring-q on" cx="'+c+'" cy="'+c+'" r="'+r+'" stroke-width="3.4" stroke-linecap="butt" stroke-dasharray="'+(full*frac).toFixed(2)+" "+(circ-full*frac).toFixed(2)+'"'+spin+'/>';
   }
-  const check=done>=n?'<path class="ring-check" d="M11.6 18.2 l3.2 3.2 7.4-7.6" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>':"";
-  return '<div class="ring wealth'+(done>=n?" full":"")+'" aria-hidden="true"><svg viewBox="0 0 36 36">'+arcs+check+'</svg></div>';
+  const check=has&&p>=1?'<path class="ring-check" d="M11.6 18.2 l3.2 3.2 7.4-7.6" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>':"";
+  return '<div class="ring wealth'+(has&&p>=1?" full":"")+'" aria-hidden="true"><svg viewBox="0 0 36 36">'+arcs+check+'</svg></div>';
 }
 function budgetTone(spent,budget){if((budget<=0&&spent>0)||spent>budget)return "over"; if(spent<budget)return "under"; return "even";}
 function budgetPct(spent,budget){if(budget<=0)return spent>0?100:0; return Math.min(100,Math.round(spent/budget*100));}
@@ -3113,11 +3178,14 @@ function budgetModel(){
   return {b,cats,spent,budget,income,allocate:income-budget,sources,next,estimate,grossOnly};
 }
 function goalBits(g){
-  const saved=+g.saved||0, target=+g.target||0, over=saved>target;
-  const done=target<=0?saved>0:saved>=target;
-  const pct=target>0?Math.min(100,Math.round(saved/target*100)):(saved>0?100:0);
-  const ratio=target>0?Math.min(1,saved/target):(saved>0?1:0);
-  return {saved,target,over,done,pct,ratio,targetDate:String(g.targetDate||"").slice(0,10),perFortnight:g.perFortnight,linkedAccount:g.linkedAccount||""};
+  const saved=g.saved!=null&&g.saved!==""&&isFinite(+g.saved)?+g.saved:null;
+  const hasT=g.target!=null&&g.target!==""&&isFinite(+g.target)&&+g.target>0;
+  const target=hasT?+g.target:null;
+  const over=hasT&&saved!=null&&saved>target;
+  const done=hasT&&saved!=null&&saved>=target;
+  const pct=hasT&&saved!=null?Math.min(100,Math.round(saved/target*100)):null;
+  const ratio=hasT&&saved!=null?Math.min(1,saved/target):null;
+  return {saved,target,hasT,over,done,pct,ratio,targetDate:String(g.targetDate||"").slice(0,10),perFortnight:g.perFortnight,linkedAccount:g.linkedAccount||""};
 }
 function goalPace(g){
   if(!g.targetDate||g.done||g.perFortnight==null||g.perFortnight==="") return null;
@@ -3143,13 +3211,13 @@ function goalCards(items){
     const x=goalBits(raw);
     const pace=goalPace(x);
     const acct=x.linkedAccount?accountById(x.linkedAccount):null;
-    const bits=[aud(x.saved)+" of "+aud(x.target)];
+    const bits=x.hasT?[aud(x.saved||0)+" of "+aud(x.target)]:[ "No target yet"];
     if(x.over) bits.push("Over by "+aud(x.saved-x.target));
     if(x.perFortnight!=null&&x.perFortnight!=="") bits.push(aud(x.perFortnight)+" / fortnight");
     if(x.targetDate) bits.push(fD(x.targetDate));
     if(acct) bits.push(acct.name);
     const paceHtml=pace?'<div class="s gl '+pace.cls+'">'+pace.label+'</div>':"";
-    return '<article class="goal">'+progressRing(x.ratio)+'<div class="move-n"><b>'+esc(raw.name||"Goal")+'</b><span>'+bits.join(" · ")+'</span>'+paceHtml+'</div><div class="amt">'+(x.done?"Done":x.pct+"%")+'</div></article>';
+    return '<button type="button" class="goal" data-goal="'+esc(raw.id||"")+'">'+progressRing(x.ratio)+'<div class="move-n"><b>'+esc(raw.name||"Goal")+'</b><span>'+bits.join(" · ")+'</span>'+paceHtml+'</div><div class="amt">'+(x.hasT?(x.done?"Done":x.pct+"%"):"")+'</div></button>';
   }).join("")+'</div>';
 }
 function billDue(b){return String(b&&b.due||"").slice(0,10);}
@@ -3481,7 +3549,10 @@ function render(){
   if(UI.area!=="wealth"&&gs.goalDate){$("#raceChip").style.display="";$("#raceChip").innerHTML=esc(gs.goalShort||"Goal")+' <b>'+Math.max(0,dBetween(TODAY,gs.goalDate))+'d</b>';}
   else if(UI.area!=="wealth"&&race){$("#raceChip").style.display="";$("#raceChip").innerHTML='10 km <b>'+Math.max(0,dBetween(TODAY,race.date))+'d</b>';}
   else $("#raceChip").style.display="none";
-  $("#fab").style.display=S.db&&UI.area!=="wealth"&&UI.tab!=="meals"?"":"none";
+  const goalFab=UI.area==="wealth"&&UI.tab==="goals";
+  $("#fab").style.display=goalFab||(S.db&&UI.area!=="wealth"&&UI.tab!=="meals")?"":"none";
+  $("#fab").classList.toggle("wealth",goalFab);
+  $("#fab").setAttribute("aria-label",goalFab?"Add a goal":"Log an activity");
   bind($("#app")); scrollTo(0,y);
   if(S.loaded){
     const r=routeFromHash();
@@ -3666,6 +3737,7 @@ function bind(r){
   r.querySelectorAll("[data-logball]").forEach(b=>b.onclick=()=>openQuickAdd("Basketball",b.dataset.logball));
   r.querySelectorAll("[data-logrun]").forEach(b=>b.onclick=()=>openQuickAdd("Run",b.dataset.logrun));
   r.querySelectorAll("[data-scope]").forEach(b=>b.onclick=()=>{UI.scope=b.dataset.scope;try{localStorage.setItem("dt-scope",UI.scope);}catch(e){}render();});
+  r.querySelectorAll("[data-goal]").forEach(b=>b.onclick=()=>openGoalSheet(b.dataset.goal));
 }
 let rq=0,pend=false;const typing=()=>{const a=document.activeElement;return !!(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName));};
 function sched(){cancelAnimationFrame(rq);rq=requestAnimationFrame(()=>{if(typing()||$("#scrim")){pend=true;return;}pend=false;render();});}
