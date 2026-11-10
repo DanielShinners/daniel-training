@@ -119,6 +119,11 @@ h2{font-size:22px;font-weight:400;letter-spacing:-.03em;line-height:var(--space-
 .head.cat-wealth h1{box-shadow:inset 0 -4px 0 var(--wealth);padding-bottom:2px}
 .chip.ex{background:var(--sunken);color:var(--ink2)}
 .rb-bar.wealth{background:var(--wealth)}
+.rb-bar.neutral{background:#8E9AAB}
+.rb-month{display:flex;flex-direction:column;align-items:center;gap:4px;flex:0 0 auto}
+.rb-pair{display:flex;gap:4px;align-items:flex-end}
+.rb-month .net{font-size:12px;font-weight:500;color:var(--ink);font-variant-numeric:tabular-nums}
+.net-debt{color:#2A56F6}
 .rb-bar.wealth.faint{background:color-mix(in srgb, var(--wealth) 32%, transparent);box-shadow:inset 0 0 0 1.5px var(--wealth)}
 .chip.exp-partial{color:var(--ink3)}
 .rb-swatch.wealth{background:var(--wealth)!important}
@@ -130,6 +135,7 @@ h2{font-size:22px;font-weight:400;letter-spacing:-.03em;line-height:var(--space-
 .wrow .amt{font-variant-numeric:tabular-nums;font-weight:500;color:var(--accent)}
 .wrow .amt.over{color:#EF4444}
 .wrow .amt.under{color:#22C55E}
+.wrow.fund{margin-left:16px}
 .ring.wealth{cursor:default}
 .ring.wealth .ring-seg.on,.ring.wealth .ring-check,.ring.wealth .ring-q.on{stroke:var(--wealth)}
 .ring.wealth .ring-q{stroke:var(--ring-track, #D5D8E0);fill:none;stroke-linecap:butt}
@@ -863,7 +869,7 @@ function applyGate(){
 
 const S={chat:[],weeks:{},pastweeks:{},runs:{},log:{},lifts:{},notes:[],weights:{},adjust:{},basketball:{},settings:{},db:null,loaded:false};
 function hasVdot(){const v=S.settings&&S.settings.vdot;return v!=null&&v!==""&&isFinite(+v)&&+v>0;}
-const UI={tab:"today",area:"health",scope:"all",sel:null,openWeek:null,recipe:4,showPast:false,budView:"plan",expMonth:"",expAvg:false,expAll:false};
+const UI={tab:"today",area:"health",scope:"all",sel:null,openWeek:null,recipe:4,showPast:false,budView:"plan",expMonth:"",expAvg:false,expAll:false,invView:"holdings"};
 try{const t=localStorage.getItem("dt-tab"); if(t) UI.tab=t; const a=localStorage.getItem("dt-area"); if(a==="health"||a==="wealth") UI.area=a; const sc=localStorage.getItem("dt-scope"); if(sc==="all"||sc==="personal"||sc==="family") UI.scope=sc;}catch(e){}
 
 /* utils */
@@ -3215,7 +3221,8 @@ const WEALTH_EXAMPLE={
     {id:"ins-home",type:"Home",insurer:"Example cover",premium:140,cadence:"Monthly",renewal:"2026-11-28"},
     {id:"ins-life",type:"Life",insurer:"Example life",premium:45,cadence:"Monthly",renewal:"2027-03-01"}
   ]},
-  expenses:buildExampleExpenses()
+  expenses:buildExampleExpenses(),
+  property:{asAt:"2026-10-01",properties:[{id:"example-house",name:"Example house",type:"investment",rented:true,lender:"Example bank",loanType:"interest-only",approxRate:0.06,value:null,loanBalance:400000,offsetBalance:50000,netDebt:350000,loanSplits:[{name:"Loan A",balance:250000,offset:20000},{name:"Loan B",balance:150000,offset:30000}],monthly:[{month:"2026-09",rentIn:2000,interestAndFees:1800},{month:"2026-10",rentIn:2000,interestAndFees:1750}],missing:["value","council rates","landlord insurance","strata"],owners:"family"}]}
 };
 let wealthStore=null, wealthLive=false, wealthEpoch=0, wealthPin=null, wealthFetch=0;
 function wealthSame(a,b){try{return JSON.stringify(a)===JSON.stringify(b);}catch(e){return false;}}
@@ -3442,8 +3449,19 @@ function pctTxt(p){
 function glClass(n){return n>0.005?"up":n<-0.005?"down":"";}
 function glMoney(n){return {c:glClass(n), t:(n>0.005?"+":"")+aud(n)};}
 function gainKnown(inv){return (inv.holdings||[]).some(h=>h.cost!=null);}
+function approxMoney(gain, pct){
+  const g=Math.round(+gain||0), sign=g>0?"+":g<0?"−":"";
+  let t="≈ "+sign+aud(Math.abs(g));
+  if(pct!=null&&isFinite(pct)){
+    const r=Math.round(pct*10)/10, ps=r>0?"+":r<0?"−":"";
+    const body=Math.abs(r-Math.round(r))<0.05?String(Math.abs(Math.round(r))):Math.abs(r).toFixed(1);
+    t+=" ("+ps+body+"%)";
+  }
+  return t;
+}
 function gainHtml(inv, withPct){
   if(!gainKnown(inv)) return '<span class="sub">Gain unknown</span>';
+  if((inv.holdings||[]).some(h=>h.cost!=null&&h.costIsApprox)) return '<span>'+approxMoney(inv.gain, withPct&&inv.cost?inv.gain/inv.cost*100:null)+'</span>';
   const gl=glMoney(inv.gain), pct=withPct&&inv.cost?pctTxt(inv.gain/inv.cost*100):"";
   return '<span class="'+(gl.c?"gl "+gl.c:"")+'">'+gl.t+(pct?" · "+pct:"")+'</span>';
 }
@@ -3460,7 +3478,8 @@ function investModel(){
     const asAt=String(h.asAt||"").slice(0,10), age=ageDays(asAt);
     const implied=units!=null&&price!=null?units*price:null;
     const priceOff=implied!=null&&value>0&&Math.abs(implied-value)/value>0.01;
-    return {id:h.id||"", name:h.name, ticker:h.ticker||"", platform:h.platform||"", units, price, value, cost, gain:known?value-cost:null, group:holdGroup(h.type), asAt, age, stale:age!=null&&age>30, priceOff, implied, scope:h.scope, linkedTo:h.linkedTo||"", excludeFromWorth:!!h.excludeFromWorth};
+    const raw={name:h.name, platform:h.platform};
+    return {id:h.id||"", name:h.name, ticker:h.ticker||"", platform:h.platform||"", units, price, value, cost, gain:known?value-cost:null, costIsApprox:h.costIsApprox===true||h.costIsApprox==="true", funds:Array.isArray(h.funds)?h.funds:[], contribution:h.contribution||null, group:isVanguardHold(raw)?"Vanguard":holdGroup(h.type), asAt, age, stale:age!=null&&age>30, priceOff, implied, scope:h.scope||(/family/i.test(String(h.owners||""))?"family":""), linkedTo:h.linkedTo||"", excludeFromWorth:!!h.excludeFromWorth};
   });
   const properties=(doc.properties||[]).filter(p=>p&&p.name).map(p=>{
     const value=+p.value||0, mortgage=Math.abs(+p.mortgage||0), offset=Math.abs(+p.offsetBalance||0);
@@ -3497,6 +3516,16 @@ function worthModel(){
     lines.push({id:p.id, name:p.name, kind:"Property", amount:p.value, liability:false, scope:p.scope});
     if(p.mortgage>0) lines.push({id:p.id+"-mortgage", name:p.name+" mortgage", kind:"Liability", amount:p.mortgage, liability:true, scope:p.scope});
   });
+  const seenProp=new Set(inv.properties.map(p=>p.id).filter(Boolean));
+  const unset=[];
+  propertyRecords().forEach(raw=>{
+    const p=asScoped(raw);
+    if(seenProp.has(p.id)||!inScope(p)) return;
+    if(!(+p.value>0)) unset.push(p.name||"Property");
+    else lines.push({id:p.id, name:p.name, kind:"Property", amount:+p.value, liability:false, scope:p.scope});
+    if(+p.offsetBalance>0) lines.push({id:p.id+"-offset", name:p.name+" offset", kind:"Offset", amount:+p.offsetBalance, liability:false, scope:p.scope});
+    if(+p.loanBalance>0) lines.push({id:p.id+"-loan", name:p.name+" loan", kind:"Liability", amount:+p.loanBalance, liability:true, scope:p.scope});
+  });
   const assetSum=lines.filter(l=>!l.liability).reduce((s,l)=>s+l.amount,0);
   const debtSum=lines.filter(l=>l.liability).reduce((s,l)=>s+l.amount,0);
   const net=assetSum-debtSum;
@@ -3505,12 +3534,13 @@ function worthModel(){
   const latest=hist.length?hist[hist.length-1]:null, prev=hist.length>1?hist[hist.length-2]:null;
   const change=latest&&prev?(+latest.total||0)-(+prev.total||0):null;
   const stale=!!(UI.scope==="all"||!UI.scope)&&!!latest&&Math.abs((+latest.total||0)-net)>0.005;
-  return {lines,assetSum,debtSum,net,superSum,hist,latest,prev,change,since:prev?monthShort(prev.month):"",stale,hasDebt:lines.some(l=>l.liability),inv};
+  return {lines,assetSum,debtSum,net,superSum,hist,latest,prev,change,since:prev?monthShort(prev.month):"",stale,hasDebt:lines.some(l=>l.liability),inv,unset};
 }
 function worthNote(w){
   const chip=w.hasDebt?"":'<span class="chip">Assets only, no debts loaded</span>';
   const stale=w.stale?'<div class="sub">History out of date</div>':"";
-  return chip||stale?'<div class="wnote">'+chip+stale+'</div>':"";
+  const unset=(w.unset||[]).map(n=>'<div class="sub">'+esc(n)+' value not set, add it to include the property</div>').join("");
+  return chip||stale||unset?'<div class="wnote">'+chip+stale+unset+'</div>':"";
 }
 function spendBars(cats,tab){
   const scale=dashScale(cats.map(c=>+c.spent||0));
@@ -3627,6 +3657,12 @@ function investPie(inv){
     if(p.excludeFromWorth) return;
     if(!(p.value>0)){ if(p.name) missing.push(p.name); return; }
     items.push({name:p.name,v:p.value,type:"Property"});
+  });
+  const seen=new Set((inv.properties||[]).map(p=>p.id).filter(Boolean));
+  propertyRecords().forEach(p=>{
+    if(seen.has(p.id)) return;
+    if(!(+p.value>0)) return;
+    items.push({name:p.name,v:+p.value,type:"Property"});
   });
   return assetPie("Holdings", items, missing);
 }
@@ -3860,15 +3896,35 @@ function vWorth(){
     superCard()+
     '<section class="card pad"><div class="eb">Accounts</div><h2 style="margin-bottom:12px">Balances</h2><div class="stack">'+rows+'</div></section>';
 }
+function unitTxt(n){return (+n).toLocaleString("en-AU",{maximumFractionDigits:2});}
+function pxTxt(n){return "$"+(+n).toLocaleString("en-AU",{minimumFractionDigits:2,maximumFractionDigits:4});}
+function holdingGain(h){
+  if(h.cost==null) return '<div class="s">Gain unknown</div>';
+  if(h.costIsApprox) return '<div class="s">'+approxMoney(h.gain, h.cost?h.gain/h.cost*100:null)+'</div><div class="s">approx · value minus net contributions</div>';
+  const gl=glMoney(h.gain), pct=h.cost?pctTxt(h.gain/h.cost*100):"";
+  return '<div class="s'+(gl.c?" gl "+gl.c:"")+'">'+gl.t+(pct?" · "+pct:"")+'</div>';
+}
+function fundRows(h){
+  return (h.funds||[]).map(f=>{
+    const deal=f.units!=null&&f.units!==""&&f.price!=null&&f.price!==""?unitTxt(f.units)+" × "+pxTxt(f.price):"";
+    return '<div class="wrow fund" style="grid-template-columns:minmax(0,1fr) auto"><span><div class="t">'+esc(f.name||"Fund")+'</div>'+(deal?'<div class="s">'+esc(deal)+'</div>':'')+'</span><span class="amt">'+aud(f.value)+'</span></div>';
+  }).join("");
+}
+function contribLine(h){
+  const c=h.contribution; if(!c||!(+c.amount>0)) return "";
+  const freq=String(c.frequency||"fortnightly").toLowerCase();
+  const every=freq==="fortnightly"?"fortnight":freq==="monthly"?"month":freq==="weekly"?"week":freq;
+  return '<div class="s">'+aud(c.amount)+" / "+every+(c.split?" · "+esc(c.split):"")+'</div>';
+}
 function holdingRow(h){
   const bits=[h.ticker,h.platform,h.units!=null?String(h.units)+" units":""].filter(Boolean);
   const when=h.asAt?"as at "+fD(h.asAt):"";
   const meta=[bits.join(" · "),when].filter(Boolean).join(" · ");
-  const gain=h.cost==null?'<div class="s">Cost unknown</div>':(function(){const gl=glMoney(h.gain), pct=h.cost?pctTxt(h.gain/h.cost*100):""; return '<div class="s'+(gl.c?" gl "+gl.c:"")+'">'+gl.t+(pct?" · "+pct:"")+'</div>';})();
   const warns=[];
   if(h.priceOff) warns.push("Units × price is "+aud(h.implied));
   if(h.stale) warns.push("Valuation "+h.age+" days old");
-  return '<div class="wrow" style="grid-template-columns:minmax(0,1fr) auto"><span><div class="t">'+esc(h.name)+'</div>'+(meta?'<div class="s">'+esc(meta)+'</div>':"")+gain+(warns.length?'<div class="s">'+esc(warns.join(" · "))+'</div>':"")+'</span><span class="amt">'+aud(h.value)+'</span></div>';
+  const row='<div class="wrow" style="grid-template-columns:minmax(0,1fr) auto"><span><div class="t">'+esc(h.name)+'</div>'+(meta?'<div class="s">'+esc(meta)+'</div>':"")+holdingGain(h)+contribLine(h)+(warns.length?'<div class="s">'+esc(warns.join(" · "))+'</div>':"")+'</span><span class="amt">'+aud(h.value)+'</span></div>';
+  return row+fundRows(h);
 }
 function mixRows(slices){
   const sum=slices.reduce((a,s)=>a+s.v,0)||1;
@@ -3888,9 +3944,116 @@ function allocBars(inv, superSum){
   if(negEq<0) html+='<div class="alloc"><span class="t gl down">Negative equity</span><span class="amt gl down">'+aud(negEq)+'</span></div>';
   return html+'</div>';
 }
+function propertyPack(){
+  const live=wealthLive&&wealthStore&&wealthStore.property&&Array.isArray(wealthStore.property.properties);
+  return live?{live:true, doc:wealthStore.property}:{live:false, doc:WEALTH_EXAMPLE.property||{properties:[]}};
+}
+function propertyRecords(){return ((propertyPack().doc||{}).properties||[]).filter(p=>p&&p.name);}
+function asScoped(p){return {...p, scope:p.scope||(/family/i.test(String(p.owners||""))?"family":"personal")};}
+function audNear(n){return aud(Math.round(+n||0));}
+function signedAud(n){const v=Math.round(+n||0); if(!v) return aud(0); return (v>0?"+":"−")+aud(Math.abs(v));}
+function rateLabel(p){
+  const bits=[];
+  if(/interest/i.test(p.loanType||"")) bits.push("Interest-only");
+  else if(p.loanType) bits.push(String(p.loanType));
+  if(p.approxRate!=null&&p.approxRate!=="") bits.push(pctTxt(+p.approxRate*100));
+  if(p.rented) bits.push("Rented");
+  return bits.join(" · ");
+}
+function splitNet(s){return (+s.balance||0)-(+s.offset||0);}
+function propValue(p){return p&&p.value!=null&&p.value!==""&&isFinite(+p.value)&&+p.value>0?+p.value:null;}
+function valueMeta(p){
+  const bits=[];
+  if(p.valueSource) bits.push(String(p.valueSource));
+  const asAt=String(p.valueAsAt||"").slice(0,10);
+  if(/^\d{4}-\d{2}-\d{2}$/.test(asAt)) bits.push(fD(asAt)+" "+asAt.slice(0,4));
+  return bits.join(" · ");
+}
+function homeBits(p){
+  const bits=[];
+  if(p.beds) bits.push(p.beds+" bed");
+  if(p.baths) bits.push(p.baths+" bath");
+  if(p.cars) bits.push(p.cars+" car");
+  return bits.join(" · ");
+}
+function propertyCard(p){
+  const loan=+p.loanBalance||0, offset=+p.offsetBalance||0, net=p.netDebt!=null&&p.netDebt!==""?+p.netDebt:loan-offset;
+  const value=propValue(p);
+  const equity=value==null?"":'<div class="sub" style="margin-top:6px">Equity '+audNear(value-loan)+' · Equity incl. offsets '+audNear(value-net)+'</div>';
+  const specs=homeBits(p);
+  const splits=(p.loanSplits||[]).map(s=>'<div class="wrow" style="grid-template-columns:minmax(0,1fr) auto"><span><div class="t">'+esc(s.name||"Split")+'</div><div class="s">'+aud(s.balance)+' · offset '+aud(s.offset)+'</div></span><span class="amt">'+signedAud(splitNet(s))+'</span></div>').join("");
+  return '<section class="card pad prop-card"><div class="eb">'+esc(p.lender||"Lender")+'</div><h2>'+esc(p.name||"Property")+'</h2><div class="lede">'+esc([rateLabel(p),specs].filter(Boolean).join(" · "))+'</div><div class="net-debt" style="font-size:28px;font-weight:400;letter-spacing:-.03em;margin-top:10px">'+audNear(net)+'</div><div class="sub">Net debt · Loan '+audNear(loan)+' · Offset '+audNear(offset)+'</div>'+equity+(splits?'<div class="stack" style="margin-top:12px">'+splits+'</div>':'')+'</section>';
+}
+function propertyValueCard(p, live){
+  const value=propValue(p);
+  const estimate=!!value&&(p.valueIsEstimate===true||p.valueIsEstimate==="true");
+  const meta=valueMeta(p);
+  return '<section class="card pad"><div class="eb">Value</div><h2>'+(value?audNear(value):"Value not set")+'</h2>'+(estimate?'<div style="margin-top:8px">'+miniChip("Estimate")+'</div>':'')+(value&&meta?'<div class="lede">'+esc(meta)+'</div>':'')+'<button class="btn" type="button" data-propval="'+esc(p.id||"")+'" style="margin-top:12px">'+(value?"Edit value":"Set value")+'</button>'+(live?"":'<div class="sub" style="margin-top:8px">Example figures aren\'t saved.</div>')+'</section>';
+}
+function propertyFlow(p){
+  const months=(p.monthly||[]).filter(m=>m&&m.month).slice().sort((a,b)=>String(a.month).localeCompare(String(b.month)));
+  if(!months.length) return "";
+  const vals=months.flatMap(m=>[+m.rentIn||0, +m.interestAndFees||0]);
+  const scale=dashScale(vals);
+  const nets=months.map(m=>(+m.rentIn||0)-(+m.interestAndFees||0));
+  const avg=nets.reduce((s,n)=>s+n,0)/nets.length;
+  const cols=months.map(m=>{
+    const rent=+m.rentIn||0, interest=+m.interestAndFees||0, net=rent-interest;
+    const bar=(v, cls, label)=>'<button type="button" class="rb" aria-label="'+esc(ymLabel(m.month)+" "+label+" "+aud(v))+'"><span class="rb-val">'+audBar(v)+'</span><span class="rb-bar '+cls+'" style="height:'+Math.round(v>0?scale(v):36)+'px"></span></button>';
+    return '<div class="rb-month">'+bar(rent,"wealth","rent")+bar(interest,"neutral","interest")+'<div class="rb-date">'+esc(monthShort(m.month))+'</div><div class="net">'+signedAud(net)+'</div></div>';
+  }).join("");
+  return '<section class="card pad"><div class="eb">Each month</div><h2>'+signedAud(avg)+'</h2><div class="lede">Average, rent minus interest.</div><div class="rb-scroll">'+cols+'</div><div class="legend"><span><i class="rb-swatch wealth"></i>Rent</span><span><i class="rb-swatch" style="background:#8E9AAB"></i>Interest</span></div><div class="sub" style="margin-top:8px">Rates, insurance and strata are not included yet.</div></section>';
+}
+function propertyView(){
+  const pack=propertyPack();
+  const list=propertyRecords().filter(p=>inScope(asScoped(p)));
+  if(!list.length) return '<section class="card pad"><div class="empty">No property yet.</div></section>';
+  return list.map(p=>propertyCard(p)+propertyValueCard(p, pack.live)+propertyFlow(p)).join("");
+}
+async function persistProperty(data){
+  if(!signedIn()){toast("Sign in to save"); return false;}
+  const {error}=await SB.from("wealth_docs").upsert({id:"property",data,updated_at:new Date().toISOString()},{onConflict:"id"});
+  if(error){toast("Couldn't save. Try again."); return false;}
+  wealthEpoch++;
+  if(!wealthStore) wealthStore={};
+  wealthStore.property=data; wealthLive=true;
+  commitPaint();
+  return true;
+}
+function openPropertyValue(id){
+  const pack=propertyPack();
+  const cur=(pack.doc.properties||[]).find(p=>p&&p.id===id);
+  if(!cur){toast("That property is missing"); return;}
+  const x='<div class="sheet-top"><span class="eb">Value</span><button class="btn ghost" id="shX" type="button">Close</button></div>'+
+    '<form id="propF" class="stack" style="gap:14px;margin-top:6px"><div class="field"><label for="pVal">'+esc(cur.name||"Property")+'</label><input id="pVal" type="number" inputmode="decimal" min="0" step="1" value="'+(cur.value!=null&&cur.value!==""?esc(cur.value):"")+'" placeholder="Current value"></div><button class="btn block" type="submit" id="pSave">Save</button><div class="sub" id="pMsg"></div></form>';
+  $("#sheetRoot").innerHTML='<div class="scrim" id="scrim"><div class="sheet" role="dialog" aria-modal="true" aria-label="Property value">'+x+'</div></div>';
+  $("#scrim").onclick=e=>{if(e.target.id==="scrim")closeSheet();}; $("#shX").onclick=closeSheet;
+  $("#propF").onsubmit=async e=>{
+    e.preventDefault();
+    if(!pack.live){$("#pMsg").textContent="Example property isn't saved."; return;}
+    const raw=$("#pVal").value.trim();
+    const n=raw===""?null:+raw;
+    if(n!=null&&!(n>=0)){$("#pMsg").textContent="Use a number, or leave it blank."; return;}
+    const properties=(pack.doc.properties||[]).map(p=>{
+      if(!p||p.id!==id) return p;
+      const next={...p, value:n};
+      if(String(n)!==String(p.value)){next.valueIsEstimate=false; delete next.valueSource;}
+      if(n>0&&Array.isArray(next.missing)) next.missing=next.missing.filter(x=>String(x).toLowerCase()!=="value");
+      return next;
+    });
+    $("#pSave").disabled=true;
+    const ok=await persistProperty({...pack.doc, properties});
+    if(ok){toast("Value saved"); closeSheet();} else $("#pSave").disabled=false;
+  };
+}
+function invSeg(){
+  const b=(id,label)=>'<button type="button" data-invview="'+id+'" aria-pressed="'+(UI.invView===id)+'">'+label+'</button>';
+  return '<div class="scopes" role="group" aria-label="Invest view">'+b("holdings","Holdings")+b("property","Property")+'</div>';
+}
 function vInvest(){
   const inv=investModel(), w=worthModel();
-  const groups=["ETF/fund","Shares","Other"].map(name=>{
+  if(UI.invView==="property") return wealthHead("Property","Invest","The rental and the loan.")+invSeg()+propertyView();
+  const groups=["Vanguard","ETF/fund","Shares","Other"].map(name=>{
     const items=inv.holdings.filter(h=>h.group===name); if(!items.length) return "";
     const total=items.reduce((s,h)=>s+h.value,0);
     return '<section class="card pad"><div class="eb">'+esc(name)+'</div><h2 style="margin-bottom:12px">'+aud(total)+'</h2><div class="stack">'+items.map(holdingRow).join("")+'</div></section>';
@@ -3902,6 +4065,7 @@ function vInvest(){
     return '<section class="card pad"><div class="eb">Property</div><h2>'+esc(p.name)+'</h2>'+(p.asAt?'<div class="lede">Valued as at '+esc(fD(p.asAt))+'</div>':"")+'<div class="metrics dash-stats" style="margin-top:12px">'+statTrio(["Value",aud(p.value),""],["Mortgage",aud(p.mortgage),""],["Equity",eq,""])+'</div>'+(extra?'<div class="sub" style="margin-top:8px">'+esc(extra)+'</div>':"")+'<div class="sub" style="margin-top:8px">LVR '+(lvr||"—")+'</div></section>';
   }).join("");
   return wealthHead("Portfolio","Invest","Shares, funds and the home.")+
+    invSeg()+
     investPie(inv)+
     '<section class="card pad"><div class="ch"><div><div class="eb">Together</div><h2>'+aud(inv.value)+'</h2><div class="lede">'+gainHtml(inv,true)+'</div></div>'+(inv.partial&&gainKnown(inv)?miniChip("Partial"):"")+'</div><div class="metrics dash-stats">'+statTrio(["Value",aud(inv.value),""],["Cost",gainKnown(inv)?aud(inv.cost):'<span class="sub">Unknown</span>',""],["Gain",gainHtml(inv,false),""])+'</div></div>'+allocBars(inv,w.superSum)+'</section>'+
     groups+props;
@@ -4161,6 +4325,8 @@ function bind(r){
   r.querySelectorAll("[data-logrun]").forEach(b=>b.onclick=()=>openQuickAdd("Run",b.dataset.logrun));
   r.querySelectorAll("[data-scope]").forEach(b=>b.onclick=()=>{UI.scope=b.dataset.scope;try{localStorage.setItem("dt-scope",UI.scope);}catch(e){}render();});
   r.querySelectorAll("[data-budview]").forEach(b=>b.onclick=()=>{UI.budView=b.dataset.budview==="expenses"?"expenses":"plan"; if(UI.tab!=="budget") setTab("budget"); else render();});
+  r.querySelectorAll("[data-invview]").forEach(b=>b.onclick=()=>{UI.invView=b.dataset.invview==="property"?"property":"holdings"; if(UI.tab!=="invest") setTab("invest"); else render();});
+  r.querySelectorAll("[data-propval]").forEach(b=>b.onclick=()=>openPropertyValue(b.dataset.propval));
   r.querySelectorAll("[data-expm]").forEach(b=>b.onclick=()=>{if(b.disabled) return; const months=expenseMonths(expenseDoc()); const pick=expensePicked(months); const idx=Math.max(0,Math.min(months.length-1,pick.idx+(+b.dataset.expm||0))); UI.expMonth=months[idx]?months[idx].month:""; UI.expAvg=false; render();});
   r.querySelectorAll("[data-expavg]").forEach(b=>b.onclick=()=>{UI.expAvg=!UI.expAvg; render();});
   r.querySelectorAll("[data-expinc]").forEach(b=>b.onclick=()=>{UI.expAll=!UI.expAll; render();});
