@@ -1033,10 +1033,58 @@ const isRun=r=>r.sport?r.sport==="run":(!r.type||/run/i.test(r.type));
 const runsOn=date=>Object.values(S.runs).filter(r=>r.date===date&&isRun(r));
 const otherOn=date=>Object.values(S.runs).filter(r=>r.date===date&&!isRun(r));
 const kmOn=date=>runsOn(date).reduce((a,r)=>a+(+r.km||0),0);
-function status(d){const lg=S.log[d.date]||{},km=kmOn(d.date);
-  if(!(+d.km))return (lg.done||lg.gymDone||otherOn(d.date).length)?"done":"rest";
-  if(lg.done||km>0){if(km>0&&km<d.km*.75&&!lg.done)return "part";return "done";}
-  if(d.date<TODAY)return "miss";return "todo";}
+function setsProgress(sets){
+  if(!sets||typeof sets!=="object")return "none";
+  const keys=Object.keys(sets).filter(k=>Array.isArray(sets[k])&&sets[k].length);
+  if(!keys.length)return "none";
+  if(keys.every(k=>sets[k].every(s=>s&&s.done)))return "done";
+  if(keys.some(k=>sets[k].some(s=>s&&s.done)))return "part";
+  return "none";
+}
+function gymActivityState(r){
+  if(!r||r.notDone||catOf(r)!=="gym")return "na";
+  if(r.source==="gym"&&r.sets)return setsProgress(r.sets);
+  return "done";
+}
+function dayGymState(date){
+  const lg=S.log[date]||{};
+  if(lg.notDone)return "none";
+  if(lg.gymDone)return "done";
+  if(lifts().some(l=>l.date===date&&sessStats(l).sets>0))return "done";
+  let part=false;
+  Object.values(S.runs).forEach(r=>{
+    if(!r||r.date!==date)return;
+    const s=gymActivityState(r);
+    if(s==="done")part="done";
+    else if(s==="part"&&part!=="done")part=true;
+  });
+  if(part==="done")return "done";
+  return part?"part":"none";
+}
+function activityCompletes(r){
+  if(!r||r.notDone)return false;
+  if(isRun(r))return (+r.km>0)||(+r.sec>0);
+  const g=gymActivityState(r);
+  if(g==="part"||g==="none")return false;
+  return true;
+}
+function status(d){
+  const lg=S.log[d.date]||{}, km=kmOn(d.date), gym=dayGymState(d.date);
+  const others=otherOn(d.date).some(activityCompletes);
+  if(lg.notDone)return (+d.km&&km>0&&km<+d.km)?"part":"rest";
+  if(!(+d.km)){
+    if(lg.done||gym==="done"||others)return "done";
+    if(gym==="part")return "part";
+    return "rest";
+  }
+  if(lg.done||km>0||gym==="done"||others){
+    if(!lg.done&&gym!=="done"&&!others&&km>0&&km<d.km*.75)return "part";
+    return "done";
+  }
+  if(gym==="part")return "part";
+  if(d.date<TODAY)return "miss";
+  return "todo";
+}
 const wPlan=w=>w&&w.target!=null&&w.target!==""&&isFinite(+w.target)?+w.target:(w&&w.days||[]).reduce((a,d)=>a+(+d.km||0),0);
 const km1=n=>{const x=Math.round((+n||0)*10)/10;return String(x);};
 const wAct=w=>(w.days||[]).reduce((a,d)=>a+kmOn(d.date),0);
@@ -1127,20 +1175,14 @@ function gridParts(d){
 function partDone(date, part){
   if(!date||part==="rest")return false;
   const lg=S.log[date]||{};
-  if(part==="gym"&&lg.gymDone)return true;
-  if(part==="run"&&lg.done)return true;
-  if(part==="gym"&&lifts().some(l=>l.date===date&&sessStats(l).sets>0))return true;
-  return Object.values(S.runs).some(r=>{
-    if(!r||r.date!==date)return false;
-    if(part==="ball")return catOf(r)==="ball";
-    if(part==="run")return (isRun(r)||catOf(r)==="run")&&((+r.km>0)||(+r.sec>0));
-    if(part==="gym"){
-      if(catOf(r)!=="gym")return false;
-      if(r.source==="gym"&&r.sets){const keys=Object.keys(r.sets);return keys.length>0&&keys.every(k=>Array.isArray(r.sets[k])&&r.sets[k].length&&r.sets[k].every(s=>s&&s.done));}
-      return true;
-    }
-    return false;
-  });
+  if(lg.notDone)return false;
+  if(part==="gym")return dayGymState(date)==="done";
+  if(part==="run"){
+    if(lg.done)return true;
+    return Object.values(S.runs).some(r=>r&&r.date===date&&!r.notDone&&(isRun(r)||catOf(r)==="run")&&((+r.km>0)||(+r.sec>0)));
+  }
+  if(part==="ball")return Object.values(S.runs).some(r=>r&&r.date===date&&!r.notDone&&catOf(r)==="ball");
+  return false;
 }
 function weekGrid(weeks){
   const mel=melbourneToday(), cur=weekOf(mel);
@@ -1276,7 +1318,7 @@ function scoreHtml(r){
   const mins=min!=null&&min!==""?'<span class="mins">'+esc(String(min))+' min</span>':"";
   return '<span class="score">'+pill+'<b>'+esc(String(pts))+' pts</b>'+mins+'</span>';
 }
-function doneTick(){return '<span class="done-tick" aria-label="Done"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.2 12.4 10.1 16.2 17.8 7.8" fill="none" stroke="#000" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>';}
+function doneTick(){return '<span class="done-tick" data-doneopen="1" aria-label="Done. Open to mark as not done"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.2 12.4 10.1 16.2 17.8 7.8" fill="none" stroke="#000" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>';}
 function rowSide(done, trail){return '<span class="day-side">'+(done?doneTick():"")+(trail||"")+'</span>';}
 function dayRow(d,dark){
   const st=(d.kind==="rest"&&!(+d.km))?"rest":status(d), z=sessZone(d), dd=pISO(d.date), km=kmOn(d.date), cat=catOf(d);
@@ -1292,7 +1334,7 @@ function dayRow(d,dark){
   const tags=(/soccer/i.test(d.extra||"")?' <span class="chip">Soccer option</span>':'')+(cat==="gym"&&/steam/i.test((d.detail||"")+(d.extra||""))&&page!=="gym"?' <span class="chip">Steam</span>':'');
   const bits=[];
   if(st==="miss")bits.push('<span class="miss">Missed</span>');
-  if(st==="part")bits.push('<span class="part">Partial</span> · '+km.toFixed(1)+' of '+d.km+' km');
+  if(st==="part")bits.push(+d.km?'<span class="part">Partial</span> · '+km.toFixed(1)+' of '+d.km+' km':'<span class="part">Partial</span>');
   else if(cat==="run"&&(+d.km||km))bits.push((Math.round((km||+d.km)*10)/10)+" km");
   if(nameHtml)bits.push(nameHtml);
   const loggedRun=cat==="ball"?game:Object.values(S.runs).find(r=>r.date===d.date&&catOf(r)===cat);
@@ -1407,7 +1449,9 @@ function collectGymSets(box){
 const gymSaveT={};
 async function flushGymSets(date,sets){
   if(!S.db){toast("Saving is unavailable right now");return;}
-  const id=gymRunId(date), cur=S.runs[id]?{...S.runs[id]}:{}, plan=dayIndex()[date];
+  const id=gymRunId(date), exists=!!(S.runs[id]&&S.runs[id].date===date);
+  if(!exists&&setsProgress(sets)==="none")return;
+  const cur=exists?{...S.runs[id]}:{}, plan=dayIndex()[date];
   const next={...cur,sets};
   if(!next.date)next.date=date;
   if(!next.title)next.title=(plan&&plan.d.title)||"Gym";
@@ -1472,7 +1516,7 @@ function bindGym(root){
     if(b.dataset.bound)return; b.dataset.bound="1";
     b.onclick=async()=>{
       const date=b.dataset.gymfinish; if(!S.db){toast("Saving is unavailable right now");return;}
-      const next={...(S.log[date]||{}),date,gymDone:true,updated:new Date().toISOString()};
+      const next={...(S.log[date]||{}),date,gymDone:true,updated:new Date().toISOString()}; delete next.notDone;
       b.disabled=true;
       try{await S.db.doc("log/"+date).set(next);S.log[date]=next; const tog=document.getElementById("lfGym"); if(tog)tog.setAttribute("aria-checked","true"); paintGymProgress(date); toast("Session complete");}
       catch(e){b.disabled=false; toast("Couldn't save. Try again.");}
@@ -1675,14 +1719,15 @@ function loggedSection(rows,title){
 function weekBreakdown(days){
   const dates=days.map(d=>d.date);
   const planned={gym:0,ball:0,runKm:0};
-  days.forEach(d=>{const parts=gridParts(d).acts;if(parts.includes("gym"))planned.gym++;if(parts.includes("ball"))planned.ball++;if(parts.includes("run"))planned.runKm+=+d.km||0;});
-  const gymDays=new Set(days.filter(d=>catOf(d)==="gym").map(d=>d.date));
-  const ballDays=new Set(days.filter(d=>catOf(d)==="ball").map(d=>d.date));
   const gymDone=new Set(), ballDone=new Set();
   let runKm=0;
-  Object.values(S.runs).forEach(r=>{if(!dates.includes(r.date))return;const c=catOf(r);if(c==="run")runKm+=+r.km||0;else if(c==="ball"&&ballDays.has(r.date))ballDone.add(r.date);else if(c==="gym"&&gymDays.has(r.date))gymDone.add(r.date);});
-  lifts().forEach(l=>{if(gymDays.has(l.date))gymDone.add(l.date);});
-  gymDays.forEach(dt=>{if((S.log[dt]||{}).gymDone)gymDone.add(dt);});
+  days.forEach(d=>{
+    const parts=gridParts(d).acts;
+    if(parts.includes("gym")){planned.gym++; if(partDone(d.date,"gym"))gymDone.add(d.date);}
+    if(parts.includes("ball")){planned.ball++; if(partDone(d.date,"ball"))ballDone.add(d.date);}
+    if(parts.includes("run"))planned.runKm+=+d.km||0;
+  });
+  Object.values(S.runs).forEach(r=>{if(dates.includes(r.date)&&isRun(r))runKm+=+r.km||0;});
   return {planned,gymDone:gymDone.size,ballDone:ballDone.size,runKm};
 }
 function catLine(days){const b=weekBreakdown(days);return catMark("gym","Gym "+b.gymDone+"/"+b.planned.gym)+" · "+catMark("ball","Basketball "+b.ballDone+"/"+b.planned.ball)+" · "+catMark("run","Run "+b.runKm.toFixed(1)+"/"+(Math.round(b.planned.runKm*10)/10)+" km");}
@@ -2055,13 +2100,13 @@ function gymMeasure(l){
 function gymLoggedSessions(){
   const out=lifts().map(l=>{const m=gymMeasure(l);return {date:l.date,title:l.name||"Gym",...m};});
   const have=new Set(out.map(x=>x.date));
-  Object.values(S.runs).filter(r=>catOf(r)==="gym"&&!have.has(r.date)).forEach(r=>{
+  Object.values(S.runs).filter(r=>catOf(r)==="gym"&&!have.has(r.date)&&gymActivityState(r)==="done").forEach(r=>{
     const sets=runSetCount(r), min=runMovingSec(r)?Math.round(runMovingSec(r)/60):0;
     if(sets)out.push({date:r.date,title:r.title||"Gym",metric:"sets",value:sets,label:String(sets)});
     else if(min)out.push({date:r.date,title:r.title||"Gym",metric:"min",value:min,label:String(min)});
     else out.push({date:r.date,title:r.title||"Gym",metric:"flat",value:1,label:"1"});
   });
-  Object.values(S.log||{}).forEach(l=>{if(l&&l.gymDone&&l.date&&!out.some(x=>x.date===l.date))out.push({date:l.date,title:"Gym",metric:"flat",value:1,label:"1"});});
+  Object.values(S.log||{}).forEach(l=>{if(l&&l.gymDone&&!l.notDone&&l.date&&!out.some(x=>x.date===l.date))out.push({date:l.date,title:"Gym",metric:"flat",value:1,label:"1"});});
   return out.sort((a,b)=>a.date.localeCompare(b.date));
 }
 function gymOverview(){
@@ -2537,6 +2582,37 @@ function runFold(date){
   const pace=sec&&+km>0?fP(sec/(+km))+"/km":"";
   return '<details class="runfold"><summary>Run</summary><div class="runbody"><div class="field"><label for="lfKm">Distance (km)</label><input id="lfKm" type="text" inputmode="decimal" value="'+esc(km)+'"></div><div class="field"><label for="lfMin">Time (min)</label><input id="lfMin" type="text" inputmode="decimal" value="'+esc(min)+'"></div><div class="sub" id="lfPace">'+(pace?"Pace "+pace:"Pace shows once distance and time are in.")+'</div></div></details>';
 }
+function clearedSets(sets){
+  const next={};
+  Object.keys(sets||{}).forEach(k=>{next[k]=Array.isArray(sets[k])?sets[k].map(s=>s&&typeof s==="object"?{...s,done:false}:s):sets[k];});
+  return next;
+}
+async function uncompleteDay(date){
+  if(!S.db){toast("Saving is unavailable right now");return;}
+  const btn=$("#markUndone"); if(btn)btn.disabled=true;
+  try{
+    for(const r of Object.values(S.runs).filter(x=>x&&x.date===date&&x.sets&&catOf(x)==="gym")){
+      const id=runKey(r); if(!id)continue;
+      const next={...r,sets:clearedSets(r.sets)};
+      await S.db.collection("runs").doc(id).set(next); S.runs[id]=next;
+    }
+    for(const l of lifts().filter(x=>x.date===date)){
+      const ex=(l.ex||[]).map(x=>({...x,sets:(x.sets||[]).map(s=>({...s,done:false}))}));
+      const next={...l,ex}; delete next.id;
+      await S.db.collection("lifts").doc(l.id).set(next); S.lifts[l.id]=next;
+    }
+    for(const r of Object.values(S.runs).filter(x=>x&&x.date===date&&!isRun(x)&&activityCompletes(x))){
+      const id=runKey(r); if(!id)continue;
+      const next={...r,notDone:true};
+      await S.db.collection("runs").doc(id).set(next); S.runs[id]=next;
+    }
+    const lg={...(S.log[date]||{}),date,done:false,gymDone:false,updated:new Date().toISOString()};
+    if(kmOn(date)>0)lg.notDone=true; else delete lg.notDone;
+    await S.db.doc("log/"+date).set(lg); S.log[date]=lg;
+    toast("Marked as not done");
+    openDay(date);
+  }catch(err){if(btn&&btn.isConnected)btn.disabled=false; toast("Couldn't update. Try again.");}
+}
 function openDay(date, opts){
   if(!(opts&&opts.quiet)&&location.hash!=="#day/"+date){
     const tab=(UI.tab&&{home:1,today:1,plan:1,gym:1,ball:1,run:1,meals:1,coach:1,profile:1}[UI.tab])?UI.tab:"home";
@@ -2548,6 +2624,7 @@ function openDay(date, opts){
   const typeTab=kind==="ball"?"ball":kind==="gym"?"gym":kind==="run"?"run":"";
   let x='<div class="sheet-top"><span class="eb">'+fD(date,true)+'</span><button class="btn ghost" id="shX" type="button">Close</button></div>';
   x+='<div class="pagelinks"><button type="button" data-tab="home">Home</button>'+(typeTab?'<button type="button" data-tab="'+typeTab+'">'+esc(CAT_NAME[typeTab])+'</button>':'')+'</div>';
+  if(it&&status(it.d)==="done")x+='<button type="button" class="btn ghost" id="markUndone" style="margin-bottom:8px">Mark as not done</button>';
   if(it)x+=sessionCard(it.d,it.w,"Session").replace(/<button class="btn" data-log[^>]*>Log session<\/button>/,"");
   x+=moveChips(date);
   const shown=actsForKind(date, kind);
@@ -2586,6 +2663,7 @@ function openDay(date, opts){
   document.querySelectorAll("#sheetRoot [data-logrun]").forEach(b=>b.onclick=e=>{e.stopPropagation(); const when=date; closeThen(()=>openQuickAdd("Run", when));});
   document.querySelectorAll("#sheetRoot [data-day]").forEach(b=>b.onclick=e=>{const inner=e.target.closest("button, a, input, textarea, select, label"); if(inner&&inner!==b) return; openDay(b.dataset.day);});
   document.querySelectorAll("#sheetRoot [data-log]").forEach(b=>b.onclick=()=>openDay(b.dataset.log));
+  const undo=$("#markUndone"); if(undo)undo.onclick=()=>uncompleteDay(date);
   bindGameStats($("#sheetRoot"));
   bindGym($("#sheetRoot"));
   const f=$("#lf"); if(!f)return;
@@ -2607,7 +2685,7 @@ function openDay(date, opts){
     const mk=kmEl&&kmEl.value.trim()!==""?+kmEl.value||0:0; if(kmEl&&!minEl)st.manualKm=mk;
     const mins=minEl&&minEl.value.trim()!==""?+minEl.value||0:0;
     if($("#nigList",f))st.niggles=(st.niggles||[]).filter(n=>n&&n.area);
-    st.date=date; st.updated=new Date().toISOString(); for(const k of Object.keys(st)) if(st[k]===undefined) delete st[k];
+    st.date=date; st.updated=new Date().toISOString(); if(st.done||st.gymDone)delete st.notDone; for(const k of Object.keys(st)) if(st[k]===undefined) delete st[k];
     const b=$("#lfSave",f); b.disabled=true; b.textContent="Saving";
     try{await S.db.doc("log/"+date).set(st);
       if(minEl&&(mk>0||mins>0)){
@@ -2657,7 +2735,7 @@ function openQuickAdd(preset,date){
     const doc={date,start:date+"T"+t,km:Math.round(km*1000)/1000,sec:min*60,el:min*60,title:$("#qaName").value.trim()||sp[0],type:sp[1],sport:sp[2],source:"manual"};
     if(rpe)doc.rpe=rpe;if(hr)doc.avgHr=hr;const note=$("#qaN").value.trim();if(note)doc.note=note;
     const id=date.replace(/-/g,"")+"T"+t+(sp[2]==="run"?"-"+Math.round(km*10):"-m"+min);
-    $("#qaGo").disabled=true;try{await S.db.doc("runs/"+id).set(doc);toast(sp[0]+" logged · "+min+" min");closeSheet();}catch(err){msg.textContent="Couldn't save: "+err.message;$("#qaGo").disabled=false;}};
+    $("#qaGo").disabled=true;try{await S.db.doc("runs/"+id).set(doc); if(S.log[date]&&S.log[date].notDone){const lg={...S.log[date]}; delete lg.notDone; await S.db.doc("log/"+date).set(lg); S.log[date]=lg;} toast(sp[0]+" logged · "+min+" min");closeSheet();}catch(err){msg.textContent="Couldn't save: "+err.message;$("#qaGo").disabled=false;}};
 }
 function goalStableId(g,i){
   if(g&&g.id) return String(g.id);
@@ -3106,7 +3184,7 @@ function vGym(){
     '<div class="metrics"><div class="m"><div class="k">Sessions</div><div class="v">'+A.n+'</div></div><div class="m"><div class="k">Sets</div><div class="v">'+A.sets+'</div></div><div class="m"><div class="k">Reps</div><div class="v">'+A.reps+'</div></div><div class="m"><div class="k">Annual run rate</div><div class="v">'+fT(rr)+'<small>/ yr</small></div></div></div>'+
     '<div class="eb" style="margin-top:16px">Weekly, last 12 weeks</div><div class="wkt">'+wk.map(x=>'<span title="'+fD(x.m)+': '+fT(x.t)+'"><i style="height:'+Math.max(2,x.t/wmx*100).toFixed(1)+'%"'+(x.m===monOf(TODAY)?' class="cur"':'')+'></i></span>').join("")+'</div><div class="wkt-lab"><span>'+fD(wk[0].m)+'</span><span>This week</span></div></section>';
   h+='<section class="card pad"><div class="eb">Sessions</div><h2>Recent</h2><div class="glist">'+ls.slice().reverse().slice(0,8).map(l=>{const s=sessStats(l);const top=Object.keys(s.mus).sort((x,y)=>s.mus[y]-s.mus[x]).slice(0,3).map(k=>MUSC[k]).join(", ");
-    return '<button type="button" class="grow" data-liftopen="'+l.id+'"><span class="wkd-date">'+DOW[pISO(l.date).getDay()]+' '+pISO(l.date).getDate()+' '+MON[pISO(l.date).getMonth()]+'</span><span class="wkd-t">'+esc(l.name||"Session")+'<span class="sub">'+s.sets+' sets · '+esc(top)+'</span></span><span class="wkd-n">'+fT(s.t)+'</span>'+rowSide(true,'<span class="r" aria-hidden="true">›</span>')+'</button>';}).join("")+'</div></section>';
+    return '<button type="button" class="grow" data-liftopen="'+l.id+'"><span class="wkd-date">'+DOW[pISO(l.date).getDay()]+' '+pISO(l.date).getDate()+' '+MON[pISO(l.date).getMonth()]+'</span><span class="wkd-t">'+esc(l.name||"Session")+'<span class="sub">'+s.sets+' sets · '+esc(top)+'</span></span><span class="wkd-n">'+fT(s.t)+'</span>'+rowSide(s.sets>0,'<span class="r" aria-hidden="true">›</span>')+'</button>';}).join("")+'</div></section>';
   h+='</div><div class="stack">';
   h+='<section class="card pad"><div class="eb">Muscles · '+(UI.gymP==="week"?"this week":UI.gymP==="month"?"last 4 weeks":"this year")+'</div><h2>What you hit</h2>'+(A.sets?bodySvg(A.mus)+splitBar(A.mus)+muscleRank(A.mus,A.mt,6)+'<div class="sub" style="margin-top:8px">Counted in sets: a full set for the main muscle, half a set for helpers.</div>':'<div class="empty">Nothing logged in this period yet.</div>')+'</section>';
   const prs=bestLifts().slice(0,6);
@@ -3240,7 +3318,7 @@ function openLogger(L){
       const doc={date:L.date,start:L.start||"",name:(L.name||"Gym session").trim(),tpl:L.tpl||"",ex,note:(L.note||"").trim(),bw:+L.bw||bw,min:mins>0&&mins<300?mins:(L.min||0),updated:new Date().toISOString()};
       const b=$("#lgFin");b.disabled=true;b.textContent="Saving";
       try{await S.db.collection("lifts").doc(id).set(doc);
-        const lg={...(S.log[L.date]||{}),date:L.date,gymDone:true};await S.db.doc("log/"+L.date).set(lg);
+        const lg={...(S.log[L.date]||{}),date:L.date,gymDone:true}; delete lg.notDone; await S.db.doc("log/"+L.date).set(lg);
         clearDraft();clearInterval(UI.gymClk);toast("Saved · "+fT(sessStats(doc).t)+" lifted");closeSheet();UI.tab="gym";render();setTimeout(()=>openLift(id),50);}
       catch(err){toast("Couldn't save. Your session is kept on this phone, try again.");b.disabled=false;b.textContent="Finish";}};
   }
@@ -4561,7 +4639,7 @@ document.addEventListener("click",e=>{
     e.preventDefault(); e.stopPropagation();
     const date=fin.dataset.gymfinish;
     if(!S.db){toast("Saving is unavailable right now");return;}
-    const next={...(S.log[date]||{}),date,gymDone:true,updated:new Date().toISOString()};
+    const next={...(S.log[date]||{}),date,gymDone:true,updated:new Date().toISOString()}; delete next.notDone;
     fin.disabled=true;
     S.db.doc("log/"+date).set(next).then(()=>{S.log[date]=next; commitPaint(); toast("Session complete");}).catch(()=>{fin.disabled=false; toast("Couldn't save. Try again.");});
     return;
