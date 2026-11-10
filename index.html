@@ -130,7 +130,7 @@ h2{font-size:22px;font-weight:400;letter-spacing:-.03em;line-height:var(--space-
 .wrow .amt.under{color:#22C55E}
 .ring.wealth{cursor:default}
 .ring.wealth .ring-seg.on,.ring.wealth .ring-check,.ring.wealth .ring-q.on{stroke:var(--wealth)}
-.ring.wealth .ring-q{stroke:var(--ring-track, #D5D8E0);fill:none}
+.ring.wealth .ring-q{stroke:var(--ring-track, #D5D8E0);fill:none;stroke-linecap:butt}
 button.goal{width:100%;text-align:left;color:inherit}
 .goal .amt{font-variant-numeric:tabular-nums;font-weight:500;color:var(--accent)}
 .goal{display:grid;grid-template-columns:72px minmax(0,1fr) auto;gap:var(--space-gap);align-items:center;background:var(--card);border:1px solid var(--line);border-radius:var(--space-radius);padding:var(--space-pad-y) var(--space-pad-x)}
@@ -3145,13 +3145,13 @@ function audBar(n){const v=Math.round(+n||0), abs=Math.abs(v); return (v<0?"−"
 function wealthHead(eb,title,lede){return '<div class="head cat-wealth"><div class="ch"><div><div class="eb acc">'+esc(eb)+'</div><h1>'+esc(title)+'</h1>'+(lede?'<div class="lede">'+esc(lede)+'</div>':'')+'</div>'+exampleChip()+'</div></div>';}
 function progressRing(pct){
   const has=pct!=null&&isFinite(+pct), p=has?Math.max(0,Math.min(1,+pct)):0;
-  const c=18, r=13.2, circ=2*Math.PI*r, gap=8, seg=90-gap;
+  const c=18, r=13.2, circ=2*Math.PI*r, gap=10, seg=90-gap;
   let arcs="";
   for(let i=0;i<4;i++){
     const rot=-90+i*90+gap/2, full=circ*(seg/360), frac=has?Math.max(0,Math.min(1,(p-i*0.25)/0.25)):0;
     const spin=' transform="rotate('+rot.toFixed(2)+" "+c+" "+c+')"';
-    arcs+='<circle class="ring-q" cx="'+c+'" cy="'+c+'" r="'+r+'" stroke-width="3.6" stroke-linecap="round" stroke-dasharray="'+full.toFixed(2)+" "+(circ-full).toFixed(2)+'"'+spin+'/>';
-    if(frac>0) arcs+='<circle class="ring-q on" cx="'+c+'" cy="'+c+'" r="'+r+'" stroke-width="3.6" stroke-linecap="round" stroke-dasharray="'+(full*frac).toFixed(2)+" "+(circ-full*frac).toFixed(2)+'"'+spin+'/>';
+    arcs+='<circle class="ring-q" cx="'+c+'" cy="'+c+'" r="'+r+'" stroke-width="3.4" stroke-linecap="butt" stroke-dasharray="'+full.toFixed(2)+" "+(circ-full).toFixed(2)+'"'+spin+'/>';
+    if(frac>0) arcs+='<circle class="ring-q on" cx="'+c+'" cy="'+c+'" r="'+r+'" stroke-width="3.4" stroke-linecap="butt" stroke-dasharray="'+(full*frac).toFixed(2)+" "+(circ-full*frac).toFixed(2)+'"'+spin+'/>';
   }
   const check=has&&p>=1?'<path class="ring-check" d="M11.6 18.2 l3.2 3.2 7.4-7.6" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>':"";
   return '<div class="ring wealth'+(has&&p>=1?" full":"")+'" aria-hidden="true"><svg viewBox="0 0 36 36">'+arcs+check+'</svg></div>';
