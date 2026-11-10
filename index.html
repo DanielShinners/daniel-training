@@ -151,12 +151,22 @@ button.exp-jump span:last-child{color:var(--ink3);font-size:18px}
 .exp-nav .avg[aria-pressed="true"],.exp-inc[aria-pressed="true"]{background:#72F476;color:#000;border-color:#72F476}
 .exp-inc{margin-top:10px}
 .pie{width:180px;height:180px;display:block;margin:14px auto 2px}
+.pie-row{display:flex;align-items:center;gap:8px}
+.pie-row .pie{margin:0;flex:none}
+.donut-wrap{position:relative;width:180px;height:180px;margin:14px auto 2px}
+.donut-wrap .pie{margin:0}
+.donut-mid{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;font-size:18px;font-weight:500;letter-spacing:-.03em;padding:52px;line-height:1.15}
+.eq-cap{min-width:0}
+.eq-cap b{display:block;font-size:22px;font-weight:400;letter-spacing:-.03em}
+.eq-lab{text-align:center;margin-top:4px}
+.loan-sec{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
 .pie-leg{display:grid;gap:8px;margin-top:14px}
 .pie-leg > span{display:grid;grid-template-columns:10px minmax(0,1fr) auto auto;gap:8px;align-items:center;color:var(--ink);font-size:14px;font-weight:500}
 .pie-leg i{width:10px;height:10px;border-radius:99px}
 .pie-leg .amt,.pie-leg .pct{font-variant-numeric:tabular-nums}
 .pie-leg .pct{color:var(--ink3);min-width:48px;text-align:right}
-.pie-leg .nm{display:flex;align-items:center;gap:6px;min-width:0}
+.pie-leg .nm{display:flex;align-items:center;gap:6px;min-width:0;flex-wrap:wrap}
+.pie-leg .nm .gain{flex-basis:100%;font-size:12px;font-weight:500;color:var(--ink2)}
 .pie-leg .nm svg{width:16px;height:16px;flex:none;color:var(--ink2)}
 .pie-leg .nm svg *{fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .ring .ring-ico{color:var(--ink2)}
@@ -3327,6 +3337,7 @@ function scopeBar(){
   return '<div class="scopes" role="group" aria-label="Whose money">'+b("all","All")+b("personal","Personal")+b("family","Family")+'</div>';
 }
 function scopeWord(item){return scopeOf(item)==="family"?"Family":"Personal";}
+function scopeLabel(){return UI.scope==="personal"?"Personal":UI.scope==="family"?"Family":"All";}
 function budgetModel(){
   const b=wealthDoc("budget"), cats=(b.categories||[]).filter(c=>c&&c.name&&inScope(c));
   const spent=cats.reduce((a,c)=>a+(+c.spent||0),0), budget=cats.reduce((a,c)=>a+(+c.budget||0),0);
@@ -3608,18 +3619,26 @@ function pieSvg(rows){
     a=a1;
     return d.replace(/<(circle|path)/,'<$1 fill="'+s.color+'"');
   }).join("");
-  const label=rows.map(s=>s.name+" "+aud(s.v)+" "+pctTxt(s.pct)).join(", ");
+  const label=rows.map(s=>s.name+" "+aud(s.v)+(s.gain?" "+s.gain:"")+" "+pctTxt(s.pct)).join(", ");
   return rows.length?'<svg class="pie" viewBox="0 0 100 100" role="img" aria-label="'+esc(label)+'">'+shapes+'</svg>':"";
 }
 function pieLegend(rows){
-  return '<div class="pie-leg">'+rows.map(s=>'<span><i style="background:'+s.color+'"></i><span class="nm">'+(s.icon||"")+esc(s.name)+'</span><span class="amt">'+aud(s.v)+'</span><span class="pct">'+pctTxt(s.pct)+'</span></span>').join("")+'</div>';
+  return '<div class="pie-leg">'+rows.map(s=>'<span><i style="background:'+s.color+'"></i><span class="nm">'+(s.icon||"")+esc(s.name)+(s.gain?'<span class="gain">'+esc(s.gain)+'</span>':'')+'</span><span class="amt">'+aud(s.v)+'</span><span class="pct">'+pctTxt(s.pct)+'</span></span>').join("")+'</div>';
 }
 function portfolioPie(){
   const sums=pieModel();
   const parts=PIE_BUCKETS.map(b=>({...b,value:sums[b.key]})).filter(b=>b.value>0.005);
   const total=parts.reduce((s,b)=>s+b.value,0);
-  const rows=mixRows(parts.map(b=>({name:b.name,v:b.value,color:b.color})));
+  let rows=mixRows(parts.map(b=>({name:b.name,v:b.value,color:b.color})));
+  const vg=vanguardGainLabel();
+  if(vg) rows=rows.map(r=>r.name==="Vanguard"?{...r,gain:vg}:r);
   return '<button type="button" class="card pad pie-card" data-tab="invest" aria-label="Portfolio '+aud(total)+'. Open investments."><div class="ch"><div><div class="eb">Portfolio</div><h2>'+aud(total)+'</h2><div class="lede">Super, Vanguard, shares and savings.</div></div></div>'+pieSvg(rows)+pieLegend(rows)+'</button>';
+}
+function vanguardGainLabel(){
+  const hs=(investModel().holdings||[]).filter(h=>isVanguardHold(h)&&h.cost!=null&&h.costIsApprox);
+  if(!hs.length) return "";
+  const gain=hs.reduce((s,h)=>s+(h.gain||0),0), cost=hs.reduce((s,h)=>s+(h.cost||0),0);
+  return approxMoney(gain, cost?gain/cost*100:null);
 }
 const SLICE_COLOR={Super:"#2A56F6",Vanguard:"#8E9AAB",Shares:"#72F476",Savings:"#D8F34A",Property:"#F97316","ETF/fund":"#1296A3",Other:"#7A5AF0"};
 const SLICE_EXTRA=["#6CB6FF","#E0A31A","#5B6B8A","#3DCFC4","#C5C9D3","#D4A0C8","#A78BFA"];
@@ -3629,16 +3648,17 @@ function sliceColors(items){
     let color=SLICE_COLOR[it.type]||SLICE_COLOR.Other;
     if(used[color]) color=SLICE_EXTRA.find(c=>!used[c])||color;
     used[color]=true;
-    return {name:it.name,v:it.v,color};
+    return {name:it.name,v:it.v,color,gain:it.gain||""};
   });
 }
-function assetPie(eb, items, missing){
+function assetPie(eb, items, missing, beside){
   const valued=items.filter(i=>i.v>0.005).sort((a,b)=>b.v-a.v||a.name.localeCompare(b.name));
   const note=missing.length?'<div class="sub" style="margin-top:10px">No value yet: '+esc(missing.join(", "))+".</div>":"";
   if(!valued.length) return '<section class="card pad"><div class="eb">'+esc(eb)+'</div><div class="empty">Nothing with a value yet.</div>'+note+'</section>';
   const rows=mixRows(sliceColors(valued));
   const total=valued.reduce((s,i)=>s+i.v,0);
-  return '<section class="card pad"><div class="ch"><div><div class="eb">'+esc(eb)+'</div><h2>'+aud(total)+'</h2></div></div>'+pieSvg(rows)+pieLegend(rows)+note+'</section>';
+  const pie=beside?'<div class="pie-row">'+pieSvg(rows)+beside+'</div>':pieSvg(rows);
+  return '<section class="card pad"><div class="ch"><div><div class="eb">'+esc(eb)+'</div><h2>'+aud(total)+'</h2></div></div>'+pie+pieLegend(rows)+note+'</section>';
 }
 function holdingSliceType(h){
   if(isVanguardHold(h)) return "Vanguard";
@@ -3651,7 +3671,7 @@ function investPie(inv){
   (inv.holdings||[]).forEach(h=>{
     if(h.excludeFromWorth) return;
     if(!(h.value>0)){ if(h.name) missing.push(h.name); return; }
-    items.push({name:h.name,v:h.value,type:holdingSliceType(h)});
+    items.push({name:h.name,v:h.value,type:holdingSliceType(h),gain:isVanguardHold(h)&&h.cost!=null&&h.costIsApprox?approxMoney(h.gain,h.cost?h.gain/h.cost*100:null):""});
   });
   (inv.properties||[]).forEach(p=>{
     if(p.excludeFromWorth) return;
@@ -3664,7 +3684,7 @@ function investPie(inv){
     if(!(+p.value>0)) return;
     items.push({name:p.name,v:+p.value,type:"Property"});
   });
-  return assetPie("Holdings", items, missing);
+  return assetPie("Holdings", items, missing, items.some(i=>i.type==="Property")?equityCaption():"");
 }
 function worthSliceType(line){
   const k=String(line.kind||"");
@@ -3677,8 +3697,10 @@ function worthSliceType(line){
   return "Other";
 }
 function worthPie(w){
-  const items=(w.lines||[]).filter(l=>l&&!l.liability&&l.amount>0.005).map(l=>({name:l.name,v:l.amount,type:worthSliceType(l)}));
-  return assetPie("Owned", items, []);
+  const gain={};
+  (investModel().holdings||[]).forEach(h=>{if(isVanguardHold(h)&&h.cost!=null&&h.costIsApprox) gain[h.name]=approxMoney(h.gain,h.cost?h.gain/h.cost*100:null);});
+  const items=(w.lines||[]).filter(l=>l&&!l.liability&&l.amount>0.005).map(l=>({name:l.name,v:l.amount,type:worthSliceType(l),gain:gain[l.name]||""}));
+  return assetPie("Owned", items, [], items.some(i=>i.type==="Property")?equityCaption():"");
 }
 const SPEND_ICONS={
   bag:'<path d="M6.5 8.5h11l-.8 11H7.3z"/><path d="M9 8.5V6.8a3 3 0 0 1 6 0v1.7"/>',
@@ -3793,7 +3815,7 @@ function expenseLink(){
   if(!months.length) return "";
   const month=months[expenseDefaultIdx(months, doc)];
   const total=expenseCats(month, doc, false).reduce((s,c)=>s+c.v,0);
-  return '<button type="button" class="exp-jump" data-budview="expenses"><span>'+esc(doc.source||"Expenses")+' · '+esc(monthShort(month.month))+' · '+aud(total)+'</span><span aria-hidden="true">›</span></button>';
+  return '<button type="button" class="exp-jump" data-budview="expenses"><span>'+esc(scopeLabel())+' · '+esc(monthShort(month.month))+' · '+aud(total)+'</span><span aria-hidden="true">›</span></button>';
 }
 function vExpenses(){
   const doc=expenseDoc(), months=expenseMonths(doc);
@@ -3813,7 +3835,8 @@ function vExpenses(){
   const excluded=(doc.excludeFromSpend||[]).filter(Boolean);
   const nav='<div class="exp-nav"><button type="button" class="chev" data-expm="-1" aria-label="Previous month"'+(pick.idx<=0?" disabled":"")+'>‹</button><div class="lab">'+esc(label)+(note?' <span class="chip exp-partial">'+esc(note)+'</span>':"")+'</div><button type="button" class="chev" data-expm="1" aria-label="Next month"'+(pick.idx>=months.length-1?" disabled":"")+'>›</button><button type="button" class="avg" data-expavg="1" aria-pressed="'+(pick.avg?"true":"false")+'">Average</button></div>';
   const tog=excluded.length?'<button type="button" class="exp-inc" data-expinc="1" aria-pressed="'+(include?"true":"false")+'">Include investing & mortgage</button>':"";
-  return '<section class="card pad exp-card"><div class="ch"><div><div class="eb">'+esc(doc.source||"Expenses")+'</div><h2>'+aud(total)+'</h2></div></div>'+nav+tog+pieSvg(rows)+pieLegend(rows)+'<div class="eb" style="margin-top:16px">Last 12 months</div><div class="rb-scroll">'+bars+'</div></section>';
+  const from=doc.source?'<div class="lede">From '+esc(doc.source)+'</div>':"";
+  return '<section class="card pad exp-card"><div class="ch"><div><div class="eb">'+esc(scopeLabel())+'</div><h2>'+aud(total)+'</h2>'+from+'</div></div>'+nav+tog+pieSvg(rows)+pieLegend(rows)+'<div class="eb" style="margin-top:16px">Last 12 months</div><div class="rb-scroll">'+bars+'</div></section>';
 }
 function insuranceCard(){
   const doc=wealthLive&&wealthStore?(wealthStore.insurance||{items:[]}):(WEALTH_EXAMPLE.insurance||{items:[]});
@@ -3839,7 +3862,7 @@ function vWealthOverview(){
   const since=w.change==null?"—":aud(w.change)+" since "+w.since+".";
   const nextTxt=bills.next?"Next is "+esc(bills.next.name)+" on "+esc(fD(billDue(bills.next),true))+". ":"";
   let h=wealthHead("Wealth","Overview","Where things stand.");
-  h+=dashCard("wspend","This month","Spending",aud(allocate)+" still to allocate."+(estimate?" "+miniChip("Net estimate"):""),statTrio(["Income",aud(income),""],["Spent",aud(spent),""],["To allocate",aud(allocate),""]),spendBars(cats,"budget"),'<div class="legend"><span><i class="rb-swatch wealth"></i>Spent</span><span class="over">Over</span><span class="under">Under</span></div>');
+  h+=dashCard("wspend","This month · "+scopeLabel(),"Spending",aud(allocate)+" still to allocate."+(estimate?" "+miniChip("Net estimate"):""),statTrio(["Income",aud(income),""],["Spent",aud(spent),""],["To allocate",aud(allocate),""]),spendBars(cats,"budget"),'<div class="legend"><span><i class="rb-swatch wealth"></i>Spent</span><span class="over">Over</span><span class="under">Under</span></div>');
   h+=expenseLink();
   h+=emergencyCard()+portfolioPie();
   h+='<section class="card pad"><div class="ch"><div><div class="eb">Saving</div><h2>Goals</h2></div><div class="metrics dash-stats">'+statTrio(["Saved",aud(saved),""],["Target",aud(target),""],[goalGap<0?"Over":"Left",aud(Math.abs(goalGap)),""])+'</div></div>'+goalCards(goals)+'<button class="btn ghost" type="button" data-tab="goals" style="margin-top:12px">Open goals</button></section>';
@@ -3866,7 +3889,7 @@ function vBudget(){
   const txRows=tx.map(t=>{const ds=String(t.date||"").slice(0,10), dd=/^\d{4}-\d{2}-\d{2}$/.test(ds)?pISO(ds):null; return '<div class="wrow">'+(dd?'<span class="tile"><span class="a">'+MON[dd.getMonth()].toUpperCase()+'</span><span class="b">'+dd.getDate()+'</span></span>':'<span class="tile"></span>')+'<span style="min-width:0"><div class="t">'+esc(t.name||"")+'</div><div class="s">'+esc(t.category||"")+'</div></span><span class="amt">'+audTxn(t.amount)+'</span></div>';}).join("");
   return wealthHead(ymLabel(b.month)||"This month","Spending","Where this month's money is going.")+
     head+
-    dashCard("wbudget","This month","Spent",aud(allocate)+" still to allocate."+(estimate?" "+miniChip("Net estimate"):""),statTrio(["Income",aud(income),""],["Spent",aud(spent),""],["To allocate",aud(allocate),""]),spendBars(cats),'<div class="legend"><span><i class="rb-swatch wealth"></i>Spent</span></div>')+
+    dashCard("wbudget","This month · "+scopeLabel(),"Spent",aud(allocate)+" still to allocate."+(estimate?" "+miniChip("Net estimate"):""),statTrio(["Income",aud(income),""],["Spent",aud(spent),""],["To allocate",aud(allocate),""]),spendBars(cats),'<div class="legend"><span><i class="rb-swatch wealth"></i>Spent</span></div>')+
     '<section class="card pad"><div class="eb">Coming in</div><h2 style="margin-bottom:12px">'+aud(income)+'</h2>'+incomeRows(sources)+'</section>'+
     '<section class="card pad"><div class="eb">By category</div><h2 style="margin-bottom:12px">Where it went</h2><div class="stack">'+rows+'</div></section>'+
     '<section class="card pad"><div class="eb">Recent</div><h2 style="margin-bottom:12px">Transactions</h2><div class="stack">'+txRows+'</div></section>';
@@ -3976,13 +3999,41 @@ function homeBits(p){
   if(p.cars) bits.push(p.cars+" car");
   return bits.join(" · ");
 }
-function propertyCard(p){
-  const loan=+p.loanBalance||0, offset=+p.offsetBalance||0, net=p.netDebt!=null&&p.netDebt!==""?+p.netDebt:loan-offset;
+const EQ_LABEL="Estimated equity (value less loan)";
+function estimatedEquity(p){
+  const v=propValue(p);
+  if(v==null) return null;
+  return Math.round(v-(+p.loanBalance||0));
+}
+function equityCaption(){
+  return propertyRecords().filter(p=>inScope(asScoped(p))&&estimatedEquity(p)!=null).map(p=>'<div class="eq-cap"><b class="net-debt">'+audNear(estimatedEquity(p))+'</b><div class="sub">'+EQ_LABEL+'</div></div>').join("");
+}
+function propertyDonut(p){
+  const eq=estimatedEquity(p), value=propValue(p);
+  if(eq==null) return "";
+  return '<div class="donut-wrap"><svg class="pie" viewBox="0 0 100 100" role="img" aria-label="'+esc(p.name+" value "+audNear(value)+". "+EQ_LABEL+" "+audNear(eq))+'"><circle cx="50" cy="50" r="32" fill="none" stroke="#F97316" stroke-width="14"/></svg><div class="donut-mid">'+audNear(eq)+'</div></div><div class="sub eq-lab">'+EQ_LABEL+'</div>';
+}
+function loanSection(p){
+  const loan=+p.loanBalance||0, net=p.netDebt!=null&&p.netDebt!==""?+p.netDebt:loan-(+p.offsetBalance||0);
+  const rate=p.approxRate!=null&&p.approxRate!==""?"~"+pctTxt(+p.approxRate*100):"";
+  const kind=/interest/i.test(p.loanType||"")?"interest-only":String(p.loanType||"");
+  const head=[p.lender, kind, rate].filter(Boolean).join(" · ");
+  const splits=(p.loanSplits||[]).map((s,i)=>{
+    const n=splitNet(s), nil=Math.abs(n)<100;
+    const letter=(String(s.name||"").match(/([A-Z])\s*$/i)||[])[1]||String.fromCharCode(65+i);
+    const netTxt=nil?"net ≈ $0":"net "+audNear(n);
+    return '<div><div class="t">Split '+esc(String(letter).toUpperCase())+' '+audNear(s.balance)+' with offset '+audNear(s.offset)+' ('+netTxt+')</div>'+(nil?'<div class="s">interest effectively nil</div>':'')+'</div>';
+  }).join("");
+  const months=(p.monthly||[]).filter(m=>m&&m.month).slice().sort((a,b)=>String(a.month).localeCompare(String(b.month)));
+  const last=months[months.length-1];
+  const fee=last?'<div class="sub" style="margin-top:8px">Interest & fees ≈ '+audNear(last.interestAndFees)+' / month · '+esc(ymLabel(last.month))+'</div>':'';
+  return '<div class="loan-sec"><div class="eb">Loan</div><div class="lede">'+esc(head)+'</div><div class="sub" style="margin-top:8px">Total loan '+audNear(loan)+'</div><div class="stack" style="margin-top:8px">'+splits+'</div><div class="net-debt" style="font-size:22px;font-weight:400;letter-spacing:-.03em;margin-top:12px">Net of offsets ≈ '+audNear(net)+'</div>'+fee+'</div>';
+}
+function propertySummary(p, live){
   const value=propValue(p);
-  const equity=value==null?"":'<div class="sub" style="margin-top:6px">Equity '+audNear(value-loan)+' · Equity incl. offsets '+audNear(value-net)+'</div>';
-  const specs=homeBits(p);
-  const splits=(p.loanSplits||[]).map(s=>'<div class="wrow" style="grid-template-columns:minmax(0,1fr) auto"><span><div class="t">'+esc(s.name||"Split")+'</div><div class="s">'+aud(s.balance)+' · offset '+aud(s.offset)+'</div></span><span class="amt">'+signedAud(splitNet(s))+'</span></div>').join("");
-  return '<section class="card pad prop-card"><div class="eb">'+esc(p.lender||"Lender")+'</div><h2>'+esc(p.name||"Property")+'</h2><div class="lede">'+esc([rateLabel(p),specs].filter(Boolean).join(" · "))+'</div><div class="net-debt" style="font-size:28px;font-weight:400;letter-spacing:-.03em;margin-top:10px">'+audNear(net)+'</div><div class="sub">Net debt · Loan '+audNear(loan)+' · Offset '+audNear(offset)+'</div>'+equity+(splits?'<div class="stack" style="margin-top:12px">'+splits+'</div>':'')+'</section>';
+  const estimate=!!value&&(p.valueIsEstimate===true||String(p.valueIsEstimate)==="true");
+  const meta=valueMeta(p), specs=homeBits(p);
+  return '<section class="card pad prop-card"><div class="eb">'+esc(p.name||"Property")+'</div><h2>'+(value?audNear(value):"Value not set")+'</h2>'+(estimate?'<div style="margin-top:8px">'+miniChip("Estimate")+'</div>':'')+(value&&meta?'<div class="lede">'+esc(meta)+'</div>':'')+(specs?'<div class="sub" style="margin-top:6px">'+esc(specs)+'</div>':'')+propertyDonut(p)+'<button class="btn" type="button" data-propval="'+esc(p.id||"")+'" style="margin-top:12px">'+(value?"Edit value":"Set value")+'</button>'+(live?"":'<div class="sub" style="margin-top:8px">Example figures aren\'t saved.</div>')+loanSection(p)+'</section>';
 }
 function propertyValueCard(p, live){
   const value=propValue(p);
@@ -4008,7 +4059,7 @@ function propertyView(){
   const pack=propertyPack();
   const list=propertyRecords().filter(p=>inScope(asScoped(p)));
   if(!list.length) return '<section class="card pad"><div class="empty">No property yet.</div></section>';
-  return list.map(p=>propertyCard(p)+propertyValueCard(p, pack.live)+propertyFlow(p)).join("");
+  return list.map(p=>propertySummary(p, pack.live)+propertyFlow(p)).join("");
 }
 async function persistProperty(data){
   if(!signedIn()){toast("Sign in to save"); return false;}
@@ -4051,7 +4102,7 @@ function invSeg(){
   return '<div class="scopes" role="group" aria-label="Invest view">'+b("holdings","Holdings")+b("property","Property")+'</div>';
 }
 function vInvest(){
-  const inv=investModel(), w=worthModel();
+  const inv=investModel();
   if(UI.invView==="property") return wealthHead("Property","Invest","The rental and the loan.")+invSeg()+propertyView();
   const groups=["Vanguard","ETF/fund","Shares","Other"].map(name=>{
     const items=inv.holdings.filter(h=>h.group===name); if(!items.length) return "";
@@ -4067,7 +4118,6 @@ function vInvest(){
   return wealthHead("Portfolio","Invest","Shares, funds and the home.")+
     invSeg()+
     investPie(inv)+
-    '<section class="card pad"><div class="ch"><div><div class="eb">Together</div><h2>'+aud(inv.value)+'</h2><div class="lede">'+gainHtml(inv,true)+'</div></div>'+(inv.partial&&gainKnown(inv)?miniChip("Partial"):"")+'</div><div class="metrics dash-stats">'+statTrio(["Value",aud(inv.value),""],["Cost",gainKnown(inv)?aud(inv.cost):'<span class="sub">Unknown</span>',""],["Gain",gainHtml(inv,false),""])+'</div></div>'+allocBars(inv,w.superSum)+'</section>'+
     groups+props;
 }
 function vBills(){
