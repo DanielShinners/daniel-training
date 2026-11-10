@@ -119,6 +119,8 @@ h2{font-size:22px;font-weight:400;letter-spacing:-.03em;line-height:var(--space-
 .head.cat-wealth h1{box-shadow:inset 0 -4px 0 var(--wealth);padding-bottom:2px}
 .chip.ex{background:var(--sunken);color:var(--ink2)}
 .rb-bar.wealth{background:var(--wealth)}
+.rb-bar.wealth.faint{background:color-mix(in srgb, var(--wealth) 32%, transparent);box-shadow:inset 0 0 0 1.5px var(--wealth)}
+.chip.exp-partial{color:var(--ink3)}
 .rb-swatch.wealth{background:var(--wealth)!important}
 .rb-sub.over{color:#EF4444}
 .rb-sub.under{color:#22C55E}
@@ -1909,7 +1911,7 @@ function statTrio(a,b,c){const m=(k,v,s)=>'<div class="m"><div class="k">'+k+'</
 function dashBar(o){
   const plan=!!o.plan, mark=o.mark==="W"||o.mark==="L"?o.mark:"";
   const cls="rb"+(plan?" plan":"")+dashScrollMark(o.date||o.exp,o.anchor);
-  const bar="rb-bar"+(o.accent?" "+o.accent:"")+(plan?" plan":"")+(mark?" cap-"+mark.toLowerCase():"");
+  const bar="rb-bar"+(o.accent?" "+o.accent:"")+(plan?" plan":"")+(o.faint?" faint":"")+(mark?" cap-"+mark.toLowerCase():"");
   const sub=(mark?'<i class="wl '+mark.toLowerCase()+'"></i>':"")+(o.sub?esc(o.sub):"");
   const act=o.tab?' data-tab="'+esc(o.tab)+'"':(o.exp?' data-expmonth="'+esc(o.exp)+'"':(o.date?' data-day="'+o.date+'"':""));
   const label=o.label!=null?esc(o.label):(o.date?esc(fD(o.date)):"");
@@ -3133,15 +3135,19 @@ function gymCtx(){const a=liftAgg(addD(TODAY,-27),TODAY);if(!a.n)return "GYM: no
 
 /* Wealth: example figures until wealth_docs has rows. Never written back. */
 function buildExampleExpenses(){
-  const base=[["Rent/Housing","family",2400],["Groceries","family",640],["Kids & childcare","family",420],["Eating out","personal",310],["Insurance","family",180],["Shopping","personal",180],["Utilities","family",160],["Car","personal",140],["Health","personal",90],["Subscriptions","personal",55],["Other","family",45],["Vanguard","personal",800],["Mortgage","family",2800]];
-  const factor=[0.92,0.95,1.04,0.98,1.06,0.9,1,0.97,1.08,0.94,1.02,1];
+  const oct=[["Rent","family",7200],["Groceries","family",3800],["Kids & childcare","family",2400],["Eating out","family",900],["Insurance","family",450],["Shopping & personal","family",1100],["Shopping & personal","personal",700],["Utilities","family",600],["Car","family",500],["Pets","family",350],["Subscriptions & fitness","family",280],["Travel","family",1400],["Other","family",490],["Vanguard","personal",800],["Mortgage","family",2800]];
+  const sep=[["Rent","family",7200],["Groceries","family",3800],["Kids & childcare","family",2000],["Eating out","family",500],["Insurance","family",450],["Shopping & personal","family",700],["Shopping & personal","personal",500],["Utilities","family",600],["Car","family",500],["Pets","family",350],["Subscriptions & fitness","family",280],["Travel","family",800],["Other","family",141],["Vanguard","personal",800],["Mortgage","family",2800]];
+  const nov=[["Groceries","family",1100],["Eating out","family",400],["Kids & childcare","family",500],["Insurance","family",180],["Shopping & personal","family",300],["Shopping & personal","personal",200],["Car","family",200],["Pets","family",150],["Subscriptions & fitness","family",180],["Travel","family",900],["Other","family",205],["Vanguard","personal",200],["Mortgage","family",900]];
+  const factor=[0.9,1.05,0.82,0.84,0.88,1.1,0.95,1.02,0.96,0.91];
+  const pack=rows=>rows.map(([name,scope,amount])=>({name,scope,amount}));
   const months=[];
-  for(let i=0;i<12;i++){
-    const dt=new Date(2025,11+i,1);
+  for(let i=0;i<13;i++){
+    const dt=new Date(2025,10+i,1);
     const month=dt.getFullYear()+"-"+p2(dt.getMonth()+1);
-    months.push({month,categories:base.map(([name,scope,amount])=>({name,scope,amount:i===11?amount:Math.round(amount*factor[i])}))});
+    const rows=i===10?sep:i===11?oct:i===12?nov:oct.map(([name,scope,amount])=>[name,scope,Math.max(1,Math.round(amount*factor[i]))]);
+    months.push({month,categories:pack(rows)});
   }
-  return {source:"ING joint",excludeFromSpend:["Vanguard","Mortgage"],months};
+  return {source:"ING joint",excludeFromSpend:["Vanguard","Mortgage"],partialMonth:"2026-11",asAt:"2026-11-10",months};
 }
 const WEALTH_EXAMPLE={
   budget:{month:"2026-11",incomeSources:[
@@ -3588,7 +3594,8 @@ function portfolioPie(){
 const SPEND_ICONS={
   bag:'<path d="M6.5 8.5h11l-.8 11H7.3z"/><path d="M9 8.5V6.8a3 3 0 0 1 6 0v1.7"/>',
   fork:'<path d="M8 4.5v6M10.5 4.5v6M13 4.5c1.6 1.4 1.6 4.2 0 6M8 7.2h2.5M10.7 10.5V19.5"/>',
-  bolt:'<path d="M13 3.5 6.5 13h5L10 20.5 17.5 10h-5z"/>'
+  bolt:'<path d="M13 3.5 6.5 13h5L10 20.5 17.5 10h-5z"/>',
+  paw:'<circle cx="8" cy="8.2" r="1.45"/><circle cx="12" cy="6.2" r="1.45"/><circle cx="16" cy="8.2" r="1.45"/><circle cx="14.5" cy="11.3" r="1.2"/><path d="M8.4 13.4c.5 2.8 1.9 4.6 3.6 4.6s3.1-1.8 3.6-4.6c-1.1-.8-2.3-1.2-3.6-1.2s-2.5.4-3.6 1.2z"/>'
 };
 const SPEND_META={
   insurance:{color:"#2A56F6",icon:"shield"},
@@ -3600,10 +3607,14 @@ const SPEND_META={
   rent:{color:"#5B6B8A",icon:"house"},
   housing:{color:"#5B6B8A",icon:"house"},
   subscriptions:{color:"#7A5AF0",icon:"phone"},
+  "subscriptions & fitness":{color:"#7A5AF0",icon:"phone"},
   "kids & childcare":{color:"#D8F34A",icon:"kid"},
   "kids and childcare":{color:"#D8F34A",icon:"kid"},
   health:{color:"#3DCFC4"},
   shopping:{color:"#E0A31A",icon:"gift"},
+  "shopping & personal":{color:"#E0A31A",icon:"gift"},
+  pets:{color:"#D4A0C8",icon:"paw"},
+  travel:{color:"#6CB6FF",icon:"plane"},
   other:{color:"#C5C9D3"},
   vanguard:{color:"#A78BFA"},
   mortgage:{color:"#9AA3B2",icon:"house"}
@@ -3631,57 +3642,87 @@ function expenseMonths(doc){
 }
 function expenseSkip(doc, include){
   if(include) return new Set();
-  return new Set((doc.excludeFromSpend||[]).map(n=>String(n||"").trim().toLowerCase()).filter(Boolean));
+  return new Set((doc.excludeFromSpend||[]).map(spendKey).filter(Boolean));
+}
+function expensePartialId(doc){return String(doc&&doc.partialMonth||"").slice(0,7);}
+function expenseFullMonths(doc, months){
+  const partial=expensePartialId(doc);
+  const full=months.filter(m=>m.month!==partial);
+  return full.length?full:months;
+}
+function expenseDefaultIdx(months, doc){
+  if(!months.length) return -1;
+  const partial=expensePartialId(doc);
+  const latest=months[months.length-1].month;
+  if(partial&&partial===latest){
+    const full=expenseFullMonths(doc, months);
+    return months.findIndex(m=>m.month===full[full.length-1].month);
+  }
+  return months.length-1;
+}
+function expensePartialLabel(doc, monthId){
+  if(expensePartialId(doc)!==monthId) return "";
+  const asAt=String(doc.asAt||"").slice(0,10);
+  if(/^\d{4}-\d{2}-\d{2}$/.test(asAt)){const d=pISO(asAt); return "Partial · to "+d.getDate()+" "+MON[d.getMonth()];}
+  return "Partial";
 }
 function expenseCats(month, doc, include){
   const skip=expenseSkip(doc, include), map={};
   ((month&&month.categories)||[]).forEach(c=>{
     if(!c||!c.name||!inScope(c)) return;
-    const name=String(c.name).trim();
-    if(!name||skip.has(name.toLowerCase())) return;
+    const name=String(c.name).trim(), key=spendKey(name);
+    if(!key||skip.has(key)) return;
     const n=+c.amount||0; if(!(n>0)) return;
-    map[name]=(map[name]||0)+n;
+    if(!map[key]) map[key]={name, v:0};
+    map[key].v+=n;
   });
-  return Object.keys(map).map(name=>({name,v:map[name]})).sort((a,b)=>b.v-a.v||a.name.localeCompare(b.name));
+  return Object.keys(map).map(k=>map[k]).sort((a,b)=>b.v-a.v||a.name.localeCompare(b.name));
 }
 function expenseSlices(cats){
   const ranked=cats.filter(c=>c.v>0.005).sort((a,b)=>b.v-a.v||a.name.localeCompare(b.name));
   const named=ranked.filter(c=>spendKey(c.name)!=="other");
   const otherOwn=ranked.filter(c=>spendKey(c.name)==="other").reduce((s,c)=>s+c.v,0);
   let keep=named, extra=otherOwn;
-  if(named.length>10){extra+=named.slice(10).reduce((s,c)=>s+c.v,0); keep=named.slice(0,10);}
+  if(named.length>11){extra+=named.slice(11).reduce((s,c)=>s+c.v,0); keep=named.slice(0,11);}
   const parts=keep.map(c=>({name:c.name,v:c.v,color:spendColor(c.name),icon:spendIconSvg(c.name)}));
   if(extra>0.005) parts.push({name:"Other",v:extra,color:spendColor("Other"),icon:""});
   return mixRows(parts);
 }
-function expensePicked(months){
+function expensePicked(months, doc){
   if(!months.length) return {idx:-1, avg:false};
   let idx=months.findIndex(m=>m.month===UI.expMonth);
-  if(idx<0) idx=months.length-1;
+  if(idx<0) idx=expenseDefaultIdx(months, doc);
   return {idx, avg:!!UI.expAvg};
+}
+function expenseAverageCats(doc, months, include){
+  const pool=expenseFullMonths(doc, months), n=pool.length||1, map={};
+  pool.forEach(m=>expenseCats(m, doc, include).forEach(c=>{const key=spendKey(c.name); if(!map[key]) map[key]={name:c.name, v:0}; map[key].v+=c.v;}));
+  return Object.keys(map).map(k=>({name:map[k].name, v:map[k].v/n})).sort((a,b)=>b.v-a.v||a.name.localeCompare(b.name));
 }
 function expenseLink(){
   const doc=expenseDoc(), months=expenseMonths(doc);
   if(!months.length) return "";
-  const last=months[months.length-1];
-  const total=expenseCats(last, doc, false).reduce((s,c)=>s+c.v,0);
-  return '<button type="button" class="exp-jump" data-budview="expenses"><span>'+esc(doc.source||"Expenses")+' · '+esc(monthShort(last.month))+' · '+aud(total)+'</span><span aria-hidden="true">›</span></button>';
+  const month=months[expenseDefaultIdx(months, doc)];
+  const total=expenseCats(month, doc, false).reduce((s,c)=>s+c.v,0);
+  return '<button type="button" class="exp-jump" data-budview="expenses"><span>'+esc(doc.source||"Expenses")+' · '+esc(monthShort(month.month))+' · '+aud(total)+'</span><span aria-hidden="true">›</span></button>';
 }
 function vExpenses(){
   const doc=expenseDoc(), months=expenseMonths(doc);
   if(!months.length) return '<section class="card pad"><div class="empty">No expenses yet.</div></section>';
-  const pick=expensePicked(months), month=months[pick.idx], include=!!UI.expAll;
-  const cats=pick.avg?(()=>{const n=months.length, map={}; months.forEach(m=>expenseCats(m,doc,include).forEach(c=>{map[c.name]=(map[c.name]||0)+c.v;})); return Object.keys(map).map(name=>({name,v:map[name]/n})).sort((a,b)=>b.v-a.v||a.name.localeCompare(b.name));})():expenseCats(month, doc, include);
+  const pick=expensePicked(months, doc), month=months[pick.idx], include=!!UI.expAll;
+  const cats=pick.avg?expenseAverageCats(doc, months, include):expenseCats(month, doc, include);
   const rows=expenseSlices(cats);
   const total=cats.reduce((s,c)=>s+c.v,0);
+  const note=pick.avg?"":expensePartialLabel(doc, month.month);
   const label=pick.avg?"Average":ymLabel(month.month);
+  const partial=expensePartialId(doc);
   const trend=months.slice(-12);
-  const totals=trend.map(m=>({month:m.month,total:expenseCats(m,doc,include).reduce((s,c)=>s+c.v,0)}));
+  const totals=trend.map(m=>({month:m.month,total:expenseCats(m,doc,include).reduce((s,c)=>s+c.v,0),faint:m.month===partial}));
   const scale=dashScale(totals.map(t=>t.total));
-  const anchor=pick.avg?trend[trend.length-1].month:month.month;
-  const bars=totals.map(t=>dashBar({label:monthShort(t.month),accent:"wealth",h:t.total>0?scale(t.total):36,val:audBar(t.total),exp:t.month,anchor,aria:ymLabel(t.month)+" "+audBar(t.total)})).join("");
+  const anchor=pick.avg?expenseFullMonths(doc, months).slice(-1)[0].month:month.month;
+  const bars=totals.map(t=>dashBar({label:monthShort(t.month),accent:"wealth",h:t.total>0?scale(t.total):36,val:audBar(t.total),exp:t.month,anchor,faint:t.faint,sub:t.faint?"Partial":"",aria:ymLabel(t.month)+" "+audBar(t.total)+(t.faint?" partial":"")})).join("");
   const excluded=(doc.excludeFromSpend||[]).filter(Boolean);
-  const nav='<div class="exp-nav"><button type="button" class="chev" data-expm="-1" aria-label="Previous month"'+(pick.idx<=0?" disabled":"")+'>‹</button><div class="lab">'+esc(label)+'</div><button type="button" class="chev" data-expm="1" aria-label="Next month"'+(pick.idx>=months.length-1?" disabled":"")+'>›</button><button type="button" class="avg" data-expavg="1" aria-pressed="'+(pick.avg?"true":"false")+'">Average</button></div>';
+  const nav='<div class="exp-nav"><button type="button" class="chev" data-expm="-1" aria-label="Previous month"'+(pick.idx<=0?" disabled":"")+'>‹</button><div class="lab">'+esc(label)+(note?' <span class="chip exp-partial">'+esc(note)+'</span>':"")+'</div><button type="button" class="chev" data-expm="1" aria-label="Next month"'+(pick.idx>=months.length-1?" disabled":"")+'>›</button><button type="button" class="avg" data-expavg="1" aria-pressed="'+(pick.avg?"true":"false")+'">Average</button></div>';
   const tog=excluded.length?'<button type="button" class="exp-inc" data-expinc="1" aria-pressed="'+(include?"true":"false")+'">Include investing & mortgage</button>':"";
   return '<section class="card pad exp-card"><div class="ch"><div><div class="eb">'+esc(doc.source||"Expenses")+'</div><h2>'+aud(total)+'</h2></div></div>'+nav+tog+pieSvg(rows)+pieLegend(rows)+'<div class="eb" style="margin-top:16px">Last 12 months</div><div class="rb-scroll">'+bars+'</div></section>';
 }
