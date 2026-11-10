@@ -3337,6 +3337,7 @@ function scopeBar(){
   return '<div class="scopes" role="group" aria-label="Whose money">'+b("all","All")+b("personal","Personal")+b("family","Family")+'</div>';
 }
 function scopeWord(item){return scopeOf(item)==="family"?"Family":"Personal";}
+function scopeLabel(){return UI.scope==="personal"?"Personal":UI.scope==="family"?"Family":"All";}
 function budgetModel(){
   const b=wealthDoc("budget"), cats=(b.categories||[]).filter(c=>c&&c.name&&inScope(c));
   const spent=cats.reduce((a,c)=>a+(+c.spent||0),0), budget=cats.reduce((a,c)=>a+(+c.budget||0),0);
@@ -3814,7 +3815,7 @@ function expenseLink(){
   if(!months.length) return "";
   const month=months[expenseDefaultIdx(months, doc)];
   const total=expenseCats(month, doc, false).reduce((s,c)=>s+c.v,0);
-  return '<button type="button" class="exp-jump" data-budview="expenses"><span>'+esc(doc.source||"Expenses")+' · '+esc(monthShort(month.month))+' · '+aud(total)+'</span><span aria-hidden="true">›</span></button>';
+  return '<button type="button" class="exp-jump" data-budview="expenses"><span>'+esc(scopeLabel())+' · '+esc(monthShort(month.month))+' · '+aud(total)+'</span><span aria-hidden="true">›</span></button>';
 }
 function vExpenses(){
   const doc=expenseDoc(), months=expenseMonths(doc);
@@ -3834,7 +3835,8 @@ function vExpenses(){
   const excluded=(doc.excludeFromSpend||[]).filter(Boolean);
   const nav='<div class="exp-nav"><button type="button" class="chev" data-expm="-1" aria-label="Previous month"'+(pick.idx<=0?" disabled":"")+'>‹</button><div class="lab">'+esc(label)+(note?' <span class="chip exp-partial">'+esc(note)+'</span>':"")+'</div><button type="button" class="chev" data-expm="1" aria-label="Next month"'+(pick.idx>=months.length-1?" disabled":"")+'>›</button><button type="button" class="avg" data-expavg="1" aria-pressed="'+(pick.avg?"true":"false")+'">Average</button></div>';
   const tog=excluded.length?'<button type="button" class="exp-inc" data-expinc="1" aria-pressed="'+(include?"true":"false")+'">Include investing & mortgage</button>':"";
-  return '<section class="card pad exp-card"><div class="ch"><div><div class="eb">'+esc(doc.source||"Expenses")+'</div><h2>'+aud(total)+'</h2></div></div>'+nav+tog+pieSvg(rows)+pieLegend(rows)+'<div class="eb" style="margin-top:16px">Last 12 months</div><div class="rb-scroll">'+bars+'</div></section>';
+  const from=doc.source?'<div class="lede">From '+esc(doc.source)+'</div>':"";
+  return '<section class="card pad exp-card"><div class="ch"><div><div class="eb">'+esc(scopeLabel())+'</div><h2>'+aud(total)+'</h2>'+from+'</div></div>'+nav+tog+pieSvg(rows)+pieLegend(rows)+'<div class="eb" style="margin-top:16px">Last 12 months</div><div class="rb-scroll">'+bars+'</div></section>';
 }
 function insuranceCard(){
   const doc=wealthLive&&wealthStore?(wealthStore.insurance||{items:[]}):(WEALTH_EXAMPLE.insurance||{items:[]});
@@ -3860,7 +3862,7 @@ function vWealthOverview(){
   const since=w.change==null?"—":aud(w.change)+" since "+w.since+".";
   const nextTxt=bills.next?"Next is "+esc(bills.next.name)+" on "+esc(fD(billDue(bills.next),true))+". ":"";
   let h=wealthHead("Wealth","Overview","Where things stand.");
-  h+=dashCard("wspend","This month","Spending",aud(allocate)+" still to allocate."+(estimate?" "+miniChip("Net estimate"):""),statTrio(["Income",aud(income),""],["Spent",aud(spent),""],["To allocate",aud(allocate),""]),spendBars(cats,"budget"),'<div class="legend"><span><i class="rb-swatch wealth"></i>Spent</span><span class="over">Over</span><span class="under">Under</span></div>');
+  h+=dashCard("wspend","This month · "+scopeLabel(),"Spending",aud(allocate)+" still to allocate."+(estimate?" "+miniChip("Net estimate"):""),statTrio(["Income",aud(income),""],["Spent",aud(spent),""],["To allocate",aud(allocate),""]),spendBars(cats,"budget"),'<div class="legend"><span><i class="rb-swatch wealth"></i>Spent</span><span class="over">Over</span><span class="under">Under</span></div>');
   h+=expenseLink();
   h+=emergencyCard()+portfolioPie();
   h+='<section class="card pad"><div class="ch"><div><div class="eb">Saving</div><h2>Goals</h2></div><div class="metrics dash-stats">'+statTrio(["Saved",aud(saved),""],["Target",aud(target),""],[goalGap<0?"Over":"Left",aud(Math.abs(goalGap)),""])+'</div></div>'+goalCards(goals)+'<button class="btn ghost" type="button" data-tab="goals" style="margin-top:12px">Open goals</button></section>';
@@ -3887,7 +3889,7 @@ function vBudget(){
   const txRows=tx.map(t=>{const ds=String(t.date||"").slice(0,10), dd=/^\d{4}-\d{2}-\d{2}$/.test(ds)?pISO(ds):null; return '<div class="wrow">'+(dd?'<span class="tile"><span class="a">'+MON[dd.getMonth()].toUpperCase()+'</span><span class="b">'+dd.getDate()+'</span></span>':'<span class="tile"></span>')+'<span style="min-width:0"><div class="t">'+esc(t.name||"")+'</div><div class="s">'+esc(t.category||"")+'</div></span><span class="amt">'+audTxn(t.amount)+'</span></div>';}).join("");
   return wealthHead(ymLabel(b.month)||"This month","Spending","Where this month's money is going.")+
     head+
-    dashCard("wbudget","This month","Spent",aud(allocate)+" still to allocate."+(estimate?" "+miniChip("Net estimate"):""),statTrio(["Income",aud(income),""],["Spent",aud(spent),""],["To allocate",aud(allocate),""]),spendBars(cats),'<div class="legend"><span><i class="rb-swatch wealth"></i>Spent</span></div>')+
+    dashCard("wbudget","This month · "+scopeLabel(),"Spent",aud(allocate)+" still to allocate."+(estimate?" "+miniChip("Net estimate"):""),statTrio(["Income",aud(income),""],["Spent",aud(spent),""],["To allocate",aud(allocate),""]),spendBars(cats),'<div class="legend"><span><i class="rb-swatch wealth"></i>Spent</span></div>')+
     '<section class="card pad"><div class="eb">Coming in</div><h2 style="margin-bottom:12px">'+aud(income)+'</h2>'+incomeRows(sources)+'</section>'+
     '<section class="card pad"><div class="eb">By category</div><h2 style="margin-bottom:12px">Where it went</h2><div class="stack">'+rows+'</div></section>'+
     '<section class="card pad"><div class="eb">Recent</div><h2 style="margin-bottom:12px">Transactions</h2><div class="stack">'+txRows+'</div></section>';
