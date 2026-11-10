@@ -31,6 +31,7 @@
   --z-rec:#8E9AAB; --z-st:#1296A3; --z-mp:#E0A31A; --z-lt2:#F06A2F; --z-vo2:#E25060; --z-sp:#7A5AF0; --z-x:#C4C7D0;
   --good:#178A56; --warn:#B45309; --bad:#D64545;
   --cat-ball:#F97316; --cat-run:#D8F34A; --cat-run-ink:#17200A; --cat-gym:#FF0A27; --cat-gym-ink:#fff; --cat-ink:#1C1206; --cat-rest:#E4E6EB; --cat-rest-ink:#5C6270;
+  --wealth:#72F476; --wealth-ink:#000;
   --holo:linear-gradient(100deg,#8AF6FF 0%,#D8F34A 36%,#F7F7FF 58%,#D0B4FF 80%,#8AF6FF 100%);
   --shadow:0 1px 0 rgba(255,255,255,.75) inset, 0 10px 28px -20px rgba(22,30,48,.35);
   --space-gap:8px; --space-pad-y:10px; --space-pad-x:12px; --space-radius:22px; --space-line:1.25; --space-rhythm:8px;
@@ -47,6 +48,7 @@
   --mbase:#2A2E3A; --mline:#3C4252; --dark:#0C0E14; --dark2:#222633; --dline:rgba(255,255,255,.12);
   --z-rec:#B4BECC; --z-st:#3DCFC4; --z-mp:#F0B044; --z-lt2:#FF8A55; --z-vo2:#FF7A88; --z-sp:#A78BFA; --z-x:#8B909C;
   --good:#3DCA86; --warn:#F0A35A; --bad:#FF7B7B;
+  --wealth:#72F476; --wealth-ink:#000;
   --shadow:0 1px 0 rgba(255,255,255,.05) inset, 0 14px 32px -22px rgba(0,0,0,.65);
   color-scheme:dark;
 }}
@@ -59,6 +61,7 @@
   --mbase:#2A2E3A; --mline:#3C4252; --dark:#0C0E14; --dark2:#222633; --dline:rgba(255,255,255,.12);
   --z-rec:#B4BECC; --z-st:#3DCFC4; --z-mp:#F0B044; --z-lt2:#FF8A55; --z-vo2:#FF7A88; --z-sp:#A78BFA; --z-x:#8B909C;
   --good:#3DCA86; --warn:#F0A35A; --bad:#FF7B7B;
+  --wealth:#72F476; --wealth-ink:#000;
   --shadow:0 1px 0 rgba(255,255,255,.05) inset, 0 14px 32px -22px rgba(0,0,0,.65);
   color-scheme:dark;
 }
@@ -105,6 +108,31 @@ h2{font-size:22px;font-weight:400;letter-spacing:-.03em;line-height:var(--space-
 .nav button[data-tab="gym"][aria-current="page"]{background:var(--cat-gym);color:var(--cat-gym-ink)}
 .nav button[data-tab="ball"][aria-current="page"]{background:var(--cat-ball);color:var(--cat-ink)}
 .nav button[data-tab="run"][aria-current="page"]{background:var(--cat-run);color:var(--cat-run-ink)}
+.nav.wealth button[aria-current="page"]{background:var(--wealth);color:var(--wealth-ink)}
+.areas{display:flex;gap:2px;background:var(--sunken);border-radius:999px;padding:3px}
+.areas button{flex:1;min-height:36px;padding:6px 14px;border-radius:999px;font-size:13px;font-weight:500;color:var(--ink2)}
+.areas button[aria-pressed="true"]{background:var(--card);color:var(--ink);box-shadow:var(--shadow)}
+.areas button[data-area="wealth"][aria-pressed="true"]{background:var(--wealth);color:var(--wealth-ink)}
+.top-in{flex-wrap:wrap}
+.top-in .areas{flex:1 0 100%;margin-top:8px}
+@media (min-width:880px){.top-in .areas{flex:0 0 auto;margin-top:0;order:2}.top-in .sp{order:3}.top-in .race{order:4}}
+.head.cat-wealth h1{box-shadow:inset 0 -4px 0 var(--wealth);padding-bottom:2px}
+.chip.ex{background:var(--sunken);color:var(--ink2)}
+.rb-bar.wealth{background:var(--wealth)}
+.rb-swatch.wealth{background:var(--wealth)!important}
+.rb-sub.over{color:#EF4444}
+.rb-sub.under{color:#22C55E}
+.wtrack{height:8px;border-radius:99px;background:var(--sunken);overflow:hidden;margin-top:8px}
+.wtrack > i{display:block;height:100%;width:0;background:var(--wealth);border-radius:99px}
+.wrow{display:grid;grid-template-columns:72px minmax(0,1fr) auto;gap:12px;align-items:center;padding:var(--space-pad-y) var(--space-pad-x);border:1px solid var(--line);border-radius:var(--space-radius);background:var(--card)}
+.wrow .amt{font-variant-numeric:tabular-nums;font-weight:500;color:var(--accent)}
+.wrow .amt.over{color:#EF4444}
+.wrow .amt.under{color:#22C55E}
+.ring.wealth{cursor:default}
+.ring.wealth .ring-seg.on,.ring.wealth .ring-check{stroke:var(--wealth)}
+.goal .amt{font-variant-numeric:tabular-nums;font-weight:500;color:var(--accent)}
+.goal{display:grid;grid-template-columns:72px minmax(0,1fr) auto;gap:var(--space-gap);align-items:center;background:var(--card);border:1px solid var(--line);border-radius:var(--space-radius);padding:var(--space-pad-y) var(--space-pad-x)}
+.signin .areas{margin-bottom:14px}
 .nav button[aria-current="page"] svg{stroke:currentColor;background:transparent}
 .head.cat-gym,.head.cat-ball,.head.cat-run{--hline:var(--accent)}
 .head.cat-gym{--hline:var(--cat-gym)}
@@ -151,6 +179,8 @@ h2{font-size:22px;font-weight:400;letter-spacing:-.03em;line-height:var(--space-
 .legend .wl{width:6px;height:6px;border-radius:99px;display:inline-block}
 .legend .wl.w{background:#22C55E}
 .legend .wl.l{background:#EF4444}
+.legend .over{color:#EF4444}
+.legend .under{color:#22C55E}
 #topbar:not([hidden]) ~ #app{padding-bottom:calc(156px + env(safe-area-inset-bottom,0px))}
 #topbar:not([hidden]) ~ #fab{bottom:calc(88px + env(safe-area-inset-bottom,0px))}
 #topbar:not([hidden]) ~ #toastRoot .toast{bottom:calc(92px + env(safe-area-inset-bottom,0px))}
@@ -681,13 +711,17 @@ ol.opts li::before{counter-increment:opt;content:counter(opt);font-weight:500;co
 </head>
 <body>
 <header class="top" id="topbar">
-  <div class="top-in"><button type="button" class="markbtn" data-tab="profile" aria-label="Profile"><img class="mark" src="icon.svg" alt="" width="28" height="28"></button><span class="brand">Squiz</span><span class="sp"></span><span class="race" id="raceChip" style="display:none"></span></div>
+  <div class="top-in"><button type="button" class="markbtn" data-tab="profile" aria-label="Profile"><img class="mark" src="icon.svg" alt="" width="28" height="28"></button><span class="brand">Squiz</span><span class="sp"></span><span class="race" id="raceChip" style="display:none"></span><div class="areas" role="tablist" aria-label="Area"><button type="button" data-area="health" aria-pressed="true">Health</button><button type="button" data-area="wealth" aria-pressed="false">Wealth</button></div></div>
 </header>
 <nav class="nav" id="nav" aria-label="Sections" hidden></nav>
-<section class="signin" id="signin" hidden><div class="card pad"><img class="mark" src="icon.svg" alt="" width="48" height="48" style="margin-bottom:14px"><div class="eb acc">Squiz</div><h1 style="margin-top:6px">Sign in</h1>
+<section class="signin" id="signin" hidden><div class="areas" role="tablist" aria-label="Area"><button type="button" data-area="health" aria-pressed="true">Health</button><button type="button" data-area="wealth" aria-pressed="false">Wealth</button></div><div class="card pad"><img class="mark" src="icon.svg" alt="" width="48" height="48" style="margin-bottom:14px"><div class="eb acc">Squiz</div><h1 style="margin-top:6px">Sign in</h1>
 <form id="siPwF"><div class="field"><label for="siE">Email</label><input id="siE" type="email" autocomplete="username" inputmode="email" required placeholder="you@example.com"></div><div class="field"><label for="siP">Password</label><input id="siP" type="password" autocomplete="current-password" placeholder="Your password"></div><button class="btn block" style="margin-top:14px" id="siPwGo" type="submit">Sign in</button></form>
 <div class="sub" id="siMsg" style="margin-top:12px"></div>
-<div class="hr"></div><div class="eb">First time, or no password yet</div><div class="sub" style="margin-top:6px">Tap below, then tap Log In in the email (don't press and hold). It opens in Safari, signs you in there and asks you to set a password. Then come back to the home screen app and sign in with it.</div><button class="btn ghost block" id="siLink" type="button" style="margin-top:10px">Email me a sign-in link</button></div></section>
+<div class="hr"></div><div class="eb">First time, or no password yet</div><div class="sub" style="margin-top:6px">Tap below, then tap Log In in the email (don't press and hold). It opens in Safari, signs you in there and asks you to set a password. Then come back to the home screen app and sign in with it. This does not create a new account.</div><button class="btn ghost block" id="siLink" type="button" style="margin-top:10px">Email me a sign-in link</button></div></section>
+<section class="signin" id="wealthLock" hidden><div class="card pad"><div class="eb acc">Wealth</div><h1 style="margin-top:6px">Sign in</h1><div class="lede">Locked to your account. No new accounts from this screen.</div>
+<form id="wlPwF"><div class="field"><label for="wlE">Email</label><input id="wlE" type="email" autocomplete="username" inputmode="email" required placeholder="you@example.com"></div><div class="field"><label for="wlP">Password</label><input id="wlP" type="password" autocomplete="current-password" placeholder="Your password"></div><button class="btn block" style="margin-top:14px" id="wlPwGo" type="submit">Sign in</button></form>
+<div class="sub" id="wlMsg" style="margin-top:12px"></div>
+<div class="hr"></div><div class="eb">Already have an account</div><div class="sub" style="margin-top:6px">A sign-in link works if this email already has an account. It will not create one.</div><button class="btn ghost block" id="wlLink" type="button" style="margin-top:10px">Email me a sign-in link</button></div></section>
 <main class="wrap" id="app"><div class="empty">Loading your plan</div></main>
 <div id="sheetRoot"></div>
 <button type="button" class="fab" id="fab" aria-label="Log an activity">+</button>
@@ -718,13 +752,25 @@ function makeDb(sb){
     doc(path){const [col,id]=path.split("/");return {set:d=>put(col,id,d),onSnapshot(next,err){listen(col,(rows,e)=>{if(e){err&&err(e);return;}const r=rows.find(x=>x.id===id);next({exists:!!r,data:()=>r&&r.data});});return ()=>{};}};}
   };
 }
+let SESSION=null;
+function signedIn(){return !!(SESSION&&SESSION.user);}
+async function signInWithPassword(email,password,msg){
+  const {error}=await SB.auth.signInWithPassword({email,password});
+  if(error){msg.textContent=/invalid/i.test(error.message)?"Email or password not right. No password yet? Use the sign-in link below first.":("Couldn't sign in: "+error.message);return false;}
+  msg.textContent=""; startData(); return true;
+}
+async function sendMagicLink(email,msg){
+  if(!email){msg.textContent="Enter your email first.";return;}
+  const {error}=await SB.auth.signInWithOtp({email,options:{emailRedirectTo:location.origin+location.pathname,shouldCreateUser:false}});
+  msg.textContent=error?("Couldn't send: "+error.message):"Sent. Tap Log In in the email. This only works for an existing account.";
+}
 function bindSignin(){
 $("#siPwF").onsubmit=async e=>{e.preventDefault();const b=$("#siPwGo");b.disabled=true;
-  const {error}=await SB.auth.signInWithPassword({email:$("#siE").value.trim(),password:$("#siP").value});
-  b.disabled=false;if(error)$("#siMsg").textContent=/invalid/i.test(error.message)?"Email or password not right. No password yet? Use the sign-in link below first.":("Couldn't sign in: "+error.message);else startData();};
-$("#siLink").onclick=async()=>{const email=$("#siE").value.trim();if(!email){$("#siMsg").textContent="Enter your email first.";return;}
-  const {error}=await SB.auth.signInWithOtp({email,options:{emailRedirectTo:location.origin+location.pathname,shouldCreateUser:true}});
-  $("#siMsg").textContent=error?("Couldn't send: "+error.message):"Sent. Tap Log In in the email.";};
+  await signInWithPassword($("#siE").value.trim(),$("#siP").value,$("#siMsg")); b.disabled=false;};
+$("#siLink").onclick=()=>sendMagicLink($("#siE").value.trim(),$("#siMsg"));
+$("#wlPwF").onsubmit=async e=>{e.preventDefault();const b=$("#wlPwGo");b.disabled=true;
+  await signInWithPassword($("#wlE").value.trim(),$("#wlP").value,$("#wlMsg")); b.disabled=false;};
+$("#wlLink").onclick=()=>sendMagicLink($("#wlE").value.trim(),$("#wlMsg"));
 }
 function passwordPrompt(){
   let done=false;try{done=localStorage.getItem("dt-pw")==="1";}catch(e){}
@@ -737,13 +783,19 @@ function passwordPrompt(){
     if(error){toast("Couldn't save: "+error.message);return;}try{localStorage.setItem("dt-pw","1");}catch(_){}box.remove();toast("Password saved. Now sign in from the home screen app.");};
   $("#pwSkip").onclick=()=>{try{localStorage.setItem("dt-pw","1");}catch(_){}box.remove();};
 }
-function showSignin(){$("#signin").hidden=false;$("#app").hidden=true;$("#topbar").hidden=true;$("#nav").hidden=true;}
-function hideSignin(){$("#signin").hidden=true;$("#app").hidden=false;$("#topbar").hidden=false;$("#nav").hidden=false;}
+function showSignin(){$("#signin").hidden=false;$("#wealthLock").hidden=true;$("#app").hidden=true;$("#topbar").hidden=true;$("#nav").hidden=true;$("#fab").style.display="none";}
+function hideSignin(){$("#signin").hidden=true;$("#wealthLock").hidden=true;$("#app").hidden=false;$("#topbar").hidden=false;$("#nav").hidden=false;}
+function applyGate(){
+  paintArea();
+  if(signedIn()){hideSignin();return;}
+  if(UI.area==="wealth"){$("#signin").hidden=true;$("#wealthLock").hidden=false;$("#app").hidden=true;$("#topbar").hidden=false;$("#nav").hidden=true;$("#fab").style.display="none";}
+  else showSignin();
+}
 
 const S={chat:[],weeks:{},pastweeks:{},runs:{},log:{},lifts:{},notes:[],weights:{},adjust:{},basketball:{},settings:{},db:null,loaded:false};
 function hasVdot(){const v=S.settings&&S.settings.vdot;return v!=null&&v!==""&&isFinite(+v)&&+v>0;}
-const UI={tab:"today",sel:null,openWeek:null,recipe:4,showPast:false};
-try{const t=localStorage.getItem("dt-tab"); if(t) UI.tab=t;}catch(e){}
+const UI={tab:"today",area:"health",sel:null,openWeek:null,recipe:4,showPast:false};
+try{const t=localStorage.getItem("dt-tab"); if(t) UI.tab=t; const a=localStorage.getItem("dt-area"); if(a==="health"||a==="wealth") UI.area=a;}catch(e){}
 
 /* utils */
 const $=(s,r=document)=>r.querySelector(s);
@@ -1031,7 +1083,7 @@ function lineChart(points,opts){ // points [{x:date,y:secPerKm}] faster is up
 }
 
 /* Views */
-function head(eb,title,lede,cat){const plan=UI.tab!=="plan"?'<button type="button" class="btn ghost" data-tab="plan">Plan</button>':'';return '<div class="head'+(cat?' cat-'+cat:'')+'"><div class="ch"><div><div class="eb acc">'+eb+'</div><h1>'+esc(title)+'</h1>'+(lede?'<div class="lede">'+esc(lede)+'</div>':'')+'</div>'+plan+'</div></div>';}
+function head(eb,title,lede,cat){const plan=UI.area!=="wealth"&&UI.tab!=="plan"?'<button type="button" class="btn ghost" data-tab="plan">Plan</button>':'';return '<div class="head'+(cat?' cat-'+cat:'')+'"><div class="ch"><div><div class="eb acc">'+eb+'</div><h1>'+esc(title)+'</h1>'+(lede?'<div class="lede">'+esc(lede)+'</div>':'')+'</div>'+plan+'</div></div>';}
 function catCls(cat){return cat==="gym"||cat==="ball"||cat==="run"||cat==="rest"?" c-"+cat:"";}
 function catMark(cat,text){return '<span class="cl-'+cat+'">'+text+'</span>';}
 function pageType(){return UI.tab==="ball"||UI.tab==="gym"||UI.tab==="run"?UI.tab:"";}
@@ -1791,7 +1843,9 @@ function dashBar(o){
   const cls="rb"+(plan?" plan":"")+dashScrollMark(o.date,o.anchor);
   const bar="rb-bar"+(o.accent?" "+o.accent:"")+(plan?" plan":"")+(mark?" cap-"+mark.toLowerCase():"");
   const sub=(mark?'<i class="wl '+mark.toLowerCase()+'"></i>':"")+(o.sub?esc(o.sub):"");
-  return '<button type="button" class="'+cls+'" data-day="'+o.date+'" aria-label="'+esc(o.aria||"")+'"><span class="rb-val">'+o.val+'</span><span class="'+bar+'" style="height:'+Math.round(o.h)+'px"></span><span class="rb-date">'+esc(fD(o.date))+'</span><span class="rb-sub">'+sub+'</span></button>';
+  const act=o.tab?' data-tab="'+esc(o.tab)+'"':(o.date?' data-day="'+o.date+'"':"");
+  const label=o.label!=null?esc(o.label):(o.date?esc(fD(o.date)):"");
+  return '<button type="button" class="'+cls+'"'+act+' aria-label="'+esc(o.aria||"")+'"><span class="rb-val">'+o.val+'</span><span class="'+bar+'" style="height:'+Math.round(o.h)+'px"></span><span class="rb-date">'+label+'</span><span class="rb-sub'+(o.tone?' '+o.tone:'')+'">'+sub+'</span></button>';
 }
 function dashScale(values){const nums=values.filter(v=>v>0);const max=Math.max(1,...nums);return v=>v>0?36+((v/max)*(112-36)):36;}
 function dashLegend(accent,extra){
@@ -1947,7 +2001,8 @@ function gymCoachCard(){
   return h+'</section>';}
 function vProfile(){
   const name=(S.settings.setup||{}).name||"";
-  return head("You","Profile",name?name+".":"Body weight lives here, not on a session.")+weightCard();
+  const email=SESSION&&SESSION.user&&SESSION.user.email||"";
+  return head("You","Profile",name?name+".":"Body weight lives here, not on a session.")+weightCard()+'<section class="card pad"><div class="eb">Account</div><h2>'+esc(email||"Signed in")+'</h2><div class="sub" style="margin-top:4px">Signs this browser out. Health and Wealth both need the same account.</div><button class="btn ghost" id="signOut" type="button" style="margin-top:12px">Sign out</button></section>';
 }
 function vCoach(){
   let h=head("Coach","Talk to your coach","Ask anything, report how you feel, flag a niggle. Replies here use your plan and logs. Anything that changes the plan gets picked up and built in.");
@@ -2926,8 +2981,149 @@ function openLogger(L){
 function gymCtx(){const a=liftAgg(addD(TODAY,-27),TODAY);if(!a.n)return "GYM: none logged in the last 4 weeks";const top=Object.keys(a.mus).sort((x,y)=>a.mus[y]-a.mus[x]).slice(0,4).map(k=>MUSC[k]+" "+a.mus[k].toFixed(1)).join(", ");
   return "GYM last 4 weeks: "+a.n+" sessions, "+fT(a.t)+" lifted, "+a.sets+" sets. Top muscles by sets: "+top+". Last session "+lifts().slice(-1)[0].date+" "+(lifts().slice(-1)[0].name||"");}
 
+/* Wealth: example figures until wealth_docs has rows. Never written back. */
+const WEALTH_EXAMPLE={
+  budget:{month:"2026-11",income:8200,categories:[
+    {name:"Rent",budget:2400,spent:2400},{name:"Groceries",budget:700,spent:640},{name:"Eating out",budget:250,spent:310},{name:"Transport",budget:150,spent:88},{name:"Fun",budget:200,spent:120}
+  ],transactions:[
+    {date:"2026-11-09",name:"Example Grocer",category:"Groceries",amount:-84.2},
+    {date:"2026-11-08",name:"Example Cafe",category:"Eating out",amount:-18.5},
+    {date:"2026-11-07",name:"Example Transit",category:"Transport",amount:-9.2},
+    {date:"2026-11-06",name:"Example Cinema",category:"Fun",amount:-32},
+    {date:"2026-11-01",name:"Example Pay",category:"Income",amount:4100}
+  ]},
+  goals:{items:[
+    {name:"Emergency fund",target:10000,saved:4200},{name:"Holiday",target:3000,saved:1800},{name:"House deposit",target:40000,saved:12000}
+  ]},
+  networth:{accounts:[
+    {name:"Everyday",kind:"Cash",balance:4200},{name:"Saver",kind:"Savings",balance:12800},{name:"Super",kind:"Super",balance:64000},{name:"Index fund",kind:"Investments",balance:18500}
+  ],history:[
+    {month:"2026-06",total:91000},{month:"2026-07",total:92800},{month:"2026-08",total:94100},{month:"2026-09",total:96300},{month:"2026-10",total:98400},{month:"2026-11",total:99500}
+  ]},
+  bills:{items:[
+    {name:"Phone",amount:55,due:"2026-11-12",cadence:"Monthly"},
+    {name:"Streaming",amount:18,due:"2026-11-18",cadence:"Monthly"},
+    {name:"Gym membership",amount:89,due:"2026-11-20",cadence:"Monthly"},
+    {name:"Insurance",amount:140,due:"2026-11-28",cadence:"Monthly"},
+    {name:"Rent",amount:2400,due:"2026-12-01",cadence:"Monthly"}
+  ]}
+};
+let wealthStore=null, wealthLive=false;
+function wealthDoc(id){return (wealthLive&&wealthStore&&wealthStore[id])||WEALTH_EXAMPLE[id]||{};}
+function aud(n,cents){const v=+n||0, abs=Math.abs(v); const body=cents?abs.toLocaleString("en-AU",{minimumFractionDigits:2,maximumFractionDigits:2}):Math.round(abs).toLocaleString("en-AU"); return (v<0?"−":"")+"$"+body;}
+function kAud(n){const k=Math.round((+n||0)/100)/10; return "$"+String(k).replace(/\.0$/,"")+"k";}
+function ymLabel(ym){const p=String(ym||"").split("-"); const m=+p[1]; return m?MON[m-1]+" "+p[0]:"";}
+function exampleChip(){return wealthLive?"":'<span class="chip ex">Example data</span>';}
+function wealthHead(eb,title,lede){return '<div class="head cat-wealth"><div class="ch"><div><div class="eb acc">'+esc(eb)+'</div><h1>'+esc(title)+'</h1>'+(lede?'<div class="lede">'+esc(lede)+'</div>':'')+'</div>'+exampleChip()+'</div></div>';}
+function progressRing(pct){
+  const n=8, c=18, r=13.2, circ=2*Math.PI*r, gap=Math.min(26,360/n*0.24), seg=(360/n)-gap;
+  const done=Math.max(0,Math.min(n,Math.round(Math.max(0,Math.min(1,pct))*n)));
+  let arcs="";
+  for(let i=0;i<n;i++){
+    const dash=circ*(seg/360), rest=circ-dash, rot=-90+i*(360/n)+gap/2;
+    arcs+='<circle class="ring-seg'+(i<done?" on":"")+'" cx="'+c+'" cy="'+c+'" r="'+r+'" stroke-width="3.4" stroke-linecap="round" stroke-dasharray="'+dash.toFixed(2)+" "+rest.toFixed(2)+'" transform="rotate('+rot.toFixed(2)+" "+c+" "+c+')"/>';
+  }
+  const check=done>=n?'<path class="ring-check" d="M11.6 18.2 l3.2 3.2 7.4-7.6" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>':"";
+  return '<div class="ring wealth'+(done>=n?" full":"")+'" aria-hidden="true"><svg viewBox="0 0 36 36">'+arcs+check+'</svg></div>';
+}
+function budgetTone(spent,budget){if(spent>budget)return "over"; if(spent<budget)return "under"; return "even";}
+function budgetModel(){
+  const b=wealthDoc("budget"), cats=(b.categories||[]).filter(c=>c&&c.name);
+  const spent=cats.reduce((a,c)=>a+(+c.spent||0),0), budget=cats.reduce((a,c)=>a+(+c.budget||0),0);
+  return {b,cats,spent,budget,left:budget-spent};
+}
+function goalCards(items){
+  return '<div class="stack">'+items.map(g=>{
+    const saved=+g.saved||0, target=+g.target||0, pct=target?saved/target:0;
+    return '<article class="goal">'+progressRing(pct)+'<div class="move-n"><b>'+esc(g.name||"Goal")+'</b><span>'+aud(saved)+' of '+aud(target)+'</span></div><div class="amt">'+Math.round(pct*100)+'%</div></article>';
+  }).join("")+'</div>';
+}
+function billRows(items){
+  return '<div class="stack">'+items.map(b=>{
+    const due=String(b.due||"").slice(0,10), dd=/^\d{4}-\d{2}-\d{2}$/.test(due)?pISO(due):null;
+    const tile=dd?'<span class="tile"><span class="a">'+DOW[dd.getDay()].toUpperCase()+'</span><span class="b">'+dd.getDate()+'</span><span class="a">'+MON[dd.getMonth()].toUpperCase()+'</span></span>':'<span class="tile"></span>';
+    return '<div class="wrow">'+tile+'<span style="min-width:0"><div class="t">'+esc(b.name||"Bill")+'</div><div class="s">'+esc(b.cadence||"")+'</div></span><span class="amt">'+aud(b.amount)+'</span></div>';
+  }).join("")+'</div>';
+}
+function vWealthOverview(){
+  const {cats,spent,budget,left}=budgetModel();
+  const scale=dashScale(cats.map(c=>+c.spent||0));
+  const bars=cats.map(c=>{
+    const tone=budgetTone(+c.spent||0,+c.budget||0);
+    return dashBar({label:c.name,accent:"wealth",h:scale(+c.spent||0),val:aud(c.spent),sub:tone,tone:tone==="even"?"":tone,tab:"budget",aria:c.name+" "+aud(c.spent)+" of "+aud(c.budget)});
+  }).join("");
+  const goals=(wealthDoc("goals").items||[]);
+  const saved=goals.reduce((a,g)=>a+(+g.saved||0),0), target=goals.reduce((a,g)=>a+(+g.target||0),0);
+  const nw=wealthDoc("networth"), hist=nw.history||[], accounts=nw.accounts||[];
+  const total=accounts.reduce((a,x)=>a+(+x.balance||0),0);
+  const prev=hist.length>1?+hist[hist.length-2].total:total;
+  const bills=(wealthDoc("bills").items||[]).slice().sort((a,b)=>String(a.due).localeCompare(String(b.due)));
+  const monthBill=bills.reduce((a,b)=>a+(+b.amount||0),0);
+  const nScale=dashScale(hist.map(h=>+h.total||0));
+  const trend=hist.map(h=>dashBar({label:ymLabel(h.month).replace(" 20"," "),accent:"wealth",h:nScale(+h.total||0),val:kAud(h.total),tab:"worth",aria:ymLabel(h.month)+" "+aud(h.total)})).join("");
+  let h=wealthHead("Wealth","Overview","A private snapshot. Figures stay on your account once the table has rows.");
+  h+=dashCard("wspend","This month","Spending",aud(spent)+" of "+aud(budget)+".",statTrio(["Spent",aud(spent),""],["Budget",aud(budget),""],["Left",aud(left),left<0?"over":""]),bars,'<div class="legend"><span><i class="rb-swatch wealth"></i>Spent</span><span class="over">Over</span><span class="under">Under</span></div>');
+  h+='<section class="card pad"><div class="ch"><div><div class="eb">Saving</div><h2>Goals</h2></div><div class="metrics dash-stats">'+statTrio(["Saved",aud(saved),""],["Target",aud(target),""],["Goals",String(goals.length),""])+'</div></div>'+goalCards(goals)+'<button class="btn ghost" type="button" data-tab="goals" style="margin-top:12px">Open goals</button></section>';
+  h+=dashCard("wworth","Snapshot","Net worth",aud(total-prev)+" since "+(hist.length>1?ymLabel(hist[hist.length-2].month):"last month")+".",statTrio(["Total",aud(total),""],["Accounts",String(accounts.length),""],["Change",aud(total-prev),""]),trend,'<div class="legend"><span><i class="rb-swatch wealth"></i>Total</span></div>');
+  h+='<section class="card pad"><div class="ch"><div><div class="eb">Coming up</div><h2>Bills</h2></div><div class="metrics dash-stats">'+statTrio(["Month",aud(monthBill),""],["Next",bills[0]?aud(bills[0].amount):"—",""],["Count",String(bills.length),""])+'</div></div>'+billRows(bills.slice(0,3))+'<button class="btn ghost" type="button" data-tab="bills" style="margin-top:12px">Open bills</button></section>';
+  return h;
+}
+function vBudget(){
+  const {b,cats,spent,budget,left}=budgetModel();
+  const scale=dashScale(cats.map(c=>+c.spent||0));
+  const bars=cats.map(c=>{
+    const tone=budgetTone(+c.spent||0,+c.budget||0);
+    return dashBar({label:c.name,accent:"wealth",h:scale(+c.spent||0),val:aud(c.spent),sub:tone,tone:tone==="even"?"":tone,aria:c.name+" "+aud(c.spent)+" of "+aud(c.budget)});
+  }).join("");
+  const rows=cats.map(c=>{
+    const spentN=+c.spent||0, bud=+c.budget||0, tone=budgetTone(spentN,bud), pct=bud?Math.min(100,Math.round(spentN/bud*100)):0;
+    const gap=tone==="even"?"even":tone+" "+aud(Math.abs(bud-spentN));
+    return '<div class="wrow" style="grid-template-columns:minmax(0,1fr) auto"><span><div class="t">'+esc(c.name)+'</div><div class="s">'+aud(spentN)+' of '+aud(bud)+'</div><div class="wtrack"><i style="width:'+pct+'%"></i></div></span><span class="amt '+(tone==="even"?"":tone)+'">'+gap+'</span></div>';
+  }).join("");
+  const tx=(b.transactions||[]).slice().sort((a,c)=>String(c.date).localeCompare(String(a.date)));
+  const txRows=tx.map(t=>{const ds=String(t.date||"").slice(0,10), dd=/^\d{4}-\d{2}-\d{2}$/.test(ds)?pISO(ds):null; return '<div class="wrow">'+(dd?'<span class="tile"><span class="a">'+MON[dd.getMonth()].toUpperCase()+'</span><span class="b">'+dd.getDate()+'</span></span>':'<span class="tile"></span>')+'<span style="min-width:0"><div class="t">'+esc(t.name||"")+'</div><div class="s">'+esc(t.category||"")+'</div></span><span class="amt">'+aud(t.amount,true)+'</span></div>';}).join("");
+  return wealthHead(ymLabel(b.month)||"This month","Spending","Budget against what has already gone out.")+
+    dashCard("wbudget","This month","Spent",left<0?aud(Math.abs(left))+" over.":aud(left)+" still inside.",statTrio(["Spent",aud(spent),""],["Budget",aud(budget),""],["Left",aud(left),""]),bars,'<div class="legend"><span><i class="rb-swatch wealth"></i>Spent</span></div>')+
+    '<section class="card pad"><div class="eb">By category</div><h2 style="margin-bottom:12px">Where it went</h2><div class="stack">'+rows+'</div></section>'+
+    '<section class="card pad"><div class="eb">Recent</div><h2 style="margin-bottom:12px">Transactions</h2><div class="stack">'+txRows+'</div></section>';
+}
+function vGoals(){
+  const items=(wealthDoc("goals").items||[]);
+  const saved=items.reduce((a,g)=>a+(+g.saved||0),0), target=items.reduce((a,g)=>a+(+g.target||0),0);
+  return wealthHead("Saving","Goals","Each ring fills the same way a gym set ring does.")+
+    '<section class="card pad"><div class="ch"><div><div class="eb">Together</div><h2>'+aud(saved)+'</h2><div class="lede">of '+aud(target)+'</div></div><div class="metrics dash-stats">'+statTrio(["Saved",aud(saved),""],["Target",aud(target),""],["Left",aud(Math.max(0,target-saved)),""])+'</div></div>'+goalCards(items)+'</section>';
+}
+function vWorth(){
+  const nw=wealthDoc("networth"), accounts=nw.accounts||[], hist=(nw.history||[]).slice();
+  const total=accounts.reduce((a,x)=>a+(+x.balance||0),0);
+  const prev=hist.length>1?+hist[hist.length-2].total:total;
+  const scale=dashScale(hist.map(h=>+h.total||0));
+  const bars=hist.map(h=>dashBar({label:ymLabel(h.month),accent:"wealth",h:scale(+h.total||0),val:kAud(h.total),aria:ymLabel(h.month)+" "+aud(h.total)})).join("");
+  const rows=accounts.map(a=>'<div class="wrow" style="grid-template-columns:minmax(0,1fr) auto"><span><div class="t">'+esc(a.name||"")+'</div><div class="s">'+esc(a.kind||"")+'</div></span><span class="amt">'+aud(a.balance)+'</span></div>').join("");
+  return wealthHead("Snapshot","Net worth","Cash, super and investments.")+
+    dashCard("wnet","Trend","Total",aud(total-prev)+" since "+(hist.length>1?ymLabel(hist[hist.length-2].month):"the previous point")+".",statTrio(["Total",aud(total),""],["Change",aud(total-prev),""],["Accounts",String(accounts.length),""]),bars,'<div class="legend"><span><i class="rb-swatch wealth"></i>Total</span></div>')+
+    '<section class="card pad"><div class="eb">Accounts</div><h2 style="margin-bottom:12px">'+aud(total)+'</h2><div class="stack">'+rows+'</div></section>';
+}
+function vBills(){
+  const items=(wealthDoc("bills").items||[]).slice().sort((a,b)=>String(a.due).localeCompare(String(b.due)));
+  const month=items.reduce((a,b)=>a+(+b.amount||0),0);
+  const next=items[0];
+  return wealthHead("Coming up","Bills","Due dates for the month, and the monthly total.")+
+    '<section class="card pad"><div class="ch"><div><div class="eb">This month</div><h2>'+aud(month)+'</h2>'+(next?'<div class="lede">Next is '+esc(next.name)+' on '+esc(fD(String(next.due).slice(0,10),true))+'.</div>':'')+'</div><div class="metrics dash-stats">'+statTrio(["Month",aud(month),""],["Next",next?aud(next.amount):"—",""],["Count",String(items.length),""])+'</div></div>'+billRows(items)+'</section>';
+}
+async function loadWealth(){
+  if(!signedIn()){wealthStore=null;wealthLive=false;return;}
+  try{
+    const {data,error}=await SB.from("wealth_docs").select("id,data");
+    if(error||!data||!data.length){wealthStore=null;wealthLive=false;}
+    else{wealthStore={};data.forEach(r=>{if(r&&r.id)wealthStore[r.id]=r.data||{};});wealthLive=true;}
+  }catch(e){wealthStore=null;wealthLive=false;}
+  sched();
+}
+
 /* Shell */
 const TABS=[["today","Today"],["gym","Gym"],["ball","Basketball"],["run","Run"],["meals","Meals"],["plan","Plan"],["coach","Coach"]];
+const WEALTH_TABS=[["overview","Overview"],["budget","Budget"],["goals","Goals"],["worth","Worth"],["bills","Bills"]];
 const NAV_ICON={
   today:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 10.5 12 4.5l7.5 6V20a.5.5 0 0 1-.5.5h-4.5V14h-5v6.5H5a.5.5 0 0 1-.5-.5z"/></svg>',
   plan:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3.5V7M16 3.5V7M4 10h16"/></svg>',
@@ -2936,19 +3132,31 @@ const NAV_ICON={
   run:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="15" cy="4.8" r="1.35"/><path d="M7.5 20.5 10 15l2.4 1.2 1.6-3.4-2.8-1.5 1.3-2.4 3.8 1.8 1.1-2.2"/></svg>',
   ball:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M4.2 12h15.6M12 4.2c2.2 2.4 2.2 13.2 0 15.6M12 4.2c-2.2 2.4-2.2 13.2 0 15.6"/></svg>',
   meals:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4v6.2c0 1 .7 1.8 1.6 1.8h.8c.9 0 1.6-.8 1.6-1.8V4M9 12v8M16.5 4c.4 2.2.4 4.3 0 6.4-.3 1.3-1.1 2-2 2h-.4V20"/></svg>',
-  coach:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 18.2c.7-2.6 2.6-4.2 6-4.2s5.3 1.6 6 4.2"/><circle cx="12" cy="8.2" r="3"/></svg>'
+  coach:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 18.2c.7-2.6 2.6-4.2 6-4.2s5.3 1.6 6 4.2"/><circle cx="12" cy="8.2" r="3"/></svg>',
+  overview:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 16.5 9.2 11l3.1 3.2L19 7.5"/><path d="M14.5 7.5H19V12"/></svg>',
+  budget:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="6" width="16" height="12" rx="2"/><path d="M4 10h16"/></svg>',
+  goals:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7.2"/><circle cx="12" cy="12" r="3.2"/><path d="M12 4.8V8"/></svg>',
+  worth:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 17V9M10 17V6M15 17v-4M20 17V8"/></svg>',
+  bills:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4.5" width="14" height="15" rx="2"/><path d="M8 9h8M8 13h8M8 16.5h5"/></svg>'
 };
+function paintArea(){
+  document.querySelectorAll("[data-area]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.area===UI.area?"true":"false"));
+  const nav=$("#nav"); if(nav) nav.classList.toggle("wealth",UI.area==="wealth");
+}
 function render(){
-  const y=scrollY; const v={today:vToday,plan:vPlan,gym:vGym,ball:vBall,run:vRuns,runs:vRuns,meals:vMeals,coach:vCoach,fitness:vFitness,profile:vProfile}[UI.tab]||vToday;
+  if(UI.area==="wealth"&&!signedIn()){applyGate();return;}
+  const y=scrollY; const v={today:vToday,plan:vPlan,gym:vGym,ball:vBall,run:vRuns,runs:vRuns,meals:vMeals,coach:vCoach,fitness:vFitness,profile:vProfile,overview:vWealthOverview,budget:vBudget,goals:vGoals,worth:vWorth,bills:vBills}[UI.tab]||(UI.area==="wealth"?vWealthOverview:vToday);
   $("#app").innerHTML=v();
   if(S.db)passwordPrompt();
-  $("#nav").innerHTML=TABS.map(t=>'<button type="button" data-tab="'+t[0]+'" aria-current="'+(UI.tab===t[0]?"page":"false")+'">'+NAV_ICON[t[0]]+'<span>'+t[1]+'</span></button>').join("");
+  const tabs=UI.area==="wealth"?WEALTH_TABS:TABS;
+  $("#nav").innerHTML=tabs.map(t=>'<button type="button" data-tab="'+t[0]+'" aria-current="'+(UI.tab===t[0]?"page":"false")+'">'+(NAV_ICON[t[0]]||"")+'<span>'+t[1]+'</span></button>').join("");
+  paintArea();
   const gs=S.settings.setup||{}; const race=goalRace();
   RACE_DATE=gs.goalDate||(race&&race.date)||"2099-01-01";
-  if(gs.goalDate){$("#raceChip").style.display="";$("#raceChip").innerHTML=esc(gs.goalShort||"Goal")+' <b>'+Math.max(0,dBetween(TODAY,gs.goalDate))+'d</b>';}
-  else if(race){$("#raceChip").style.display="";$("#raceChip").innerHTML='10 km <b>'+Math.max(0,dBetween(TODAY,race.date))+'d</b>';}
+  if(UI.area!=="wealth"&&gs.goalDate){$("#raceChip").style.display="";$("#raceChip").innerHTML=esc(gs.goalShort||"Goal")+' <b>'+Math.max(0,dBetween(TODAY,gs.goalDate))+'d</b>';}
+  else if(UI.area!=="wealth"&&race){$("#raceChip").style.display="";$("#raceChip").innerHTML='10 km <b>'+Math.max(0,dBetween(TODAY,race.date))+'d</b>';}
   else $("#raceChip").style.display="none";
-  $("#fab").style.display=S.db&&UI.tab!=="meals"?"":"none";
+  $("#fab").style.display=S.db&&UI.area!=="wealth"&&UI.tab!=="meals"?"":"none";
   bind($("#app")); scrollTo(0,y);
   if(S.loaded){
     const r=routeFromHash();
@@ -2957,20 +3165,23 @@ function render(){
   }
 }
 const TABS_OK={today:1,gym:1,ball:1,run:1,meals:1,plan:1,coach:1,profile:1};
+const WEALTH_OK={overview:1,budget:1,goals:1,worth:1,bills:1,wealth:1};
 function routeFromHash(){
   const raw=(location.hash||"").replace(/^#\/?/,"");
   const bits=raw.split("/"), a=bits[0], b=bits[1]||"";
   if(a==="day"&&/^\d{4}-\d{2}-\d{2}$/.test(b)){
     const it=dayIndex()[b]; let tab="today";
     if(it){const c=catOf(it.d); if(c==="gym"||c==="ball"||c==="run")tab=c;}
-    return {tab,day:b};
+    return {tab,day:b,area:"health"};
   }
-  if(TABS_OK[a])return {tab:a,day:""};
-  return {tab:TABS_OK[UI.tab]?UI.tab:"today",day:""};
+  if(a==="wealth")return {tab:"overview",day:"",area:"wealth"};
+  if(WEALTH_OK[a])return {tab:a,day:"",area:"wealth"};
+  if(TABS_OK[a])return {tab:a,day:"",area:a==="profile"?UI.area:"health"};
+  return {tab:TABS_OK[UI.tab]?UI.tab:(UI.area==="wealth"?"overview":"today"),day:"",area:UI.area};
 }
 let hashLock=false;
 function writeHash(tab, day, replace){
-  const next=day?"#day/"+day:"#"+tab;
+  const next=day?"#day/"+day:(tab==="overview"?"#wealth":"#"+tab);
   if(location.hash===next)return;
   hashLock=true;
   const url=location.pathname+location.search+next;
@@ -2978,18 +3189,33 @@ function writeHash(tab, day, replace){
   else history.pushState({tab,day:day||""},"",url);
   hashLock=false;
 }
+function setArea(a){
+  UI.area=a==="wealth"?"wealth":"health";
+  try{localStorage.setItem("dt-area",UI.area);}catch(e){}
+  const t=UI.area==="wealth"?(WEALTH_OK[UI.tab]&&UI.tab!=="wealth"?UI.tab:"overview"):(TABS_OK[UI.tab]&&UI.tab!=="profile"?UI.tab:"today");
+  if(!signedIn()){
+    UI.tab=t;
+    try{localStorage.setItem("dt-tab",t);}catch(e){}
+    writeHash(t,"",false);
+    applyGate();
+    return;
+  }
+  setTab(t);
+}
 function setTab(t){
-  UI.tab=t; UI.sel=null;
-  try{localStorage.setItem("dt-tab",t);}catch(e){}
+  if(WEALTH_OK[t]) UI.area="wealth";
+  else if(t!=="profile") UI.area="health";
+  UI.tab=WEALTH_OK[t]&&t==="wealth"?"overview":t; UI.sel=null;
+  try{localStorage.setItem("dt-tab",UI.tab);localStorage.setItem("dt-area",UI.area);}catch(e){}
   $("#sheetRoot").innerHTML="";
-  writeHash(t,"",false);
+  writeHash(UI.tab,"",false);
   render(); scrollTo(0,0);
 }
 window.addEventListener("popstate",()=>{
   if(hashLock)return;
   const r=routeFromHash();
-  UI.tab=r.tab;
-  try{localStorage.setItem("dt-tab",r.tab);}catch(e){}
+  UI.tab=r.tab; if(r.area) UI.area=r.area;
+  try{localStorage.setItem("dt-tab",r.tab);localStorage.setItem("dt-area",UI.area);}catch(e){}
   $("#sheetRoot").innerHTML="";
   render();
 });
@@ -3016,6 +3242,7 @@ document.addEventListener("click",e=>{
     S.db.doc("log/"+date).set(next).then(()=>{S.log[date]=next; const tog=document.getElementById("lfGym"); if(tog)tog.setAttribute("aria-checked","true"); paintGymProgress(date); toast("Session complete");}).catch(()=>{fin.disabled=false; toast("Couldn't save. Try again.");});
     return;
   }
+  const area=e.target.closest("[data-area]"); if(area&&area.tagName==="BUTTON"){setArea(area.dataset.area);return;}
   const b=e.target.closest("[data-tab]"); if(b&&b.tagName==="BUTTON")setTab(b.dataset.tab);
 },true);
 function foldIdFor(el){
@@ -3110,6 +3337,7 @@ function bind(r){
     sv.disabled=true;try{await S.db.doc("settings/main").set(next);S.settings=next;toast("Inputs saved");}catch(e){toast("Couldn't save. Try again.");}finally{sv.disabled=false;}};
   const mf=$("#movF",r); if(mf)mf.onsubmit=async e=>{e.preventDefault();const raw=$("#movKm",r).value.trim();if(!S.db){toast("Saving is unavailable right now");return;}const doc={updated:new Date().toISOString()};if(raw==="")doc.official=null;else{const km=parseFloat(raw);if(!(km>=0)){toast("Enter kilometres");return;}doc.official=km;}try{await S.db.collection("adjust").doc("movember-2026").set(doc);toast(doc.official==null?"Using runs in the app":"Mo Space total saved");render();}catch(err){toast("Couldn't save");}};
   const wf=$("#wtF",r); if(wf)wf.onsubmit=async e=>{e.preventDefault();const kg=parseFloat($("#wtKg",r).value);const date=($("#wtD",r)&&$("#wtD",r).value)||TODAY;if(!(kg>40&&kg<200)){toast("Enter a weight in kg");return;}if(!/^\d{4}-\d{2}-\d{2}$/.test(date)){toast("Choose a date");return;}if(!S.db){toast("Saving is unavailable right now");return;}try{await S.db.collection("weights").doc(date).set({date,kg,updated:new Date().toISOString()});toast("Weigh-in saved");render();}catch(err){toast("Couldn't save");}};
+  const so=$("#signOut",r); if(so)so.onclick=async()=>{so.disabled=true;try{await SB.auth.signOut();}catch(e){so.disabled=false;toast("Couldn't sign out. Try again.");}};
   r.querySelectorAll("[data-logball]").forEach(b=>b.onclick=()=>openQuickAdd("Basketball",b.dataset.logball));
   r.querySelectorAll("[data-logrun]").forEach(b=>b.onclick=()=>openQuickAdd("Run",b.dataset.logrun));
 }
@@ -3117,8 +3345,8 @@ let rq=0,pend=false;const typing=()=>{const a=document.activeElement;return !!(a
 function sched(){cancelAnimationFrame(rq);rq=requestAnimationFrame(()=>{if(typing()||$("#scrim")){pend=true;return;}pend=false;render();});}
 document.addEventListener("focusout",()=>setTimeout(()=>{if(pend&&!typing()&&!$("#scrim"))sched();},60));
 new MutationObserver(()=>{if(pend&&!$("#scrim"))sched();}).observe($("#sheetRoot"),{childList:true});
-if(!location.hash){const t=TABS_OK[UI.tab]?UI.tab:"today"; writeHash(t,"",true);}
-else {const r=routeFromHash(); UI.tab=r.tab;}
+if(!location.hash){const t=UI.area==="wealth"?(WEALTH_OK[UI.tab]?UI.tab:"overview"):(TABS_OK[UI.tab]?UI.tab:"today"); UI.tab=t; writeHash(t,"",true);}
+else {const r=routeFromHash(); UI.tab=r.tab; if(r.area) UI.area=r.area;}
 render();
 function startData(){
   if(S.db)return; hideSignin();
@@ -3134,13 +3362,15 @@ function startData(){
   db.collection("adjust").onSnapshot(s=>{S.adjust={};s.docs.forEach(d=>{if(d.exists)S.adjust[d.id]=d.data();});sched();},()=>{});
   db.collection("basketball").onSnapshot(s=>{S.basketball={};s.docs.forEach(d=>{if(d.exists)S.basketball[d.id]=d.data();});sched();},()=>{});
   db.doc("settings/main").onSnapshot(d=>{if(d.exists)S.settings=d.data()||{};sched();},()=>{});
-  document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")db.refresh();});
+  document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"){db.refresh();loadWealth();}});
+  loadWealth();
 }
 (async function boot(){
   bindSignin();
-  SB.auth.onAuthStateChange((ev,session)=>{ if(session&&!S.db) setTimeout(startData,0); if(ev==="SIGNED_OUT"){ location.replace(location.origin+location.pathname); } });
+  SB.auth.onAuthStateChange((ev,session)=>{ SESSION=session||null; if(session&&!S.db) setTimeout(startData,0); else applyGate(); if(ev==="SIGNED_OUT"){ const keep=UI.area==="wealth"?"#wealth":""; location.replace(location.origin+location.pathname+keep); } });
   const sess=(await SB.auth.getSession()).data.session;
-  if(sess) startData(); else if(!S.db) showSignin();
+  SESSION=sess||null;
+  if(sess) startData(); else applyGate();
 })();
 })();
 </script>
