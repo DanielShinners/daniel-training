@@ -278,6 +278,8 @@ section.card[style*="border-left"]{border-left-width:0!important;box-shadow:inse
 .btn{display:inline-flex;align-items:center;gap:6px;background:var(--accent);color:var(--accent-ink);border-radius:999px;padding:11px 16px;font-size:14px;font-weight:500}
 .btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line2)}
 .dk .btn.ghost{color:var(--ink);border-color:var(--line2)}
+.btn.del{width:100%;justify-content:center;color:#EF4444;background:transparent;border:1px solid var(--line2)}
+.dk .btn.del{color:#EF4444;background:transparent}
 .btn.block{width:100%;justify-content:center;padding:12px}
 .btn:disabled{opacity:.5}
 .chip{display:inline-flex;align-items:center;gap:6px;font-family:var(--sans);font-size:12px;font-weight:500;letter-spacing:0;text-transform:none;padding:5px 10px;border-radius:999px;background:var(--sunken);color:var(--ink2)}
@@ -2518,10 +2520,18 @@ function openQuickAdd(preset,date){
     const id=date.replace(/-/g,"")+"T"+t+(sp[2]==="run"?"-"+Math.round(km*10):"-m"+min);
     $("#qaGo").disabled=true;try{await S.db.doc("runs/"+id).set(doc);toast(sp[0]+" logged · "+min+" min");closeSheet();}catch(err){msg.textContent="Couldn't save: "+err.message;$("#qaGo").disabled=false;}};
 }
+function goalStableId(g,i){
+  if(g&&g.id) return String(g.id);
+  const slug=String(g&&g.name||"goal").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,32)||"goal";
+  return "goal-idx-"+i+"-"+slug;
+}
+function withGoalIds(items){
+  return (items||[]).map((g,i)=>g&&g.id?g:{...(g||{}), id:goalStableId(g,i)});
+}
 function goalPool(){
   const live=wealthLive&&wealthStore&&wealthStore.goals;
-  if(live&&Array.isArray(live.items)) return {live:true, doc:live, items:live.items};
-  return {live:false, doc:null, items:((WEALTH_EXAMPLE.goals||{}).items||[])};
+  if(live&&Array.isArray(live.items)) return {live:true, doc:live, items:withGoalIds(live.items)};
+  return {live:false, doc:null, items:withGoalIds(((WEALTH_EXAMPLE.goals||{}).items)||[])};
 }
 function goalNum(raw){const s=String(raw==null?"":raw).trim(); if(s==="") return null; const n=+s; return isFinite(n)?n:null;}
 async function persistGoals(data){
@@ -2544,7 +2554,7 @@ function openGoalSheet(id){
     '<div class="grid2"><div class="field"><label for="gDate">Target date</label><input id="gDate" type="date" value="'+esc(cur&&cur.targetDate||"")+'"></div>'+
     '<div class="field"><label for="gPf">$ per fortnight</label><input id="gPf" type="number" inputmode="decimal" min="0" step="0.01" value="'+(cur&&cur.perFortnight!=null?esc(cur.perFortnight):"")+'" placeholder="Optional"></div></div>'+
     '<div class="field"><div class="eb">Icon</div><div class="gicons" id="gIcons"></div></div>'+
-    '<button class="btn" type="submit" id="gSave">Save</button>'+(editing?'<button class="btn ghost" type="button" id="gDel">Delete</button>':"")+'<div class="sub" id="gMsg"></div></form>';
+    '<button class="btn block" type="submit" id="gSave">Save</button>'+(editing?'<button class="btn del" type="button" id="gDel">Delete</button>':"")+'<div class="sub" id="gMsg"></div></form>';
   $("#sheetRoot").innerHTML='<div class="scrim" id="scrim"><div class="sheet" role="dialog" aria-modal="true" aria-label="'+(editing?"Edit goal":"Add a goal")+'">'+x+'</div></div>';
   $("#scrim").onclick=e=>{if(e.target.id==="scrim")closeSheet();}; $("#shX").onclick=closeSheet;
   const stored=cur&&GOAL_ICONS[cur.icon]?cur.icon:"";
@@ -3458,7 +3468,7 @@ function superCard(){
 }
 function vWealthOverview(){
   const {cats,spent,income,allocate,estimate}=budgetModel();
-  const goals=(wealthDoc("goals").items||[]);
+  const goals=goalPool().items;
   const saved=goals.reduce((a,g)=>a+goalBits(g).saved,0), target=goals.reduce((a,g)=>a+(+g.target||0),0);
   const goalGap=target-saved;
   const w=worthModel(), bills=billModel();
@@ -3493,7 +3503,7 @@ function vBudget(){
     '<section class="card pad"><div class="eb">Recent</div><h2 style="margin-bottom:12px">Transactions</h2><div class="stack">'+txRows+'</div></section>';
 }
 function vGoals(){
-  const items=(wealthDoc("goals").items||[]);
+  const items=goalPool().items;
   const saved=items.reduce((a,g)=>a+goalBits(g).saved,0), target=items.reduce((a,g)=>a+(+g.target||0),0);
   const gap=target-saved;
   return wealthHead("Saving","Goals","What you're saving toward.")+
