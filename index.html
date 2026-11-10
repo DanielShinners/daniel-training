@@ -190,10 +190,13 @@ button.ov{width:100%;display:block;text-align:left;color:inherit}
 .ov-leg b{font-weight:500;font-variant-numeric:tabular-nums}
 .ov-line{display:flex;justify-content:space-between;gap:8px;align-items:baseline;margin-top:8px;font-weight:500}
 .ov-line b{font-weight:500;font-variant-numeric:tabular-nums}
-.ov-goal{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:8px;align-items:center;margin-top:8px}
+.ov-goals{display:grid;gap:8px;margin-top:8px}
+.ov-goal{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:8px;align-items:center;margin:0}
 .ov-goal b{display:block;font-weight:500}
 .ov-goal .amt{font-variant-numeric:tabular-nums;font-weight:500;color:var(--accent)}
-.ov .ring.sm{width:44px;height:44px}
+.ov .ring.sm{width:44px;height:44px;min-height:0}
+.ov .ring.sm svg{width:44px;height:44px}
+.ov .ring.sm .ring-q{stroke-width:2.2}
 .ov-more{margin-top:8px;color:var(--ink2);font-weight:500}
 .bill-cat{display:flex;align-items:center;gap:8px;margin:14px 0 8px;font-weight:500}
 .bill-cat i{width:10px;height:10px;border-radius:99px;flex:none}
@@ -3998,7 +4001,7 @@ function vWealthOverview(){
   const port=ovCard('data-tab="invest" aria-label="Portfolio"',"Portfolio",'<h2>'+aud(total)+'</h2><div class="ov-split">'+ovDonut(rows)+'<div class="ov-leg">'+rows.map(s=>'<span><span class="nm"><i style="background:'+s.color+'"></i>'+esc(s.name)+(s.name==="Property"&&s.gain?'<span class="gain">'+esc(s.gain)+'</span>':"")+'</span><b>'+aud(s.v)+'</b></span>').join("")+'</div></div>');
   const budBody='<h2>'+(pick.month?aud(spent.total):"—")+'</h2><div class="lede">'+(pick.month?esc(monthName(pick.month.month)):"")+(basis?" · "+esc(basis):"")+' · income '+aud(money.income)+'</div>'+top.map(c=>'<div class="ov-line"><span>'+esc(c.name)+'</span><b>'+aud(c.v)+'</b></div>').join("")+'<div class="sub">Income excludes Sarah\'s salary.</div>'+(partial?'<div class="sub">Partial month · '+esc(monthShort(partial))+'</div>':"");
   const bud=ovCard('data-budview="expenses" aria-label="Budget"',"Budget",budBody);
-  const goalBody=goals.map(g=>{const x=goalBits(g); return '<div class="ov-goal">'+progressRing(x.ratio, goalIconFor(g.name, g.icon)).replace('class="ring','class="ring sm')+'<span><b>'+esc(g.name||"Goal")+'</b><span class="sub">'+(x.hasT?aud(x.saved||0)+" of "+aud(x.target):"No target yet")+'</span></span><span class="amt">'+(x.hasT?x.pct+"%":"")+'</span></div>';}).join("")+(extra?'<div class="ov-more">+'+extra+' more</div>':"")||'<div class="sub">No goals yet.</div>';
+  const goalBody=goals.length?'<div class="ov-goals">'+goals.map(g=>{const x=goalBits(g); return '<div class="ov-goal">'+progressRing(x.ratio, goalIconFor(g.name, g.icon)).replace('class="ring','class="ring sm')+'<span><b>'+esc(g.name||"Goal")+'</b><span class="sub">'+(x.hasT?aud(x.saved||0)+" of "+aud(x.target):"No target yet")+'</span></span><span class="amt">'+(x.hasT?x.pct+"%":"")+'</span></div>';}).join("")+(extra?'<div class="ov-more">+'+extra+' more</div>':"")+'</div>':'<div class="sub">No goals yet.</div>';
   const goal=ovCard('data-tab="goals" aria-label="Goals"',"Goals",goalBody);
   let investBody="";
   if(vgVal>0) investBody+='<div class="ov-line"><span>Vanguard</span><b>'+aud(vgVal)+'</b></div>'+(gain?'<div class="sub">'+esc(gain)+'</div>':"");
