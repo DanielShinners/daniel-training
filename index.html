@@ -135,6 +135,7 @@ h2{font-size:22px;font-weight:400;letter-spacing:-.03em;line-height:var(--space-
 .wrow .amt{font-variant-numeric:tabular-nums;font-weight:500;color:var(--accent)}
 .wrow .amt.over{color:#EF4444}
 .wrow .amt.under{color:#22C55E}
+.wrow.fund{margin-left:16px}
 .ring.wealth{cursor:default}
 .ring.wealth .ring-seg.on,.ring.wealth .ring-check,.ring.wealth .ring-q.on{stroke:var(--wealth)}
 .ring.wealth .ring-q{stroke:var(--ring-track, #D5D8E0);fill:none;stroke-linecap:butt}
@@ -3448,8 +3449,19 @@ function pctTxt(p){
 function glClass(n){return n>0.005?"up":n<-0.005?"down":"";}
 function glMoney(n){return {c:glClass(n), t:(n>0.005?"+":"")+aud(n)};}
 function gainKnown(inv){return (inv.holdings||[]).some(h=>h.cost!=null);}
+function approxMoney(gain, pct){
+  const g=Math.round(+gain||0), sign=g>0?"+":g<0?"−":"";
+  let t="≈ "+sign+aud(Math.abs(g));
+  if(pct!=null&&isFinite(pct)){
+    const r=Math.round(pct*10)/10, ps=r>0?"+":r<0?"−":"";
+    const body=Math.abs(r-Math.round(r))<0.05?String(Math.abs(Math.round(r))):Math.abs(r).toFixed(1);
+    t+=" ("+ps+body+"%)";
+  }
+  return t;
+}
 function gainHtml(inv, withPct){
   if(!gainKnown(inv)) return '<span class="sub">Gain unknown</span>';
+  if((inv.holdings||[]).some(h=>h.cost!=null&&h.costIsApprox)) return '<span>'+approxMoney(inv.gain, withPct&&inv.cost?inv.gain/inv.cost*100:null)+'</span>';
   const gl=glMoney(inv.gain), pct=withPct&&inv.cost?pctTxt(inv.gain/inv.cost*100):"";
   return '<span class="'+(gl.c?"gl "+gl.c:"")+'">'+gl.t+(pct?" · "+pct:"")+'</span>';
 }
@@ -3466,7 +3478,8 @@ function investModel(){
     const asAt=String(h.asAt||"").slice(0,10), age=ageDays(asAt);
     const implied=units!=null&&price!=null?units*price:null;
     const priceOff=implied!=null&&value>0&&Math.abs(implied-value)/value>0.01;
-    return {id:h.id||"", name:h.name, ticker:h.ticker||"", platform:h.platform||"", units, price, value, cost, gain:known?value-cost:null, group:holdGroup(h.type), asAt, age, stale:age!=null&&age>30, priceOff, implied, scope:h.scope, linkedTo:h.linkedTo||"", excludeFromWorth:!!h.excludeFromWorth};
+    const raw={name:h.name, platform:h.platform};
+    return {id:h.id||"", name:h.name, ticker:h.ticker||"", platform:h.platform||"", units, price, value, cost, gain:known?value-cost:null, costIsApprox:h.costIsApprox===true||h.costIsApprox==="true", funds:Array.isArray(h.funds)?h.funds:[], contribution:h.contribution||null, group:isVanguardHold(raw)?"Vanguard":holdGroup(h.type), asAt, age, stale:age!=null&&age>30, priceOff, implied, scope:h.scope||(/family/i.test(String(h.owners||""))?"family":""), linkedTo:h.linkedTo||"", excludeFromWorth:!!h.excludeFromWorth};
   });
   const properties=(doc.properties||[]).filter(p=>p&&p.name).map(p=>{
     const value=+p.value||0, mortgage=Math.abs(+p.mortgage||0), offset=Math.abs(+p.offsetBalance||0);
@@ -3883,15 +3896,35 @@ function vWorth(){
     superCard()+
     '<section class="card pad"><div class="eb">Accounts</div><h2 style="margin-bottom:12px">Balances</h2><div class="stack">'+rows+'</div></section>';
 }
+function unitTxt(n){return (+n).toLocaleString("en-AU",{maximumFractionDigits:2});}
+function pxTxt(n){return "$"+(+n).toLocaleString("en-AU",{minimumFractionDigits:2,maximumFractionDigits:4});}
+function holdingGain(h){
+  if(h.cost==null) return '<div class="s">Gain unknown</div>';
+  if(h.costIsApprox) return '<div class="s">'+approxMoney(h.gain, h.cost?h.gain/h.cost*100:null)+'</div><div class="s">approx · value minus net contributions</div>';
+  const gl=glMoney(h.gain), pct=h.cost?pctTxt(h.gain/h.cost*100):"";
+  return '<div class="s'+(gl.c?" gl "+gl.c:"")+'">'+gl.t+(pct?" · "+pct:"")+'</div>';
+}
+function fundRows(h){
+  return (h.funds||[]).map(f=>{
+    const deal=f.units!=null&&f.units!==""&&f.price!=null&&f.price!==""?unitTxt(f.units)+" × "+pxTxt(f.price):"";
+    return '<div class="wrow fund" style="grid-template-columns:minmax(0,1fr) auto"><span><div class="t">'+esc(f.name||"Fund")+'</div>'+(deal?'<div class="s">'+esc(deal)+'</div>':'')+'</span><span class="amt">'+aud(f.value)+'</span></div>';
+  }).join("");
+}
+function contribLine(h){
+  const c=h.contribution; if(!c||!(+c.amount>0)) return "";
+  const freq=String(c.frequency||"fortnightly").toLowerCase();
+  const every=freq==="fortnightly"?"fortnight":freq==="monthly"?"month":freq==="weekly"?"week":freq;
+  return '<div class="s">'+aud(c.amount)+" / "+every+(c.split?" · "+esc(c.split):"")+'</div>';
+}
 function holdingRow(h){
   const bits=[h.ticker,h.platform,h.units!=null?String(h.units)+" units":""].filter(Boolean);
   const when=h.asAt?"as at "+fD(h.asAt):"";
   const meta=[bits.join(" · "),when].filter(Boolean).join(" · ");
-  const gain=h.cost==null?'<div class="s">Cost unknown</div>':(function(){const gl=glMoney(h.gain), pct=h.cost?pctTxt(h.gain/h.cost*100):""; return '<div class="s'+(gl.c?" gl "+gl.c:"")+'">'+gl.t+(pct?" · "+pct:"")+'</div>';})();
   const warns=[];
   if(h.priceOff) warns.push("Units × price is "+aud(h.implied));
   if(h.stale) warns.push("Valuation "+h.age+" days old");
-  return '<div class="wrow" style="grid-template-columns:minmax(0,1fr) auto"><span><div class="t">'+esc(h.name)+'</div>'+(meta?'<div class="s">'+esc(meta)+'</div>':"")+gain+(warns.length?'<div class="s">'+esc(warns.join(" · "))+'</div>':"")+'</span><span class="amt">'+aud(h.value)+'</span></div>';
+  const row='<div class="wrow" style="grid-template-columns:minmax(0,1fr) auto"><span><div class="t">'+esc(h.name)+'</div>'+(meta?'<div class="s">'+esc(meta)+'</div>':"")+holdingGain(h)+contribLine(h)+(warns.length?'<div class="s">'+esc(warns.join(" · "))+'</div>':"")+'</span><span class="amt">'+aud(h.value)+'</span></div>';
+  return row+fundRows(h);
 }
 function mixRows(slices){
   const sum=slices.reduce((a,s)=>a+s.v,0)||1;
@@ -4020,7 +4053,7 @@ function invSeg(){
 function vInvest(){
   const inv=investModel(), w=worthModel();
   if(UI.invView==="property") return wealthHead("Property","Invest","The rental and the loan.")+invSeg()+propertyView();
-  const groups=["ETF/fund","Shares","Other"].map(name=>{
+  const groups=["Vanguard","ETF/fund","Shares","Other"].map(name=>{
     const items=inv.holdings.filter(h=>h.group===name); if(!items.length) return "";
     const total=items.reduce((s,h)=>s+h.value,0);
     return '<section class="card pad"><div class="eb">'+esc(name)+'</div><h2 style="margin-bottom:12px">'+aud(total)+'</h2><div class="stack">'+items.map(holdingRow).join("")+'</div></section>';
