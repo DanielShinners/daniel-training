@@ -653,6 +653,9 @@ section.card[style*="border-left"]{border-left-width:0!important;box-shadow:inse
 .day.done .t{text-decoration:line-through;text-decoration-color:var(--ink3);color:var(--ink2)}
 .dk .day.done .t{color:var(--ink2);text-decoration-color:var(--ink3)}
 .day .r{font-family:var(--sans);font-size:16px;color:var(--ink3);text-align:right}
+.day-side{display:flex;align-items:center;gap:8px;flex:none}
+.done-tick{width:24px;height:24px;border-radius:99px;background:#72F476;display:grid;place-items:center;flex:none}
+.done-tick svg{width:14px;height:14px;display:block}
 .ok{color:var(--good)} .miss{color:var(--bad)} .part{color:var(--warn)}
 
 /* Recipe rows */
@@ -1273,6 +1276,8 @@ function scoreHtml(r){
   const mins=min!=null&&min!==""?'<span class="mins">'+esc(String(min))+' min</span>':"";
   return '<span class="score">'+pill+'<b>'+esc(String(pts))+' pts</b>'+mins+'</span>';
 }
+function doneTick(){return '<span class="done-tick" aria-label="Done"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.2 12.4 10.1 16.2 17.8 7.8" fill="none" stroke="#000" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>';}
+function rowSide(done, trail){return '<span class="day-side">'+(done?doneTick():"")+(trail||"")+'</span>';}
 function dayRow(d,dark){
   const st=(d.kind==="rest"&&!(+d.km))?"rest":status(d), z=sessZone(d), dd=pISO(d.date), km=kmOn(d.date), cat=catOf(d);
   const parts=gridParts(d).acts.filter(a=>a!=="rest");
@@ -1295,7 +1300,8 @@ function dayRow(d,dark){
   if(score)bits.push(score);
   else if(cat==="ball"||parts.includes("ball")){const tip=fixtureWhen(d.date); if(tip)bits.push(esc(tip));}
   const s=bits.filter(Boolean).join(" · ");
-  return '<button class="day z-'+z+(mixed?" c-mix":catCls(cat))+(o==="W"?" res-w":o==="L"?" res-l":"")+(st==="done"?' done':'')+(d.date===TODAY?' today':'')+'" data-day="'+d.date+'"><span class="tile"><span class="a">'+DOW[dd.getDay()].toUpperCase()+'</span><span class="b">'+dd.getDate()+'</span><span class="a">'+MON[dd.getMonth()].toUpperCase()+'</span></span><span style="min-width:0"><div class="t">'+esc(title)+'</div>'+(s?'<div class="s">'+s+tags+dayChips(d.date)+verdictChip(d.date)+'</div>':'')+'</span>'+(d.date>=TODAY&&!canMove(d.date,d.date+"x")?'<span class="drag" data-drag aria-label="Drag to move this session" title="Drag to move">⋮⋮</span>':'<span class="r">›</span>')+'</button>';
+  const trail=d.date>=TODAY&&!canMove(d.date,d.date+"x")?'<span class="drag" data-drag aria-label="Drag to move this session" title="Drag to move">⋮⋮</span>':'<span class="r" aria-hidden="true">›</span>';
+  return '<button class="day z-'+z+(mixed?" c-mix":catCls(cat))+(o==="W"?" res-w":o==="L"?" res-l":"")+(st==="done"?' done':'')+(d.date===TODAY?' today':'')+'" data-day="'+d.date+'"><span class="tile"><span class="a">'+DOW[dd.getDay()].toUpperCase()+'</span><span class="b">'+dd.getDate()+'</span><span class="a">'+MON[dd.getMonth()].toUpperCase()+'</span></span><span style="min-width:0"><div class="t">'+esc(title)+'</div>'+(s?'<div class="s">'+s+tags+dayChips(d.date)+verdictChip(d.date)+'</div>':'')+'</span>'+rowSide(st==="done",trail)+'</button>';
 }
 function moveKey(name){return String(name||"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,48)||"move";}
 function splitClauses(s){const out=[];let cur="",depth=0;for(const ch of s){if(ch==="(")depth++;else if(ch===")")depth=Math.max(0,depth-1);if(ch===","&&depth===0){out.push(cur);cur="";}else cur+=ch;}if(cur.trim())out.push(cur);return out;}
@@ -1659,7 +1665,7 @@ function activityButton(r){
   const detail=(cat==="ball"&&score)?"":a.detail;
   const sub=[sport,detail].filter(Boolean).join(" · ");
   const done=cat==="ball"&&!!score;
-  return '<button type="button" class="day z-'+z+catCls(cat)+(o==="W"?" res-w":o==="L"?" res-l":"")+(done?" done":"")+(r.date===TODAY?" today":"")+'" data-day="'+r.date+'" data-run="'+esc(runKey(r))+'"><span class="tile"><span class="a">'+DOW[dd.getDay()].toUpperCase()+'</span><span class="b">'+dd.getDate()+'</span><span class="a">'+MON[dd.getMonth()].toUpperCase()+'</span></span><span style="min-width:0"><div class="tline"><div class="t">'+esc(title)+'</div>'+score+'</div>'+(sub?'<div class="s">'+esc(sub)+'</div>':'')+'<div class="act-box">'+activityExtra(r,true)+'</div></span><span class="r">›</span></button>';
+  return '<button type="button" class="day z-'+z+catCls(cat)+(o==="W"?" res-w":o==="L"?" res-l":"")+(done?" done":"")+(r.date===TODAY?" today":"")+'" data-day="'+r.date+'" data-run="'+esc(runKey(r))+'"><span class="tile"><span class="a">'+DOW[dd.getDay()].toUpperCase()+'</span><span class="b">'+dd.getDate()+'</span><span class="a">'+MON[dd.getMonth()].toUpperCase()+'</span></span><span style="min-width:0"><div class="tline"><div class="t">'+esc(title)+'</div>'+score+'</div>'+(sub?'<div class="s">'+esc(sub)+'</div>':'')+'<div class="act-box">'+activityExtra(r,true)+'</div></span>'+rowSide(true,'<span class="r" aria-hidden="true">›</span>')+'</button>';
 }
 function loggedActivities(){return Object.values(S.runs).slice().sort((a,b)=>String(b.start||b.date).localeCompare(String(a.start||a.date)));}
 function loggedSection(rows,title){
@@ -2091,7 +2097,7 @@ function vRuns(){
   h+='<section class="card pad" style="margin-top:10px"><div class="ch"><h2>Recorded</h2><span class="sub mono">'+all.length+' runs</span></div>';
   if(!all.length)h+='<div class="empty">No runs in the app yet.</div>';
   else h+='<div class="days" style="margin-top:12px">'+all.slice(0,150).map(r=>{const it=idx[r.date];const z=isRun(r)?zoneOfPace(r.sec/r.km):"x";const dd=pISO(r.date);
-    return '<button class="day z-'+z+'" data-day="'+r.date+'"><span class="tile"><span class="a">'+DOW[dd.getDay()].toUpperCase()+'</span><span class="b">'+dd.getDate()+'</span><span class="a">'+MON[dd.getMonth()].toUpperCase()+'</span></span><span style="min-width:0"><div class="t">'+esc(cleanTitle(r.title||r.type||"Activity","run",r.date))+'</div><div class="s">'+(isRun(r)?(+r.km).toFixed(2)+' km · '+fP(r.sec/r.km)+'/km':esc(r.type||"Cross-train"))+' · '+fDur(r.sec)+(r.avgHr?' · '+Math.round(r.avgHr)+' bpm':'')+(it&&isRun(r)?' · plan '+it.d.km+' km':'')+'</div></span><span class="r">›</span></button>';}).join("")+'</div>';
+    return '<button class="day z-'+z+'" data-day="'+r.date+'"><span class="tile"><span class="a">'+DOW[dd.getDay()].toUpperCase()+'</span><span class="b">'+dd.getDate()+'</span><span class="a">'+MON[dd.getMonth()].toUpperCase()+'</span></span><span style="min-width:0"><div class="t">'+esc(cleanTitle(r.title||r.type||"Activity","run",r.date))+'</div><div class="s">'+(isRun(r)?(+r.km).toFixed(2)+' km · '+fP(r.sec/r.km)+'/km':esc(r.type||"Cross-train"))+' · '+fDur(r.sec)+(r.avgHr?' · '+Math.round(r.avgHr)+' bpm':'')+(it&&isRun(r)?' · plan '+it.d.km+' km':'')+'</div></span>'+rowSide(true,'<span class="r" aria-hidden="true">›</span>')+'</button>';}).join("")+'</div>';
   h+='</section>'+shoeCard()+'<details class="card pad older" style="margin-top:14px"><summary><span class="eb">Import a file manually</span><div class="sub" style="margin-top:4px">Only needed if something didn\'t come through from Strava</div></summary><div style="margin-top:12px"><label class="drop" id="drop" for="fIn"><b style="color:var(--accent)">Import from Garmin or Strava</b><div style="margin-top:4px">Garmin Connect activities CSV, Strava activities.csv, or .tcx / .gpx files</div></label><input id="fIn" type="file" multiple accept=".csv,.tcx,.gpx" hidden><div class="sub" style="margin-top:10px">Garmin Connect on a computer: Activities, All activities, Export CSV. Gym, bike and swim sessions import too and count as cross-training.</div></div></details>'; return h;
 }
 
@@ -3094,7 +3100,7 @@ function vGym(){
     '<div class="metrics"><div class="m"><div class="k">Sessions</div><div class="v">'+A.n+'</div></div><div class="m"><div class="k">Sets</div><div class="v">'+A.sets+'</div></div><div class="m"><div class="k">Reps</div><div class="v">'+A.reps+'</div></div><div class="m"><div class="k">Annual run rate</div><div class="v">'+fT(rr)+'<small>/ yr</small></div></div></div>'+
     '<div class="eb" style="margin-top:16px">Weekly, last 12 weeks</div><div class="wkt">'+wk.map(x=>'<span title="'+fD(x.m)+': '+fT(x.t)+'"><i style="height:'+Math.max(2,x.t/wmx*100).toFixed(1)+'%"'+(x.m===monOf(TODAY)?' class="cur"':'')+'></i></span>').join("")+'</div><div class="wkt-lab"><span>'+fD(wk[0].m)+'</span><span>This week</span></div></section>';
   h+='<section class="card pad"><div class="eb">Sessions</div><h2>Recent</h2><div class="glist">'+ls.slice().reverse().slice(0,8).map(l=>{const s=sessStats(l);const top=Object.keys(s.mus).sort((x,y)=>s.mus[y]-s.mus[x]).slice(0,3).map(k=>MUSC[k]).join(", ");
-    return '<button type="button" class="grow" data-liftopen="'+l.id+'"><span class="wkd-date">'+DOW[pISO(l.date).getDay()]+' '+pISO(l.date).getDate()+' '+MON[pISO(l.date).getMonth()]+'</span><span class="wkd-t">'+esc(l.name||"Session")+'<span class="sub">'+s.sets+' sets · '+esc(top)+'</span></span><span class="wkd-n">'+fT(s.t)+'</span><span class="r">›</span></button>';}).join("")+'</div></section>';
+    return '<button type="button" class="grow" data-liftopen="'+l.id+'"><span class="wkd-date">'+DOW[pISO(l.date).getDay()]+' '+pISO(l.date).getDate()+' '+MON[pISO(l.date).getMonth()]+'</span><span class="wkd-t">'+esc(l.name||"Session")+'<span class="sub">'+s.sets+' sets · '+esc(top)+'</span></span><span class="wkd-n">'+fT(s.t)+'</span>'+rowSide(true,'<span class="r" aria-hidden="true">›</span>')+'</button>';}).join("")+'</div></section>';
   h+='</div><div class="stack">';
   h+='<section class="card pad"><div class="eb">Muscles · '+(UI.gymP==="week"?"this week":UI.gymP==="month"?"last 4 weeks":"this year")+'</div><h2>What you hit</h2>'+(A.sets?bodySvg(A.mus)+splitBar(A.mus)+muscleRank(A.mus,A.mt,6)+'<div class="sub" style="margin-top:8px">Counted in sets: a full set for the main muscle, half a set for helpers.</div>':'<div class="empty">Nothing logged in this period yet.</div>')+'</section>';
   const prs=bestLifts().slice(0,6);
