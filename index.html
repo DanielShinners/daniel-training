@@ -588,12 +588,12 @@ section.card[style*="border-left"]{border-left-width:0!important;box-shadow:inse
 .day.c-mix{background:linear-gradient(to bottom,var(--cat-ball) 0 50%,var(--cat-gym) 50% 100%) left center / 3px 100% no-repeat,var(--card);border:1px solid var(--line);box-shadow:var(--shadow)}
 .day.res-w{box-shadow:inset 3px 0 0 #22C55E, var(--shadow)}
 .day.res-l{box-shadow:inset 3px 0 0 #EF4444, var(--shadow)}
-.day .tline{display:flex;align-items:baseline;justify-content:space-between;gap:8px;min-width:0}
-.day .t{font-weight:500;line-height:var(--space-line);min-width:0}
-.score{display:inline-flex;align-items:baseline;gap:6px;flex:none}
-.score b{font-size:16px;font-weight:600;color:var(--ink);letter-spacing:-.02em}
-.score .mins{font-size:11px;font-weight:400;color:var(--ink3)}
-.score .res{margin-top:0}
+.tline,.day .tline{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-start;gap:8px;min-width:0;max-width:100%}
+.day .t,.rec-act .t{font-weight:500;line-height:var(--space-line);min-width:0;max-width:100%}
+.score{display:inline-flex;flex-wrap:wrap;align-items:center;gap:8px;max-width:100%;min-width:0;flex:0 1 auto;vertical-align:middle}
+.score b{font-size:16px;font-weight:600;color:var(--ink);letter-spacing:-.02em;white-space:nowrap}
+.score .mins{font-size:11px;font-weight:400;color:var(--ink3);white-space:nowrap}
+.score .res{margin:0}
 .day.done .score,.day.done .score b{text-decoration:none;color:var(--ink)}
 .day .s{font-size:12px;color:var(--ink3);margin-top:2px;font-family:var(--sans)}
 .dk .day .s{color:var(--ink3)}
@@ -601,7 +601,8 @@ section.card[style*="border-left"]{border-left-width:0!important;box-shadow:inse
 .act-stats.ball{color:var(--cat-ball)}
 .act-note{font-size:12px;color:var(--ink3);margin-top:4px;line-height:1.35;white-space:pre-wrap}
 .act-note.clamp{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.res{display:inline-flex;align-items:center;align-self:flex-start;gap:6px;margin-top:6px;font-family:var(--sans);font-size:12px;font-weight:500;line-height:1.3;padding:3px 8px;border-radius:999px;background:transparent;border:1px solid var(--line2);color:var(--ink2)}
+.res{display:inline-flex;align-items:center;align-self:center;gap:6px;margin:0;font-family:var(--sans);font-size:12px;font-weight:500;line-height:1;padding:6px 12px;border-radius:999px;background:transparent;border:1px solid var(--line2);color:var(--ink2);vertical-align:middle;white-space:nowrap;flex:none}
+.act-box > .res{margin-top:8px}
 .res.w{color:#178A56;border-color:#22C55E}
 .res.l{color:#DC2626;border-color:#EF4444}
 .res.d{color:var(--ink2);border-color:var(--line2)}
@@ -752,7 +753,7 @@ input[type=date],input[type=time]{min-height:44px;-webkit-appearance:none;appear
 a.ball-next{display:block;color:inherit;text-decoration:none}
 button.sess-t{display:block;width:100%;text-align:left}
 .tapday{cursor:pointer}
-.tline .sess-t{width:auto;flex:1;min-width:0}
+.tline .sess-t{width:auto;flex:0 1 auto;min-width:0;max-width:100%}
 .wg-legend{display:flex;flex-wrap:wrap;gap:8px 14px;margin-top:12px;font-size:12px;font-weight:500;color:var(--ink)}
 .wg-legend span{display:inline-flex;align-items:center;gap:6px}
 .wg-legend i{width:12px;height:12px;border-radius:4px;display:inline-block}
@@ -1339,11 +1340,10 @@ function dayRow(d,dark){
   if(nameHtml)bits.push(nameHtml);
   const loggedRun=cat==="ball"?game:Object.values(S.runs).find(r=>r.date===d.date&&catOf(r)===cat);
   if(loggedRun){const logged=stripTypePrefix(loggedRun.title||"","ball"===cat?"ball":cat);if(logged&&!sameTypeName(logged,cat)&&logged.toLowerCase()!==String(title).toLowerCase())bits.push(esc(logged));}
-  if(score)bits.push(score);
-  else if(cat==="ball"||parts.includes("ball")){const tip=fixtureWhen(d.date); if(tip)bits.push(esc(tip));}
+  if(!(score)&&(cat==="ball"||parts.includes("ball"))){const tip=fixtureWhen(d.date); if(tip)bits.push(esc(tip));}
   const s=bits.filter(Boolean).join(" · ");
   const trail=d.date>=TODAY&&!canMove(d.date,d.date+"x")?'<span class="drag" data-drag aria-label="Drag to move this session" title="Drag to move">⋮⋮</span>':'<span class="r" aria-hidden="true">›</span>';
-  return '<button class="day z-'+z+(mixed?" c-mix":catCls(cat))+(o==="W"?" res-w":o==="L"?" res-l":"")+(st==="done"?' done':'')+(d.date===TODAY?' today':'')+'" data-day="'+d.date+'"><span class="tile"><span class="a">'+DOW[dd.getDay()].toUpperCase()+'</span><span class="b">'+dd.getDate()+'</span><span class="a">'+MON[dd.getMonth()].toUpperCase()+'</span></span><span style="min-width:0"><div class="t">'+esc(title)+'</div>'+(s?'<div class="s">'+s+tags+dayChips(d.date)+verdictChip(d.date)+'</div>':'')+'</span>'+rowSide(st==="done",trail)+'</button>';
+  return '<button class="day z-'+z+(mixed?" c-mix":catCls(cat))+(o==="W"?" res-w":o==="L"?" res-l":"")+(st==="done"?' done':'')+(d.date===TODAY?' today':'')+'" data-day="'+d.date+'"><span class="tile"><span class="a">'+DOW[dd.getDay()].toUpperCase()+'</span><span class="b">'+dd.getDate()+'</span><span class="a">'+MON[dd.getMonth()].toUpperCase()+'</span></span><span style="min-width:0"><div class="tline"><div class="t">'+esc(title)+'</div>'+(score||"")+'</div>'+(s?'<div class="s">'+s+tags+dayChips(d.date)+verdictChip(d.date)+'</div>':'')+'</span>'+rowSide(st==="done",trail)+'</button>';
 }
 function moveKey(name){return String(name||"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,48)||"move";}
 function splitClauses(s){const out=[];let cur="",depth=0;for(const ch of s){if(ch==="(")depth++;else if(ch===")")depth=Math.max(0,depth-1);if(ch===","&&depth===0){out.push(cur);cur="";}else cur+=ch;}if(cur.trim())out.push(cur);return out;}
