@@ -879,8 +879,8 @@ function applyGate(){
 
 const S={chat:[],weeks:{},pastweeks:{},runs:{},log:{},lifts:{},notes:[],weights:{},adjust:{},basketball:{},settings:{},db:null,loaded:false};
 function hasVdot(){const v=S.settings&&S.settings.vdot;return v!=null&&v!==""&&isFinite(+v)&&+v>0;}
-const UI={tab:"today",area:"health",scope:"all",sel:null,openWeek:null,recipe:4,showPast:false,budView:"plan",expMonth:"",expAvg:false,expAll:false,invView:"holdings"};
-try{const t=localStorage.getItem("dt-tab"); if(t) UI.tab=t; const a=localStorage.getItem("dt-area"); if(a==="health"||a==="wealth") UI.area=a; const sc=localStorage.getItem("dt-scope"); if(sc==="all"||sc==="personal"||sc==="family") UI.scope=sc;}catch(e){}
+const UI={tab:"today",area:"health",sel:null,openWeek:null,recipe:4,showPast:false,budView:"plan",expMonth:"",expAvg:false,expAll:false,invView:"holdings"};
+try{const t=localStorage.getItem("dt-tab"); if(t) UI.tab=t; const a=localStorage.getItem("dt-area"); if(a==="health"||a==="wealth") UI.area=a; localStorage.removeItem("dt-scope");}catch(e){}
 
 /* utils */
 const $=(s,r=document)=>r.querySelector(s);
@@ -3331,19 +3331,14 @@ function progressRing(pct, iconKey){
 function budgetTone(spent,budget){if((budget<=0&&spent>0)||spent>budget)return "over"; if(spent<budget)return "under"; return "even";}
 function budgetPct(spent,budget){if(budget<=0)return spent>0?100:0; return Math.min(100,Math.round(spent/budget*100));}
 function scopeOf(item){const s=String(item&&item.scope||"").trim().toLowerCase(); return s==="family"?"family":"personal";}
-function inScope(item){if(!UI.scope||UI.scope==="all")return true; return scopeOf(item)===UI.scope;}
-function scopeBar(){
-  const b=(id,label)=>'<button type="button" data-scope="'+id+'" aria-pressed="'+(UI.scope===id)+'">'+label+'</button>';
-  return '<div class="scopes" role="group" aria-label="Whose money">'+b("all","All")+b("personal","Personal")+b("family","Family")+'</div>';
-}
-function scopeWord(item){return scopeOf(item)==="family"?"Family":"Personal";}
-function scopeLabel(){return UI.scope==="personal"?"Personal":UI.scope==="family"?"Family":"All";}
+function isFamily(item){return scopeOf(item)==="family";}
 function budgetModel(){
-  const b=wealthDoc("budget"), cats=(b.categories||[]).filter(c=>c&&c.name&&inScope(c));
+  const b=wealthDoc("budget"), cats=(b.categories||[]).filter(c=>c&&c.name&&isFamily(c));
   const spent=cats.reduce((a,c)=>a+(+c.spent||0),0), budget=cats.reduce((a,c)=>a+(+c.budget||0),0);
-  const sources=(b.incomeSources||[]).filter(s=>s&&inScope(s));
+  const listed=(b.incomeSources||[]).filter(Boolean);
+  const sources=listed.filter(isFamily);
   const recurring=sources.filter(s=>!isOnce(s.cadence));
-  const income=sources.length?recurring.reduce((a,s)=>a+monthlyEquiv(+s.amount||0,s.cadence),0):(+b.income||0);
+  const income=listed.length?recurring.reduce((a,s)=>a+monthlyEquiv(+s.amount||0,s.cadence),0):(+b.income||0);
   const estimate=recurring.some(s=>sourceBasis(s)==="gross"||s.isEstimate);
   const grossOnly=recurring.length>0&&recurring.every(s=>sourceBasis(s)==="gross");
   const today=melbourneToday();
@@ -3419,7 +3414,7 @@ function billMoney(b){
 function billCounts(b){return billStatus(b)!=="cancelled"&&billMoney(b).aud;}
 function billModel(){
   const today=melbourneToday(), month=today.slice(0,7);
-  const items=(wealthDoc("bills").items||[]).filter(b=>b&&inScope(b)).slice().sort((a,b)=>billDue(a).localeCompare(billDue(b))||String(a.name||"").localeCompare(String(b.name||"")));
+  const items=(wealthDoc("bills").items||[]).filter(b=>b).slice().sort((a,b)=>billDue(a).localeCompare(billDue(b))||String(a.name||"").localeCompare(String(b.name||"")));
   const counted=items.filter(billCounts);
   const dueMonth=counted.filter(b=>billDue(b).slice(0,7)===month);
   const face=dueMonth.reduce((a,b)=>a+billMoney(b).amount,0);
@@ -3433,7 +3428,7 @@ function billRows(items){
     const due=billDue(b), dd=/^\d{4}-\d{2}-\d{2}$/.test(due)?pISO(due):null;
     const tile=dd?'<span class="tile"><span class="a">'+DOW[dd.getDay()].toUpperCase()+'</span><span class="b">'+dd.getDate()+'</span><span class="a">'+MON[dd.getMonth()].toUpperCase()+'</span></span>':'<span class="tile"></span>';
     const money=billMoney(b), st=billStatus(b), acct=b.paidFrom?accountById(b.paidFrom):null;
-    const note=[b.cadence||"",scopeWord(b),b.trialEnds?"Trial ends "+fD(String(b.trialEnds).slice(0,10)):"",b.accessUntil&&st==="cancelled"?"Until "+fD(String(b.accessUntil).slice(0,10)):"",inBudget(b.name)?"Also in budget":"",acct?acct.name:"",money.aud&&money.label?money.label:""].filter(Boolean).join(" · ");
+    const note=[b.cadence||"",b.trialEnds?"Trial ends "+fD(String(b.trialEnds).slice(0,10)):"",b.accessUntil&&st==="cancelled"?"Until "+fD(String(b.accessUntil).slice(0,10)):"",inBudget(b.name)?"Also in budget":"",acct?acct.name:"",money.aud&&money.label?money.label:""].filter(Boolean).join(" · ");
     const chips=[st==="cancelled"?miniChip("Cancelled"):"",st==="trial"?miniChip("Trial"):"",!money.aud?miniChip(money.label):""].filter(Boolean).join(" ");
     const amt=money.aud?aud(money.amount,true):aud(money.amount,true);
     return '<div class="wrow">'+tile+'<span style="min-width:0"><div class="t">'+esc(b.name||"Bill")+'</div><div class="s">'+esc(note)+(chips?" "+chips:"")+'</div></span><span class="amt">'+amt+'</span></div>';
@@ -3514,16 +3509,15 @@ function worthModel(){
     if(a.excludeFromWorth) return;
     if(a.linkedTo&&(holdIds.has(a.linkedTo)||propIds.has(a.linkedTo))) return;
     if(a.id&&(inv.holdings.some(h=>h.linkedTo===a.id)||inv.properties.some(p=>p.linkedTo===a.id))) return;
-    if(!inScope(a)) return;
     const liability=isLiability(a);
     lines.push({id:a.id||"", name:a.name||"Account", kind:a.kind||"Account", amount:liability?Math.abs(+a.balance||0):(+a.balance||0), liability, scope:a.scope, ratePa:a.ratePa, rateType:a.rateType, indexationDate:a.indexationDate, super:a.super});
   });
   inv.holdings.forEach(h=>{
-    if(h.excludeFromWorth||!inScope(h)) return;
+    if(h.excludeFromWorth) return;
     lines.push({id:h.id, name:h.name, kind:h.group, amount:h.value, liability:false, scope:h.scope});
   });
   inv.properties.forEach(p=>{
-    if(p.excludeFromWorth||!inScope(p)) return;
+    if(p.excludeFromWorth) return;
     lines.push({id:p.id, name:p.name, kind:"Property", amount:p.value, liability:false, scope:p.scope});
     if(p.mortgage>0) lines.push({id:p.id+"-mortgage", name:p.name+" mortgage", kind:"Liability", amount:p.mortgage, liability:true, scope:p.scope});
   });
@@ -3531,7 +3525,7 @@ function worthModel(){
   const unset=[];
   propertyRecords().forEach(raw=>{
     const p=asScoped(raw);
-    if(seenProp.has(p.id)||!inScope(p)) return;
+    if(seenProp.has(p.id)) return;
     if(!(+p.value>0)) unset.push(p.name||"Property");
     else lines.push({id:p.id, name:p.name, kind:"Property", amount:+p.value, liability:false, scope:p.scope});
     if(+p.offsetBalance>0) lines.push({id:p.id+"-offset", name:p.name+" offset", kind:"Offset", amount:+p.offsetBalance, liability:false, scope:p.scope});
@@ -3544,7 +3538,7 @@ function worthModel(){
   const hist=(wealthDoc("networth").history||[]).filter(h=>h&&h.month).slice().sort((a,b)=>String(a.month).localeCompare(String(b.month)));
   const latest=hist.length?hist[hist.length-1]:null, prev=hist.length>1?hist[hist.length-2]:null;
   const change=latest&&prev?(+latest.total||0)-(+prev.total||0):null;
-  const stale=!!(UI.scope==="all"||!UI.scope)&&!!latest&&Math.abs((+latest.total||0)-net)>0.005;
+  const stale=!!latest&&Math.abs((+latest.total||0)-net)>0.005;
   return {lines,assetSum,debtSum,net,superSum,hist,latest,prev,change,since:prev?monthShort(prev.month):"",stale,hasDebt:lines.some(l=>l.liability),inv,unset};
 }
 function worthNote(w){
@@ -3564,7 +3558,7 @@ function incomeRows(sources){
   return '<div class="stack">'+sources.map(s=>{
     const once=isOnce(s.cadence), basis=sourceBasis(s), acct=s.from?accountById(s.from):null;
     const when=once?(s.date?fD(String(s.date).slice(0,10)):""):(s.nextPay?"next "+fD(String(s.nextPay).slice(0,10)):"");
-    const tags=[once?"Once":(s.cadence||""), basis, scopeWord(s), acct?acct.name:"", when].filter(Boolean);
+    const tags=[once?"Once":(s.cadence||""), basis, acct?acct.name:"", when].filter(Boolean);
     const chip=((basis==="gross"&&!once)||s.isEstimate)?" "+miniChip("Net estimate"):"";
     const side=once?aud(s.amount,true):aud(monthlyEquiv(+s.amount||0,s.cadence));
     return '<div class="wrow" style="grid-template-columns:minmax(0,1fr) auto"><span><div class="t">'+esc(s.name||"Pay")+'</div><div class="s">'+esc(tags.join(" · "))+chip+'</div></span><span class="amt">'+side+(once?"":'<div class="s">/ month</div>')+'</span></div>';
@@ -3584,7 +3578,7 @@ function isVanguardHold(h){return /vanguard/i.test(String(h.name||"")+" "+String
 function savingsKind(kind){return /sav|offset|cash|everyday/i.test(String(kind||""));}
 function pieModel(){
   const inv=investModel();
-  const accounts=(wealthDoc("networth").accounts||[]).filter(a=>a&&!a.excludeFromWorth&&inScope(a));
+  const accounts=(wealthDoc("networth").accounts||[]).filter(a=>a&&!a.excludeFromWorth);
   const accountIds=new Set(accounts.map(a=>a.id).filter(Boolean));
   const sums={super:0,vanguard:0,shares:0,savings:0};
   accounts.forEach(a=>{
@@ -3593,7 +3587,7 @@ function pieModel(){
     else if(savingsKind(a.kind)) sums.savings+=n;
   });
   inv.holdings.forEach(h=>{
-    if(h.excludeFromWorth||!inScope(h)||!(h.value>0)) return;
+    if(h.excludeFromWorth||!(h.value>0)) return;
     if(isVanguardHold(h)) sums.vanguard+=h.value;
     else if(h.group==="Shares") sums.shares+=h.value;
   });
@@ -3780,7 +3774,7 @@ function expensePartialLabel(doc, monthId){
 function expenseCats(month, doc, include){
   const skip=expenseSkip(doc, include), map={};
   ((month&&month.categories)||[]).forEach(c=>{
-    if(!c||!c.name||!inScope(c)) return;
+    if(!c||!c.name||!isFamily(c)) return;
     const name=String(c.name).trim(), key=spendKey(name);
     if(!key||skip.has(key)) return;
     const n=+c.amount||0; if(!(n>0)) return;
@@ -3815,7 +3809,7 @@ function expenseLink(){
   if(!months.length) return "";
   const month=months[expenseDefaultIdx(months, doc)];
   const total=expenseCats(month, doc, false).reduce((s,c)=>s+c.v,0);
-  return '<button type="button" class="exp-jump" data-budview="expenses"><span>'+esc(scopeLabel())+' · '+esc(monthShort(month.month))+' · '+aud(total)+'</span><span aria-hidden="true">›</span></button>';
+  return '<button type="button" class="exp-jump" data-budview="expenses"><span>'+esc(doc.source||"Expenses")+' · '+esc(monthShort(month.month))+' · '+aud(total)+'</span><span aria-hidden="true">›</span></button>';
 }
 function vExpenses(){
   const doc=expenseDoc(), months=expenseMonths(doc);
@@ -3835,8 +3829,7 @@ function vExpenses(){
   const excluded=(doc.excludeFromSpend||[]).filter(Boolean);
   const nav='<div class="exp-nav"><button type="button" class="chev" data-expm="-1" aria-label="Previous month"'+(pick.idx<=0?" disabled":"")+'>‹</button><div class="lab">'+esc(label)+(note?' <span class="chip exp-partial">'+esc(note)+'</span>':"")+'</div><button type="button" class="chev" data-expm="1" aria-label="Next month"'+(pick.idx>=months.length-1?" disabled":"")+'>›</button><button type="button" class="avg" data-expavg="1" aria-pressed="'+(pick.avg?"true":"false")+'">Average</button></div>';
   const tog=excluded.length?'<button type="button" class="exp-inc" data-expinc="1" aria-pressed="'+(include?"true":"false")+'">Include investing & mortgage</button>':"";
-  const from=doc.source?'<div class="lede">From '+esc(doc.source)+'</div>':"";
-  return '<section class="card pad exp-card"><div class="ch"><div><div class="eb">'+esc(scopeLabel())+'</div><h2>'+aud(total)+'</h2>'+from+'</div></div>'+nav+tog+pieSvg(rows)+pieLegend(rows)+'<div class="eb" style="margin-top:16px">Last 12 months</div><div class="rb-scroll">'+bars+'</div></section>';
+  return '<section class="card pad exp-card"><div class="ch"><div><div class="eb">'+esc(doc.source||"Expenses")+'</div><h2>'+aud(total)+'</h2></div></div>'+nav+tog+pieSvg(rows)+pieLegend(rows)+'<div class="eb" style="margin-top:16px">Last 12 months</div><div class="rb-scroll">'+bars+'</div></section>';
 }
 function insuranceCard(){
   const doc=wealthLive&&wealthStore?(wealthStore.insurance||{items:[]}):(WEALTH_EXAMPLE.insurance||{items:[]});
@@ -3845,7 +3838,7 @@ function insuranceCard(){
   return '<section class="card pad"><div class="eb">Renewals</div><h2 style="margin-bottom:12px">Policies</h2><div class="stack">'+rows+'</div></section>';
 }
 function superCard(){
-  const accounts=(wealthDoc("networth").accounts||[]).filter(a=>a&&String(a.kind||"").toLowerCase()==="super"&&!a.excludeFromWorth&&inScope(a));
+  const accounts=(wealthDoc("networth").accounts||[]).filter(a=>a&&String(a.kind||"").toLowerCase()==="super"&&!a.excludeFromWorth);
   return accounts.map(a=>{
     const s=a.super||{}, ytd=+s.concessionalYTD||0, pct=Math.max(0,Math.min(100,Math.round(ytd/SUPER_CAP*100)));
     return '<section class="card pad"><div class="eb">Super</div><h2>'+esc(a.name||"Super")+'</h2><div class="lede">'+esc(s.fund||"")+(s.asAt?" · as at "+esc(fD(String(s.asAt).slice(0,10))):"")+'</div><div class="sub" style="margin-top:8px">Concessional '+aud(ytd)+' of '+aud(SUPER_CAP)+' · '+pct+'%</div><div class="wtrack"><i style="width:'+pct+'%"></i></div><div class="sub" style="margin-top:8px">Carry-forward '+aud(+s.carryForward||0)+' · insurance inside '+aud(+s.insuranceInside||0)+' · employer '+aud(+s.employerSG||0)+'</div></section>';
@@ -3862,7 +3855,7 @@ function vWealthOverview(){
   const since=w.change==null?"—":aud(w.change)+" since "+w.since+".";
   const nextTxt=bills.next?"Next is "+esc(bills.next.name)+" on "+esc(fD(billDue(bills.next),true))+". ":"";
   let h=wealthHead("Wealth","Overview","Where things stand.");
-  h+=dashCard("wspend","This month · "+scopeLabel(),"Spending",aud(allocate)+" still to allocate."+(estimate?" "+miniChip("Net estimate"):""),statTrio(["Income",aud(income),""],["Spent",aud(spent),""],["To allocate",aud(allocate),""]),spendBars(cats,"budget"),'<div class="legend"><span><i class="rb-swatch wealth"></i>Spent</span><span class="over">Over</span><span class="under">Under</span></div>');
+  h+=dashCard("wspend","This month","Spending",aud(allocate)+" still to allocate."+(estimate?" "+miniChip("Net estimate"):""),statTrio(["Income",aud(income),""],["Spent",aud(spent),""],["To allocate",aud(allocate),""]),spendBars(cats,"budget"),'<div class="legend"><span><i class="rb-swatch wealth"></i>Spent</span><span class="over">Over</span><span class="under">Under</span></div>');
   h+=expenseLink();
   h+=emergencyCard()+portfolioPie();
   h+='<section class="card pad"><div class="ch"><div><div class="eb">Saving</div><h2>Goals</h2></div><div class="metrics dash-stats">'+statTrio(["Saved",aud(saved),""],["Target",aud(target),""],[goalGap<0?"Over":"Left",aud(Math.abs(goalGap)),""])+'</div></div>'+goalCards(goals)+'<button class="btn ghost" type="button" data-tab="goals" style="margin-top:12px">Open goals</button></section>';
@@ -3877,19 +3870,19 @@ function budSeg(){
   return '<div class="scopes" role="group" aria-label="Budget view">'+b("plan","Plan")+b("expenses","Expenses")+'</div>';
 }
 function vBudget(){
-  const head=budSeg()+scopeBar();
+  const head=budSeg();
   if(UI.budView==="expenses") return wealthHead("ING","Expenses","Where the money went.")+head+vExpenses();
   const {b,cats,spent,income,allocate,sources,estimate}=budgetModel();
   const rows=cats.map(c=>{
     const spentN=+c.spent||0, bud=+c.budget||0, tone=budgetTone(spentN,bud), pct=budgetPct(spentN,bud);
     const gap=tone==="even"?"even":tone+" "+aud(Math.abs(bud<=0&&tone==="over"?spentN:bud-spentN));
-    return '<div class="wrow" style="grid-template-columns:minmax(0,1fr) auto"><span><div class="t">'+esc(c.name)+'</div><div class="s">'+esc(scopeWord(c))+' · '+aud(spentN)+' of '+aud(bud)+'</div><div class="wtrack"><i style="width:'+pct+'%"></i></div></span><span class="amt '+(tone==="even"?"":tone)+'">'+gap+'</span></div>';
+    return '<div class="wrow" style="grid-template-columns:minmax(0,1fr) auto"><span><div class="t">'+esc(c.name)+'</div><div class="s">'+aud(spentN)+' of '+aud(bud)+'</div><div class="wtrack"><i style="width:'+pct+'%"></i></div></span><span class="amt '+(tone==="even"?"":tone)+'">'+gap+'</span></div>';
   }).join("");
-  const tx=(b.transactions||[]).filter(t=>t&&inScope(t)).slice().sort((a,c)=>String(c.date||"").localeCompare(String(a.date||"")));
+  const tx=(b.transactions||[]).filter(t=>t&&isFamily(t)).slice().sort((a,c)=>String(c.date||"").localeCompare(String(a.date||"")));
   const txRows=tx.map(t=>{const ds=String(t.date||"").slice(0,10), dd=/^\d{4}-\d{2}-\d{2}$/.test(ds)?pISO(ds):null; return '<div class="wrow">'+(dd?'<span class="tile"><span class="a">'+MON[dd.getMonth()].toUpperCase()+'</span><span class="b">'+dd.getDate()+'</span></span>':'<span class="tile"></span>')+'<span style="min-width:0"><div class="t">'+esc(t.name||"")+'</div><div class="s">'+esc(t.category||"")+'</div></span><span class="amt">'+audTxn(t.amount)+'</span></div>';}).join("");
   return wealthHead(ymLabel(b.month)||"This month","Spending","Where this month's money is going.")+
     head+
-    dashCard("wbudget","This month · "+scopeLabel(),"Spent",aud(allocate)+" still to allocate."+(estimate?" "+miniChip("Net estimate"):""),statTrio(["Income",aud(income),""],["Spent",aud(spent),""],["To allocate",aud(allocate),""]),spendBars(cats),'<div class="legend"><span><i class="rb-swatch wealth"></i>Spent</span></div>')+
+    dashCard("wbudget","This month","Spent",aud(allocate)+" still to allocate."+(estimate?" "+miniChip("Net estimate"):""),statTrio(["Income",aud(income),""],["Spent",aud(spent),""],["To allocate",aud(allocate),""]),spendBars(cats),'<div class="legend"><span><i class="rb-swatch wealth"></i>Spent</span></div>')+
     '<section class="card pad"><div class="eb">Coming in</div><h2 style="margin-bottom:12px">'+aud(income)+'</h2>'+incomeRows(sources)+'</section>'+
     '<section class="card pad"><div class="eb">By category</div><h2 style="margin-bottom:12px">Where it went</h2><div class="stack">'+rows+'</div></section>'+
     '<section class="card pad"><div class="eb">Recent</div><h2 style="margin-bottom:12px">Transactions</h2><div class="stack">'+txRows+'</div></section>';
@@ -3906,16 +3899,16 @@ function vWorth(){
   const w=worthModel();
   const scale=dashScale(w.hist.map(h=>+h.total||0));
   const bars=w.hist.map(h=>dashBar({label:ymLabel(h.month),accent:"wealth",h:scale(+h.total||0),val:kAud(h.total),aria:ymLabel(h.month)+" "+aud(h.total)})).join("");
-  const since=w.change==null?"—":aud(w.change)+" since "+w.since+".";
+  const since=w.change==null?"":aud(w.change)+" since "+w.since+".";
   const rows=w.lines.map(a=>{
     const rate=a.ratePa!=null?pctTxt(a.ratePa)+(a.rateType?" "+a.rateType:""):"";
-    const sub=[a.kind,scopeWord(a),rate,a.indexationDate?"Indexation "+fD(String(a.indexationDate).slice(0,10)):"",a.note&&normName(a.note)!==normName(a.name)?a.note:""].filter(Boolean).join(" · ");
+    const sub=[a.kind,rate,a.indexationDate?"Indexation "+fD(String(a.indexationDate).slice(0,10)):"",a.note&&normName(a.note)!==normName(a.name)?a.note:""].filter(Boolean).join(" · ");
     return '<div class="wrow" style="grid-template-columns:minmax(0,1fr) auto"><span><div class="t">'+esc(a.name||"")+'</div><div class="s">'+esc(sub)+'</div></span><span class="amt">'+aud(a.amount)+'</span></div>';
   }).join("");
+  const summary=dashCard("wnet","Trend",aud(w.net),since,statTrio(["Assets",aud(w.assetSum),""],["Liabilities",aud(w.debtSum),""],["Net worth",aud(w.net),""]),bars,'<div class="legend"><span><i class="rb-swatch wealth"></i>Total</span></div>'+worthNote(w));
   return wealthHead("Snapshot","Net worth","What you own, minus what you owe.")+
-    scopeBar()+
+    summary+
     worthPie(w)+
-    dashCard("wnet","Trend",aud(w.net),since,statTrio(["Assets",aud(w.assetSum),""],["Liabilities",aud(w.debtSum),""],["Net worth",aud(w.net),""]),bars,'<div class="legend"><span><i class="rb-swatch wealth"></i>Total</span></div>'+worthNote(w))+
     superCard()+
     '<section class="card pad"><div class="eb">Accounts</div><h2 style="margin-bottom:12px">Balances</h2><div class="stack">'+rows+'</div></section>';
 }
@@ -4006,7 +3999,7 @@ function estimatedEquity(p){
   return Math.round(v-(+p.loanBalance||0));
 }
 function equityCaption(){
-  return propertyRecords().filter(p=>inScope(asScoped(p))&&estimatedEquity(p)!=null).map(p=>'<div class="eq-cap"><b class="net-debt">'+audNear(estimatedEquity(p))+'</b><div class="sub">'+EQ_LABEL+'</div></div>').join("");
+  return propertyRecords().filter(p=>estimatedEquity(p)!=null).map(p=>'<div class="eq-cap"><b class="net-debt">'+audNear(estimatedEquity(p))+'</b><div class="sub">'+EQ_LABEL+'</div></div>').join("");
 }
 function propertyDonut(p){
   const eq=estimatedEquity(p), value=propValue(p);
@@ -4057,7 +4050,7 @@ function propertyFlow(p){
 }
 function propertyView(){
   const pack=propertyPack();
-  const list=propertyRecords().filter(p=>inScope(asScoped(p)));
+  const list=propertyRecords();
   if(!list.length) return '<section class="card pad"><div class="empty">No property yet.</div></section>';
   return list.map(p=>propertySummary(p, pack.live)+propertyFlow(p)).join("");
 }
@@ -4125,7 +4118,6 @@ function vBills(){
   const next=bills.next;
   const lede=next?"Next is "+esc(next.name)+" on "+esc(fD(billDue(next),true))+".":"";
   return wealthHead("Coming up","Bills","What's due.")+
-    scopeBar()+
     '<section class="card pad"><div class="ch"><div><div class="eb">Melbourne</div><h2>'+aud(bills.face,true)+'</h2><div class="lede">'+lede+'</div></div><div class="metrics dash-stats">'+statTrio(["Due this month",aud(bills.face,true),""],["Next",next?aud(next.amount,true):"—",""],["Per month",aud(bills.equiv),""])+'</div></div>'+billRows(bills.items)+'</section>'+
     insuranceCard();
 }
@@ -4373,7 +4365,6 @@ function bind(r){
   const so=$("#signOut",r); if(so)so.onclick=async()=>{so.disabled=true;try{await SB.auth.signOut();}catch(e){so.disabled=false;toast("Couldn't sign out. Try again.");}};
   r.querySelectorAll("[data-logball]").forEach(b=>b.onclick=()=>openQuickAdd("Basketball",b.dataset.logball));
   r.querySelectorAll("[data-logrun]").forEach(b=>b.onclick=()=>openQuickAdd("Run",b.dataset.logrun));
-  r.querySelectorAll("[data-scope]").forEach(b=>b.onclick=()=>{UI.scope=b.dataset.scope;try{localStorage.setItem("dt-scope",UI.scope);}catch(e){}render();});
   r.querySelectorAll("[data-budview]").forEach(b=>b.onclick=()=>{UI.budView=b.dataset.budview==="expenses"?"expenses":"plan"; if(UI.tab!=="budget") setTab("budget"); else render();});
   r.querySelectorAll("[data-invview]").forEach(b=>b.onclick=()=>{UI.invView=b.dataset.invview==="property"?"property":"holdings"; if(UI.tab!=="invest") setTab("invest"); else render();});
   r.querySelectorAll("[data-propval]").forEach(b=>b.onclick=()=>openPropertyValue(b.dataset.propval));
