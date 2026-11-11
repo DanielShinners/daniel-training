@@ -77,7 +77,7 @@
         (next ? '<section class="card"><p class="kicker">Next game</p><h2>' + esc(next.round) + " vs " + esc(next.opponent) + "</h2><p class=\"note\">" + esc([niceDate(next.date), niceTime(next.time), next.court, next.venue].filter(Boolean).join(" · ")) + "</p></section>" : "") +
         (last ? '<section class="card"><p class="kicker">Latest result</p><div class="scoreline"><h2>' + esc(last.round) + " vs " + esc(last.opponent) + '</h2><span class="wl">' + esc(last.outcome || "") + " " + esc(last.scoreFor) + "–" + esc(last.scoreAgainst) + "</span></div><p class=\"note\">" + esc(niceDate(last.date)) + (last.periods.length ? " · " + last.periods.map((p) => p.label + " " + p.for + "–" + p.against).join(", ") : "") + "</p></section>" : "") +
         '<div class="pair"><img src="assets/run-flannel.jpg" width="640" height="640" alt="Teammates running in flannel, one in a Support Brahs tee"><img src="assets/street-dunk.jpg" width="513" height="640" alt="A layup at an outdoor street game"></div>' +
-        '<section class="card stack"><p class="kicker">Locker room</p><h2>Every jersey, on its own hook.</h2><p class="note">Purple mesh, white print, surname on the back. A simple 3D stand-in for now.</p><a class="btn" href="locker.html">Open the locker room</a></section>' +
+        '<section class="card stack"><p class="kicker">Locker room</p><h2>Every jersey, on its own hook.</h2><p class="note">Black singlets on a rack. Surname and number on the back when we have them.</p><a class="btn" href="locker.html">Open the locker room</a></section>' +
         '<section class="card stack"><p class="kicker">Most Valuable Brah</p><h2>Winner revealed at the Christmas party.</h2><p class="note">Votes stay sealed. One ballot each, after the game.</p><div class="row"><a class="btn" href="vote.html">Vote</a><a class="btn ghost" href="board.html">The teaser</a></div></section>'
       );
       refreshMo("mo-home");
@@ -171,7 +171,7 @@
         '<section class="card"><h2>Ladder</h2><div class="table-wrap"><table><thead><tr><th>#</th><th>Team</th><th>P</th><th>W</th><th>L</th><th>For</th><th>Ag</th><th>%</th><th>Pts</th></tr></thead><tbody>' +
         S.ladder.map((t) => "<tr" + (t.teamId === S.meta.teamId ? ' class="us"' : "") + "><td>" + t.position + "</td><td>" + esc(t.team) + "</td><td>" + t.played + "</td><td>" + t.won + "</td><td>" + t.lost + "</td><td>" + t.pointsFor + "</td><td>" + t.pointsAgainst + "</td><td>" + t.percentage + "</td><td>" + t.points + "</td></tr>").join("") +
         "</tbody></table></div></section>" +
-        '<section class="card"><h2>Scoring</h2><div class="table-wrap"><table><thead><tr><th>Player</th><th>GP</th><th>PTS</th><th>PPG</th><th>1s</th><th>2s</th><th>3s</th></tr></thead><tbody>' +
+        '<section class="card" id="scoring"><h2>Scoring</h2><div class="table-wrap"><table><thead><tr><th>Player</th><th>GP</th><th>PTS</th><th>PPG</th><th>1s</th><th>2s</th><th>3s</th></tr></thead><tbody>' +
         leaders.map((p) => "<tr><td>" + esc(p.name) + "</td><td>" + p.gp + "</td><td>" + p.pts + "</td><td>" + (p.gp ? (p.pts / p.gp).toFixed(1) : "–") + "</td><td>" + p.p1 + "</td><td>" + p.p2 + "</td><td>" + p.p3 + "</td></tr>").join("") +
         "</tbody></table></div><p class=\"note\">PlayHQ did not publish a season aggregate. These totals are added up from game sheet points. Anonymous fill-ins stay on the game, not on this list.</p></section>" +
         '<section class="card stack"><h2>Fixture</h2>' + games.map((g) => {
