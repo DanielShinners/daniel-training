@@ -67,20 +67,24 @@
       const last = finals()[0];
       const next = upcoming()[0];
       wrap(
-        '<p class="kicker">Tuesday Men B · MSAC</p>' +
-        "<h1>Most Valuable Brah starts with showing up.</h1>" +
-        '<p class="lede">A community basketball team for men to move, grow and connect. Corporate games at lululemon in 2017. A weekly domestic comp now.</p>' +
+        '<img class="shot" src="assets/hero-court.jpg" width="640" height="640" alt="Overhead of the black Support Brahs 3x3 court">' +
+        '<p class="kicker">The real brahs of lululemon</p>' +
+        "<h1>Show up. Have a crack.</h1>" +
+        '<p class="lede">A community basketball team for men to move, grow and connect. Corporate games in 2017. Tuesday nights at MSAC now.</p>' +
+        '<div class="motifs"><div><b>3x3</b><span>Streetball</span></div><div><b>Mo</b><span>Movember</span></div><div><b>Brah-B-Q</b><span>The cook-up</span></div></div>' +
         '<section class="card stack">' + moBlock("mo-home") +
         '<a class="btn" href="' + esc(C.movemberTeamUrl) + '">Donate to the team</a></section>' +
         (next ? '<section class="card"><p class="kicker">Next game</p><h2>' + esc(next.round) + " vs " + esc(next.opponent) + "</h2><p class=\"note\">" + esc([niceDate(next.date), niceTime(next.time), next.court, next.venue].filter(Boolean).join(" · ")) + "</p></section>" : "") +
         (last ? '<section class="card"><p class="kicker">Latest result</p><div class="scoreline"><h2>' + esc(last.round) + " vs " + esc(last.opponent) + '</h2><span class="wl">' + esc(last.outcome || "") + " " + esc(last.scoreFor) + "–" + esc(last.scoreAgainst) + "</span></div><p class=\"note\">" + esc(niceDate(last.date)) + (last.periods.length ? " · " + last.periods.map((p) => p.label + " " + p.for + "–" + p.against).join(", ") : "") + "</p></section>" : "") +
-        '<section class="card stack"><p class="kicker">Locker room</p><h2>Every jersey, on its own hook.</h2><p class="note">Purple mesh, white print, surname on the back. Numbers from PlayHQ are flagged where they are still a placeholder.</p><a class="btn" href="locker.html">Open the locker room</a></section>' +
+        '<div class="pair"><img src="assets/run-flannel.jpg" width="640" height="640" alt="Teammates running in flannel, one in a Support Brahs tee"><img src="assets/street-dunk.jpg" width="513" height="640" alt="A layup at an outdoor street game"></div>' +
+        '<section class="card stack"><p class="kicker">Locker room</p><h2>Every jersey, on its own hook.</h2><p class="note">Purple mesh, white print, surname on the back. A simple 3D stand-in for now.</p><a class="btn" href="locker.html">Open the locker room</a></section>' +
         '<section class="card stack"><p class="kicker">Most Valuable Brah</p><h2>Winner revealed at the Christmas party.</h2><p class="note">Votes stay sealed. One ballot each, after the game.</p><div class="row"><a class="btn" href="vote.html">Vote</a><a class="btn ghost" href="board.html">The teaser</a></div></section>'
       );
       refreshMo("mo-home");
     },
     about() {
       wrap(
+        '<img class="shot" src="assets/run-flannel.jpg" width="640" height="640" alt="Teammates out for a run, moustaches and a Support Brahs tee">' +
         '<p class="kicker">About</p><h1>A safe place to have a crack.</h1>' +
         '<p class="lede">The Support Brahs are a community basketball team. The mission is simple: make room for men to move, grow and connect.</p>' +
         '<section class="card stack"><p>It started with lululemon SSC staff in Melbourne, joking their way into a corporate basketball team. Not everyone could play. Enough of them were willing to show up.</p><p>The Tuesday game became the point of connection. Banter first, then the harder conversations. The team later moved into a weekly domestic comp: MCBA Tuesday Men B at MSAC.</p><p>Age, size and ability are not the test. Show up and have a crack.</p><p>There is a sister team, the Brah-lettes.</p></section>' +
@@ -91,6 +95,7 @@
       const item = (year, title, body, ph) =>
         "<article><p class=\"kicker\">" + esc(year) + (ph ? ' <span class="ph">placeholder</span>' : "") + "</p><h2>" + esc(title) + "</h2><p class=\"note\">" + body + "</p></article>";
       wrap(
+        '<img class="shot" src="assets/court-overhead.jpg" width="360" height="640" alt="The 3x3 court from above, Support Brahs at centre court">' +
         '<p class="kicker">History</p><h1>From the loft to Tuesday night.</h1>' +
         '<p class="lede">A first pass. Dates we are not sure of are marked placeholder. Daniel can correct the line.</p>' +
         '<div class="tl">' +
@@ -107,8 +112,9 @@
     },
     movember() {
       wrap(
+        '<div class="pair"><img src="assets/mo-thumbs.jpg" width="640" height="640" alt="A teammate with a moustache giving a thumbs up"><img src="assets/mo-portrait.jpg" width="512" height="640" alt="A smiling teammate in a Movember hoodie"></div>' +
         '<p class="kicker">Movember</p><h1>Men\'s health, centre court.</h1>' +
-        '<p class="lede">This is the team page, not a personal Mo page. Donate to The Support Brahs.</p>' +
+        '<p class="lede">This is the team page, not a personal Mo page. Donate to The Support Brahs. Bio line: the real brahs. $89,559 raised.</p>' +
         '<section class="card stack">' + moBlock("mo-page") +
         '<a class="btn" href="' + esc(C.movemberTeamUrl) + '">Donate on the team page</a>' +
         '<p class="note"><a href="' + esc(C.movemberShortUrl) + '">movember.com/t/supportbrahs</a> · <a href="' + esc(C.movemberTeamUrl) + '">au.movember.com/team/2241550</a></p>' +
@@ -121,7 +127,7 @@
       const camps = ["All"].concat(window.BRAHS_CAMPAIGNS || []);
       wrap(
         '<p class="kicker">Gallery</p><h1>Pictures, when we have them.</h1>' +
-        '<p class="lede">Filters are ready for Movember, 3x3, Brah-B-Q, jerseys and Spalding. The Instagram archive was not in the repo, so this pass only has the jersey art.</p>' +
+        '<p class="lede">A first handful from @supportbrahs, plus this season\'s jersey. Brah-B-Q and the Spalding shots are still to come from the Drive archive.</p>' +
         '<div class="filters" id="g-filters">' + camps.map((c, i) => '<button class="chip" type="button" data-camp="' + esc(c) + '" aria-pressed="' + (i === 0 ? "true" : "false") + '">' + esc(c) + "</button>").join("") + "</div>" +
         '<div class="masonry" id="g-grid"></div>' +
         '<dialog id="g-light"><img alt=""><div class="cap"><p></p><button class="btn ghost" type="button" id="g-close">Close</button></div></dialog>'
@@ -159,6 +165,7 @@
       const leaders = S.players.filter((p) => p.kind !== "private" && p.pts != null).slice().sort((a, b) => b.pts - a.pts || b.p3 - a.p3);
       const games = S.games.slice().sort((a, b) => a.date.localeCompare(b.date));
       wrap(
+        '<img class="shot" src="assets/street-dunk.jpg" width="513" height="640" alt="Street basketball under the trees">' +
         '<p class="kicker">Games & Stats</p><h1>Summer 2026/27</h1>' +
         '<p class="lede">Tuesday Men B. Scoring only. No minutes, no foul ladder, no bottom of the list.</p>' +
         '<section class="card"><h2>Ladder</h2><div class="table-wrap"><table><thead><tr><th>#</th><th>Team</th><th>P</th><th>W</th><th>L</th><th>For</th><th>Ag</th><th>%</th><th>Pts</th></tr></thead><tbody>' +

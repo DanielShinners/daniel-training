@@ -1,19 +1,21 @@
 :root {
-  --bg: #F3F0EA;
-  --ink: #1B1916;
-  --ink2: #5C564C;
-  --ink3: #8A8378;
-  --line: #E4DDD2;
-  --card: #FFFCF8;
-  --accent: #442C75;
+  --bg: #F2EFE8;
+  --ink: #111111;
+  --ink2: #4A4742;
+  --ink3: #7A756C;
+  --line: #E0DBD1;
+  --card: #FBF9F4;
+  --accent: #E8452C;
   --accent-ink: #fff;
-  --sunken: #EBE6DC;
-  --bad: #C42318;
+  --sunken: #E7E2D8;
+  --bad: #9F1239;
   --radius: 22px;
   --s: 8px;
   --sans: "Outfit", "Avenir Next", "Segoe UI", sans-serif;
+  --display: "Bebas Neue", Impact, sans-serif;
+  --serif: "Libre Baskerville", Georgia, serif;
   --max: 880px;
-  --header: 56px;
+  --header: 64px;
   color-scheme: light;
 }
 * { box-sizing: border-box; }
@@ -28,8 +30,9 @@ img { max-width: 100%; display: block; }
 a { color: var(--accent); }
 button, input, select, textarea { font: inherit; color: inherit; }
 h1, h2, h3, p { margin: 0; }
-h1 { font-size: 34px; line-height: 1.05; letter-spacing: -0.03em; font-weight: 600; }
-h2 { font-size: 22px; letter-spacing: -0.02em; font-weight: 600; }
+h1, h2 { font-family: var(--display); font-weight: 400; letter-spacing: 0.02em; }
+h1 { font-size: 46px; line-height: 0.95; }
+h2 { font-size: 28px; line-height: 1; }
 h3 { font-size: 16px; font-weight: 600; }
 
 .skip {
@@ -46,8 +49,12 @@ h3 { font-size: 16px; font-weight: 600; }
   background: var(--bg);
   border-bottom: 1px solid var(--line);
 }
-.brand { display: flex; align-items: center; gap: 8px; text-decoration: none; color: inherit; }
-.brand img { height: 28px; width: auto; }
+.brand { display: flex; align-items: center; gap: 8px; text-decoration: none; color: var(--ink); }
+.badge { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; }
+.word { display: flex; flex-direction: column; align-items: center; line-height: 0.9; }
+.word .crown { display: block; margin-bottom: 1px; }
+.support { font-family: var(--serif); font-style: italic; font-size: 12px; letter-spacing: 0; }
+.brahs { font-family: var(--display); font-size: 22px; letter-spacing: 0.06em; }
 .hamb {
   width: 44px; height: 44px; border: 0; background: transparent; border-radius: 12px;
   display: grid; place-items: center; gap: 5px;
@@ -68,7 +75,7 @@ h3 { font-size: 16px; font-weight: 600; }
   min-height: 44px; display: flex; align-items: center;
   padding: 8px 12px; border-radius: 12px; font-weight: 500;
 }
-.navlinks a[aria-current="page"] { background: var(--accent); color: var(--accent-ink); }
+.navlinks a[aria-current="page"] { background: var(--ink); color: var(--bg); }
 
 main { padding: 16px 16px 48px; }
 .wrap { max-width: var(--max); margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
@@ -195,8 +202,16 @@ tr.us { background: #F3EEF8; }
 .fallback figure { flex: 0 0 78%; scroll-snap-align: center; margin: 0; }
 .fallback img { width: 100%; border-radius: 16px; background: #2a1248; }
 
+.shot { width: 100%; max-width: 640px; height: auto; border-radius: var(--radius); }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; max-width: 640px; }
+.pair img { width: 100%; max-width: 320px; height: 200px; object-fit: cover; border-radius: 16px; }
+.motifs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.motifs div { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 12px 8px; text-align: center; }
+.motifs b { display: block; font-family: var(--display); font-size: 18px; letter-spacing: 0.04em; }
+.motifs span { color: var(--ink2); font-size: 12px; }
+
 @media (min-width: 900px) {
-  h1 { font-size: 48px; }
+  h1 { font-size: 64px; }
   .hamb { display: none; }
   .top { position: sticky; }
   .navlinks {

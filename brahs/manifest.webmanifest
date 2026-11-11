@@ -4,9 +4,9 @@
   "start_url": ".",
   "scope": ".",
   "display": "standalone",
-  "background_color": "#F3F0EA",
-  "theme_color": "#442C75",
+  "background_color": "#F2EFE8",
+  "theme_color": "#111111",
   "icons": [
-    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+    { "src": "assets/mark-ball.jpg", "sizes": "150x150", "type": "image/jpeg", "purpose": "any" }
   ]
 }

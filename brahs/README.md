@@ -59,4 +59,4 @@ PlayHQ numbers are stored when the sheet had one. They are not confirmed against
 
 ## Credits
 
-Jersey wordmark traced from the team's print artwork. Crest redrawn from the crown-over-ball mark on the jersey. Locker and singlet are procedural three.js geometry (three.js is MIT). No third-party jersey mesh.
+The header wordmark is set in type: a crown, italic Support, condensed BRAHS. It is not a trace of the lululemon or Movember marks. The small ball photo is the Instagram profile image, used only at badge size. Event photos are from @supportbrahs and stay at or below their original 640px. The jersey crest is redrawn. The locker is a simple three.js stand-in (three.js is MIT).

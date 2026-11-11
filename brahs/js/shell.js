@@ -14,7 +14,9 @@
   const header = document.createElement("header");
   header.className = "top";
   header.innerHTML =
-    '<a class="brand" href="index.html"><img src="assets/wordmark.svg" alt="Support Brahs"></a>' +
+    '<a class="brand" href="index.html"><img class="badge" src="assets/mark-ball.jpg" width="36" height="36" alt="">' +
+    '<span class="word"><svg class="crown" viewBox="0 0 24 14" width="22" height="12" aria-hidden="true"><path fill="currentColor" d="M1 13 4.2 5.2 8 8.4 12 1.2 16 8.4 19.8 5.2 23 13Z"/></svg>' +
+    '<span class="support">Support</span><span class="brahs">BRAHS</span></span></a>' +
     '<button class="hamb" type="button" aria-expanded="false" aria-controls="site-nav"><span></span><span></span><span></span><span class="skip" style="position:static;left:auto;top:auto;width:1px;height:1px;overflow:hidden;padding:0">Menu</span></button>';
   const nav = document.createElement("nav");
   nav.id = "site-nav";
