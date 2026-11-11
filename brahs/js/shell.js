@@ -33,13 +33,14 @@
   });
 
   const C = window.BRAHS_CONFIG || {};
+  const F = (window.BRAHS_COPY && window.BRAHS_COPY.footer) || {};
   const foot = document.createElement("footer");
   foot.className = "site-footer";
   foot.innerHTML =
     '<div class="wrap">' +
-    '<div><a href="' + (C.instagram || "#") + '">Instagram @supportbrahs</a></div>' +
-    '<div><a href="' + (C.movemberTeamUrl || "#") + '">Movember team</a> · <a href="' + (C.movemberShortUrl || "#") + '">movember.com/t/supportbrahs</a></div>' +
-    "<div>Proud partners: lululemon, Movember, Spalding</div>" +
+    '<div><a href="' + (C.instagram || "#") + '">' + (F.instagram || "Instagram") + '</a></div>' +
+    '<div><a href="' + (C.movemberTeamUrl || "#") + '">' + (F.movember || "Movember team") + '</a></div>' +
+    "<div>" + (F.partners || "") + "</div>" +
     "</div>";
   document.body.appendChild(foot);
 })();

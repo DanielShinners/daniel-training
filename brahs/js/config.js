@@ -8,11 +8,5 @@ window.BRAHS_CONFIG = {
   partnershipsEmail: "partnerships@supportbrahs.com",
   instagram: "https://www.instagram.com/supportbrahs/",
   movemberTeamUrl: "https://au.movember.com/team/2241550",
-  movemberShortUrl: "https://movember.com/t/supportbrahs",
-  movemberApi: "https://api.movember.com/v22/team/2241550",
-  // All-time figure from the public team page. The v22 API only returns this campaign.
-  movemberAllTimeCents: 8955900,
-  movemberAllTimeLabel: "as of Nov 2026",
-  movemberCampaignCents: 286680,
-  movemberCampaignLabel: "this Movember, snapshot 11 Nov 2026"
+  movemberShortUrl: "https://movember.com/t/supportbrahs"
 };

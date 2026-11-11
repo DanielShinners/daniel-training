@@ -304,3 +304,23 @@ revoke all on function public.brahs_ballot_counts() from public;
 revoke all on function public.brahs_public_board() from public;
 grant execute on function public.brahs_ballot_counts() to anon, authenticated;
 grant execute on function public.brahs_public_board() to anon, authenticated;
+
+-- Cache of the Movember team page total. The page is the source. The site reads this, it does not hardcode the figure.
+alter table public.brahs_settings add column if not exists movember_raised_cents integer;
+alter table public.brahs_settings add column if not exists movember_as_of text;
+update public.brahs_settings
+set movember_raised_cents = 8955900, movember_as_of = 'as of Nov 2026', updated_at = now()
+where id = 'reveal';
+
+create or replace function public.brahs_movember()
+returns jsonb
+language sql
+security definer
+set search_path = public
+as $$
+  select jsonb_build_object('cents', s.movember_raised_cents, 'asOf', s.movember_as_of)
+  from public.brahs_settings s
+  where s.id = 'reveal'
+$$;
+revoke all on function public.brahs_movember() from public;
+grant execute on function public.brahs_movember() to anon, authenticated;

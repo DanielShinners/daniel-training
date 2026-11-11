@@ -1,6 +1,7 @@
 (function () {
   const C = window.BRAHS_CONFIG;
   const S = window.BRAHS_SEASON;
+  const COPY = window.BRAHS_COPY || {};
   const app = document.getElementById("app");
   const page = document.body.dataset.page;
 
@@ -27,39 +28,32 @@
     if (p.pts != null) return p.pts;
     return (p.p1 || 0) + (p.p2 || 0) * 2 + (p.p3 || 0) * 3;
   }
-  function displayNo(p) { return p.number || p.placeholderNumber || ""; }
   function wrap(html) { app.innerHTML = '<div class="wrap">' + html + "</div>"; }
-
+  function rosterRows() { return COPY.roster || []; }
+  function publicName(full) {
+    const raw = String(full || "");
+    if (/^fill-in/i.test(raw) || raw === "Private player") return raw;
+    const first = raw.split(" ")[0];
+    const hit = rosterRows().find((r) => r.match && r.match.toLowerCase() === first.toLowerCase());
+    return hit ? hit.nick : first;
+  }
   function moBlock(id) {
-    return '<div class="stat" id="' + id + '"><b>' + money(C.movemberAllTimeCents) + '</b><span>raised all-time, ' + esc(C.movemberAllTimeLabel) + '</span></div>';
+    return '<div class="stat" id="' + id + '"><b>—</b><span>Raised all-time, from the team page cache.</span></div>';
   }
   async function refreshMo(id) {
     const el = document.getElementById(id);
     if (!el) return;
-    let all = C.movemberAllTimeCents;
-    let label = C.movemberAllTimeLabel;
-    let campaign = C.movemberCampaignCents;
-    let campaignLabel = C.movemberCampaignLabel;
     try {
-      const r = await fetch(C.supabaseUrl + "/rest/v1/brahs_meta?id=eq.movember&select=data", {
-        headers: { apikey: C.supabaseKey, Authorization: "Bearer " + C.supabaseKey }
+      const r = await fetch(C.supabaseUrl + "/rest/v1/rpc/brahs_movember", {
+        method: "POST",
+        headers: { apikey: C.supabaseKey, Authorization: "Bearer " + C.supabaseKey, "Content-Type": "application/json" },
+        body: "{}"
       });
-      if (r.ok) {
-        const rows = await r.json();
-        const d = rows[0] && rows[0].data;
-        if (d && d.allTimeCents) { all = d.allTimeCents; label = d.allTimeLabel || label; }
-        if (d && d.campaignCents) { campaign = d.campaignCents; campaignLabel = d.campaignLabel || campaignLabel; }
-      }
+      if (!r.ok) return;
+      const d = await r.json();
+      if (!d || d.cents == null) return;
+      el.innerHTML = "<b>" + money(d.cents) + "</b><span>raised all-time" + (d.asOf ? ", " + esc(d.asOf) : "") + ". Source: the Movember team page.</span>";
     } catch (e) {}
-    try {
-      const r = await fetch(C.movemberApi, { headers: { Accept: "application/json" } });
-      if (r.ok) {
-        const j = await r.json();
-        const amt = j.AmountRaised && parseFloat(j.AmountRaised.convertedAmount);
-        if (isFinite(amt)) { campaign = Math.round(amt * 100); campaignLabel = "this Movember, live from Movember"; }
-      }
-    } catch (e) {}
-    el.innerHTML = "<b>" + money(all) + "</b><span>raised all-time, " + esc(label) + ". " + money(campaign) + " " + esc(campaignLabel) + ".</span>";
   }
 
   const pages = {
@@ -68,27 +62,27 @@
       const next = upcoming()[0];
       wrap(
         '<img class="shot" src="assets/hero-court.jpg" width="640" height="640" alt="Overhead of the black Support Brahs 3x3 court">' +
-        '<p class="kicker">The real brahs of lululemon</p>' +
-        "<h1>Show up. Have a crack.</h1>" +
-        '<p class="lede">A community basketball team for men to move, grow and connect. Corporate games in 2017. Tuesday nights at MSAC now.</p>' +
-        '<div class="motifs"><div><b>3x3</b><span>Streetball</span></div><div><b>Mo</b><span>Movember</span></div><div><b>Brah-B-Q</b><span>The cook-up</span></div></div>' +
+        '<p class="kicker">' + esc(COPY.home.kicker) + '</p>' +
+        "<h1>" + esc(COPY.hero) + "</h1>" +
+        '<p class="lede">' + esc(COPY.home.lede) + '</p>' +
+        '<div class="motifs">' + COPY.home.motifs.map((m) => '<div><b>' + esc(m[0]) + '</b><span>' + esc(m[1]) + '</span></div>').join("") + '</div>' +
         '<section class="card stack">' + moBlock("mo-home") +
-        '<a class="btn" href="' + esc(C.movemberTeamUrl) + '">Donate to the team</a></section>' +
-        (next ? '<section class="card"><p class="kicker">Next game</p><h2>' + esc(next.round) + " vs " + esc(next.opponent) + "</h2><p class=\"note\">" + esc([niceDate(next.date), niceTime(next.time), next.court, next.venue].filter(Boolean).join(" · ")) + "</p></section>" : "") +
-        (last ? '<section class="card"><p class="kicker">Latest result</p><div class="scoreline"><h2>' + esc(last.round) + " vs " + esc(last.opponent) + '</h2><span class="wl">' + esc(last.outcome || "") + " " + esc(last.scoreFor) + "–" + esc(last.scoreAgainst) + "</span></div><p class=\"note\">" + esc(niceDate(last.date)) + (last.periods.length ? " · " + last.periods.map((p) => p.label + " " + p.for + "–" + p.against).join(", ") : "") + "</p></section>" : "") +
+        '<a class="btn" href="' + esc(C.movemberTeamUrl) + '">' + esc(COPY.home.donate) + '</a></section>' +
+        (next ? '<section class="card"><p class="kicker">' + esc(COPY.home.next) + '</p><h2>' + esc(next.round) + " vs " + esc(next.opponent) + "</h2><p class=\"note\">" + esc([niceDate(next.date), niceTime(next.time), next.court, next.venue].filter(Boolean).join(" · ")) + "</p></section>" : "") +
+        (last ? '<section class="card"><p class="kicker">' + esc(COPY.home.latest) + '</p><div class="scoreline"><h2>' + esc(last.round) + " vs " + esc(last.opponent) + '</h2><span class="wl">' + esc(last.outcome || "") + " " + esc(last.scoreFor) + "–" + esc(last.scoreAgainst) + "</span></div><p class=\"note\">" + esc(niceDate(last.date)) + (last.periods.length ? " · " + last.periods.map((p) => p.label + " " + p.for + "–" + p.against).join(", ") : "") + "</p></section>" : "") +
         '<div class="pair"><img src="assets/run-flannel.jpg" width="640" height="640" alt="Teammates running in flannel, one in a Support Brahs tee"><img src="assets/street-dunk.jpg" width="513" height="640" alt="A layup at an outdoor street game"></div>' +
-        '<section class="card stack"><p class="kicker">Locker room</p><h2>Every jersey, on its own hook.</h2><p class="note">Black singlets on a rack. Surname and number on the back when we have them.</p><a class="btn" href="locker.html">Open the locker room</a></section>' +
-        '<section class="card stack"><p class="kicker">Most Valuable Brah</p><h2>Winner revealed at the Christmas party.</h2><p class="note">Votes stay sealed. One ballot each, after the game.</p><div class="row"><a class="btn" href="vote.html">Vote</a><a class="btn ghost" href="board.html">The teaser</a></div></section>'
+        '<section class="card stack"><p class="kicker">' + esc(COPY.home.lockerKicker) + '</p><h2>' + esc(COPY.home.lockerTitle) + '</h2><p class="note">' + esc(COPY.home.lockerNote) + '</p><a class="btn" href="locker.html">' + esc(COPY.home.lockerCta) + '</a></section>' +
+        '<section class="card stack"><p class="kicker">' + esc(COPY.home.mvbKicker) + '</p><h2>' + esc(COPY.home.mvbTitle) + '</h2><p class="note">' + esc(COPY.home.mvbNote) + '</p><div class="row"><a class="btn" href="vote.html">' + esc(COPY.home.vote) + '</a><a class="btn ghost" href="board.html">' + esc(COPY.home.teaser) + '</a></div></section>'
       );
       refreshMo("mo-home");
     },
     about() {
       wrap(
         '<img class="shot" src="assets/run-flannel.jpg" width="640" height="640" alt="Teammates out for a run, moustaches and a Support Brahs tee">' +
-        '<p class="kicker">About</p><h1>A safe place to have a crack.</h1>' +
-        '<p class="lede">The Support Brahs are a community basketball team. The mission is simple: make room for men to move, grow and connect.</p>' +
-        '<section class="card stack"><p>It started with lululemon SSC staff in Melbourne, joking their way into a corporate basketball team. Not everyone could play. Enough of them were willing to show up.</p><p>The Tuesday game became the point of connection. Banter first, then the harder conversations. The team later moved into a weekly domestic comp: MCBA Tuesday Men B at MSAC.</p><p>Age, size and ability are not the test. Show up and have a crack.</p><p>There is a sister team, the Brah-lettes.</p></section>' +
-        '<section class="card stack"><h2>More than a team</h2><p>Merchandise, Brah-B-Qs and 3x3 tournaments turned the same group toward Movember. lululemon has written about more than $70,000 raised for men\'s health. The Movember team page puts the running total at $89,559.</p><a class="btn ghost" href="movember.html">Movember</a></section>'
+        '<p class="kicker">' + esc(COPY.about.kicker) + '</p><h1>' + esc(COPY.about.title) + '</h1>' +
+        '<p class="lede">' + esc(COPY.about.lede) + '</p>' +
+        '<section class="card stack">' + COPY.about.paragraphs.map((p) => "<p>" + esc(p) + "</p>").join("") + '</section>' +
+        '<section class="card stack"><h2>' + esc(COPY.about.moreTitle) + '</h2><p>' + esc(COPY.about.more) + '</p><a class="btn ghost" href="movember.html">Movember</a></section>'
       );
     },
     history() {
@@ -96,29 +90,22 @@
         "<article><p class=\"kicker\">" + esc(year) + (ph ? ' <span class="ph">placeholder</span>' : "") + "</p><h2>" + esc(title) + "</h2><p class=\"note\">" + body + "</p></article>";
       wrap(
         '<img class="shot" src="assets/court-overhead.jpg" width="360" height="640" alt="The 3x3 court from above, Support Brahs at centre court">' +
-        '<p class="kicker">History</p><h1>From the loft to Tuesday night.</h1>' +
-        '<p class="lede">A first pass. Dates we are not sure of are marked placeholder. Daniel can correct the line.</p>' +
+        '<p class="kicker">' + esc(COPY.history.kicker) + '</p><h1>' + esc(COPY.history.title) + '</h1>' +
+        '<p class="lede">' + esc(COPY.history.lede) + '</p>' +
         '<div class="tl">' +
-        item("2017", "The team starts", "Co-founder Daniel Shinners and lululemon SSC colleagues turn office banter into a corporate basketball side in Melbourne.", false) +
-        item("Soon after", "The Brah-lettes", "A sister team forms on the heels of the Brahs. The office starts treating Tuesday as part of the culture, not a one-off.", true) +
-        item("Dates TBC", "Brah-B-Q 1.0, 2.0 and 3.0", "Three editions of the cook-up fundraiser. Years still to be filled in from the archive.", true) +
-        item("2023", "3x3 Streetball Tournament", "Support Brahs host a 3x3 streetball event. A second annual edition followed. The year of that second one is still to confirm.", false) +
-        item("Year TBC", "3x3 Fire Relief", "A 3x3 event tied to fire relief. Detail and date to come from Daniel.", true) +
-        item("Year TBC", "Movember × Spalding × Support Brahs", "A partnership across the campaign, the ball brand and the team. Date to confirm.", true) +
-        item("By 2025", "More than $70,000", "The lululemon story records $70,000+ for men's health. The Movember team page later shows $89,559 all-time.", false) +
-        item("Summer 2026/27", "Tuesday Men B at MSAC", "Support Brahs are in the MCBA domestic grade at Melbourne Sports and Aquatic Centre. Most Valuable Brah runs alongside the season.", false) +
+        COPY.history.items.map((row) => item(row[0], row[1], row[2], row[3])).join("") +
         "</div>"
       );
     },
     movember() {
       wrap(
         '<div class="pair"><img src="assets/mo-thumbs.jpg" width="640" height="640" alt="A teammate with a moustache giving a thumbs up"><img src="assets/mo-portrait.jpg" width="512" height="640" alt="A smiling teammate in a Movember hoodie"></div>' +
-        '<p class="kicker">Movember</p><h1>Men\'s health, centre court.</h1>' +
-        '<p class="lede">This is the team page, not a personal Mo page. Donate to The Support Brahs. Bio line: the real brahs. $89,559 raised.</p>' +
+        '<p class="kicker">' + esc(COPY.movember.kicker) + '</p><h1>' + esc(COPY.movember.title) + '</h1>' +
+        '<p class="lede">' + esc(COPY.movember.lede) + '</p>' +
         '<section class="card stack">' + moBlock("mo-page") +
-        '<a class="btn" href="' + esc(C.movemberTeamUrl) + '">Donate on the team page</a>' +
+        '<a class="btn" href="' + esc(C.movemberTeamUrl) + '">' + esc(COPY.movember.donate) + '</a>' +
         '<p class="note"><a href="' + esc(C.movemberShortUrl) + '">movember.com/t/supportbrahs</a> · <a href="' + esc(C.movemberTeamUrl) + '">au.movember.com/team/2241550</a></p>' +
-        "<p>The public Movember API exposes this campaign's total, not the all-time figure. If the browser can read it, the campaign line updates. The all-time number stays on the cached figure until someone updates it in Supabase.</p></section>"
+        "<p>" + esc(COPY.movember.note) + "</p></section>"
       );
       refreshMo("mo-page");
     },
@@ -126,8 +113,8 @@
       const items = (window.BRAHS_GALLERY || []).slice().sort((a, b) => (a.sort || 0) - (b.sort || 0));
       const camps = ["All"].concat(window.BRAHS_CAMPAIGNS || []);
       wrap(
-        '<p class="kicker">Gallery</p><h1>Pictures, when we have them.</h1>' +
-        '<p class="lede">A first handful from @supportbrahs, plus this season\'s jersey. Brah-B-Q and the Spalding shots are still to come from the Drive archive.</p>' +
+        '<p class="kicker">' + esc(COPY.gallery.kicker) + '</p><h1>' + esc(COPY.gallery.title) + '</h1>' +
+        '<p class="lede" id="g-intro">' + esc(COPY.gallery.intro) + '</p>' +
         '<div class="filters" id="g-filters">' + camps.map((c, i) => '<button class="chip" type="button" data-camp="' + esc(c) + '" aria-pressed="' + (i === 0 ? "true" : "false") + '">' + esc(c) + "</button>").join("") + "</div>" +
         '<div class="masonry" id="g-grid"></div>' +
         '<dialog id="g-light"><img alt=""><div class="cap"><p></p><button class="btn ghost" type="button" id="g-close">Close</button></div></dialog>'
@@ -149,6 +136,8 @@
         const b = e.target.closest("button");
         if (!b) return;
         document.querySelectorAll("#g-filters button").forEach((x) => x.setAttribute("aria-pressed", x === b ? "true" : "false"));
+        const intro = document.getElementById("g-intro");
+        if (intro) intro.textContent = (COPY.gallery.sections && COPY.gallery.sections[b.dataset.camp]) || COPY.gallery.intro;
         draw(b.dataset.camp);
       });
       grid.addEventListener("click", (e) => {
@@ -172,7 +161,7 @@
         S.ladder.map((t) => "<tr" + (t.teamId === S.meta.teamId ? ' class="us"' : "") + "><td>" + t.position + "</td><td>" + esc(t.team) + "</td><td>" + t.played + "</td><td>" + t.won + "</td><td>" + t.lost + "</td><td>" + t.pointsFor + "</td><td>" + t.pointsAgainst + "</td><td>" + t.percentage + "</td><td>" + t.points + "</td></tr>").join("") +
         "</tbody></table></div></section>" +
         '<section class="card" id="scoring"><h2>Scoring</h2><div class="table-wrap"><table><thead><tr><th>Player</th><th>GP</th><th>PTS</th><th>PPG</th><th>1s</th><th>2s</th><th>3s</th></tr></thead><tbody>' +
-        leaders.map((p) => "<tr><td>" + esc(p.name) + "</td><td>" + p.gp + "</td><td>" + p.pts + "</td><td>" + (p.gp ? (p.pts / p.gp).toFixed(1) : "–") + "</td><td>" + p.p1 + "</td><td>" + p.p2 + "</td><td>" + p.p3 + "</td></tr>").join("") +
+        leaders.map((p) => "<tr><td>" + esc(publicName(p.name)) + "</td><td>" + p.gp + "</td><td>" + p.pts + "</td><td>" + (p.gp ? (p.pts / p.gp).toFixed(1) : "–") + "</td><td>" + p.p1 + "</td><td>" + p.p2 + "</td><td>" + p.p3 + "</td></tr>").join("") +
         "</tbody></table></div><p class=\"note\">PlayHQ did not publish a season aggregate. These totals are added up from game sheet points. Anonymous fill-ins stay on the game, not on this list.</p></section>" +
         '<section class="card stack"><h2>Fixture</h2>' + games.map((g) => {
           const score = g.status === "FINAL" && g.scoreFor != null ? esc(g.outcome) + " " + g.scoreFor + "–" + g.scoreAgainst : esc(g.status === "FINAL" ? "Final" : "Upcoming");
@@ -187,7 +176,7 @@
           if (g) {
             const box = document.createElement("section");
             box.className = "card stack";
-            const line = (g.lineup || []).map((p) => "<tr><td>" + esc(p.name) + "</td><td>" + esc(p.number || "") + "</td><td>" + ptsOf(p) + "</td><td>" + (p.p1 || 0) + "</td><td>" + (p.p2 || 0) + "</td><td>" + (p.p3 || 0) + "</td></tr>").join("");
+            const line = (g.lineup || []).map((p) => "<tr><td>" + esc(publicName(p.name)) + "</td><td>" + esc(p.number || "") + "</td><td>" + ptsOf(p) + "</td><td>" + (p.p1 || 0) + "</td><td>" + (p.p2 || 0) + "</td><td>" + (p.p3 || 0) + "</td></tr>").join("");
             box.innerHTML = "<h2>" + esc(g.round) + " vs " + esc(g.opponent) + "</h2><p class=\"note\">" + esc([niceDate(g.date), niceTime(g.time), g.court, g.venue].filter(Boolean).join(" · ")) + "</p>" +
               (g.periods.length ? "<p>" + g.periods.map((p) => esc(p.label) + " " + p.for + "–" + p.against).join(" · ") + "</p>" : "") +
               (line ? '<div class="table-wrap"><table><thead><tr><th>Player</th><th>#</th><th>PTS</th><th>1</th><th>2</th><th>3</th></tr></thead><tbody>' + line + "</tbody></table></div>" : "<p>Lineup not published for this game.</p>") +
@@ -200,8 +189,8 @@
     vote() { renderVote(); },
     board() {
       wrap(
-        '<p class="kicker">Most Valuable Brah</p><h1>Sealed until the Christmas party.</h1>' +
-        '<section class="card stack"><h2>Winner revealed at the Christmas party.</h2><p>Ballots are write-only. The public site cannot read who voted, or who they picked. A count of ballots can show once that function is live. The tally stays shut until the reveal switch is turned on.</p><a class="btn" href="vote.html">Cast a vote</a><p class="note" id="ballot-note"></p></section>'
+        '<p class="kicker">' + esc(COPY.mvb.kicker) + '</p><h1>' + esc(COPY.mvb.title) + '</h1>' +
+        '<section class="card stack"><h2>' + esc(COPY.mvb.cardTitle) + '</h2><p>' + esc(COPY.mvb.body) + '</p><a class="btn" href="vote.html">' + esc(COPY.mvb.cta) + '</a><p class="note" id="ballot-note"></p></section>'
       );
       fetch(C.supabaseUrl + "/rest/v1/rpc/brahs_ballot_counts", {
         method: "POST",
@@ -298,7 +287,7 @@
     function pool() {
       const g = game();
       const lineup = (g && g.lineup || []).filter((p) => p.kind !== "opponent");
-      const base = lineup.length ? lineup.map((p) => p.name) : S.players.map((p) => p.name);
+      const base = lineup.length ? lineup.map((p) => publicName(p.name)) : rosterRows().map((r) => r.nick);
       return Array.from(new Set(base.concat(extra)));
     }
     function votedKey() { return "brahs-vote:" + (game() && game().id) + ":" + voter.trim().toLowerCase(); }
@@ -310,8 +299,8 @@
       const nextSlot = order.find((k) => !picks[k]);
       const taken = new Set(order.map((k) => picks[k]).filter(Boolean));
       wrap(
-        '<p class="kicker">Vote</p><h1>Most Valuable Brah</h1>' +
-        '<p class="lede">Three taps. You can\'t vote for yourself, or the same brah twice.</p>' +
+        '<p class="kicker">' + esc(COPY.mvb.kicker) + '</p><h1>' + esc(COPY.mvb.kicker) + '</h1>' +
+        '<p class="lede">' + esc(COPY.mvb.voteLede) + '</p>' +
         '<section class="card stack"><h2>The game</h2><div class="chips" id="games">' +
         played.map((gm) => '<button type="button" class="chip" data-game="' + esc(gm.id) + '" aria-pressed="' + (gm.id === g.id ? "true" : "false") + '">' + esc(gm.round) + " · " + esc(niceDate(gm.date)) + "<small>vs " + esc(gm.opponent) + "</small></button>").join("") +
         "</div></section>" +
@@ -395,8 +384,8 @@
       }
       localStorage.setItem(votedKey(), "1");
       wrap(
-        '<p class="kicker">Most Valuable Brah</p><h1>Votes are in.</h1>' +
-        '<section class="card stack"><p>Thanks. Your ballot is sealed with the others.</p><a class="btn" href="board.html">Christmas party teaser</a></section>'
+        '<p class="kicker">' + esc(COPY.mvb.kicker) + '</p><h1>Votes are in.</h1>' +
+        '<section class="card stack"><p>' + esc(COPY.mvb.thanks) + '</p><a class="btn" href="board.html">' + esc(COPY.home.teaser) + '</a></section>'
       );
     }
     draw();
