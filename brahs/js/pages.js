@@ -51,7 +51,8 @@
   function moLine(template, d) {
     const raised = d && d.cents != null ? money(d.cents) : "—";
     const target = d && d.targetCents != null ? money(d.targetCents) : "—";
-    return template.replace("{raised}", raised).replace("{target}", target);
+    const label = (d && d.asOf) || "all-time raised";
+    return template.replace("{raised}", raised + ", " + label).replace("{target}", target);
   }
 
   const pages = {
@@ -147,7 +148,7 @@
       wrap(
         '<img class="shot" src="assets/street-dunk.jpg" width="513" height="640" alt="Street basketball under the trees">' +
         '<p class="kicker">Games & Stats</p><h1>Summer 2026/27</h1>' +
-        '<p class="lede">Tuesday Men B. Scoring only. No minutes, no foul ladder, no bottom of the list.</p>' +
+        '<p class="lede">Tuesday nights at MSAC. Scoring only. No minutes, no foul ladder, no bottom of the list.</p>' +
         '<section class="card"><h2>Ladder</h2><div class="table-wrap"><table><thead><tr><th>#</th><th>Team</th><th>P</th><th>W</th><th>L</th><th>For</th><th>Ag</th><th>%</th><th>Pts</th></tr></thead><tbody>' +
         S.ladder.map((t) => "<tr" + (t.teamId === S.meta.teamId ? ' class="us"' : "") + "><td>" + t.position + "</td><td>" + esc(t.team) + "</td><td>" + t.played + "</td><td>" + t.won + "</td><td>" + t.lost + "</td><td>" + t.pointsFor + "</td><td>" + t.pointsAgainst + "</td><td>" + t.percentage + "</td><td>" + t.points + "</td></tr>").join("") +
         "</tbody></table></div></section>" +

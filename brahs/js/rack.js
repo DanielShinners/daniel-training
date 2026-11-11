@@ -10,14 +10,13 @@
   }
   function statsFor(row) {
     if (!row.match) return null;
-    return season.find((p) => String(p.name || "").split(" ")[0].toLowerCase() === row.match.toLowerCase()) || null;
+    return season.find((p) => String(p.name || "").toLowerCase() === row.nick.toLowerCase()) || null;
   }
   const players = roster.map((row) => {
     const s = statsFor(row);
     return {
       nick: row.nick,
       number: row.number || "",
-      provisional: !!row.provisional,
       gp: s ? s.gp : 0,
       pts: s ? s.pts : null,
       p1: s ? s.p1 : null,
@@ -65,7 +64,7 @@
       : '<div class="table-wrap"><table><thead><tr><th>GP</th><th>PTS</th><th>PPG</th><th>1s</th><th>2s</th><th>3s</th></tr></thead><tbody><tr><td>' +
         p.gp + "</td><td>" + p.pts + "</td><td>" + ppg + "</td><td>" + (p.p1 || 0) + "</td><td>" + (p.p2 || 0) + "</td><td>" + (p.p3 || 0) + "</td></tr></tbody></table></div>";
     return '<article class="card player-card" id="player-card" tabindex="-1"><p class="kicker">Player' +
-      (p.provisional ? ' <span class="ph">provisional</span>' : "") + "</p><h2>" + esc(p.nick) + "</h2>" +
+      "</p><h2>" + esc(p.nick) + "</h2>" +
       '<p class="sheet-no">' + (p.number ? esc(p.number) : "—") + "</p><p>Games played <b>" + p.gp + "</b></p>" + stats + "</article>";
   }
 
@@ -75,7 +74,7 @@
     '<div class="bay-scroll" id="bays" tabindex="0">' + players.map(bay).join("") + "</div></div>" +
     '<div class="rack-page"><div id="card-slot"></div>' +
     '<h2 class="list-title" style="color:#F2EFE8">All players</h2><ul class="roster-list">' +
-    players.map((p, i) => '<li><button type="button" data-i="' + i + '">' + esc(p.nick) + (p.number ? " · " + esc(p.number) : "") + (p.provisional ? " (provisional)" : "") + "</button></li>").join("") +
+    players.map((p, i) => '<li><button type="button" data-i="' + i + '">' + esc(p.nick) + (p.number ? " · " + esc(p.number) : "") + "</button></li>").join("") +
     "</ul></div>" +
     '<nav class="pill" aria-label="Team sections"><a href="locker.html" aria-current="page">Locker Room</a><a href="vote.html">Vote</a><a href="games.html">Games</a><a href="games.html#scoring">Stats</a><a href="board.html">MVB</a></nav>';
 

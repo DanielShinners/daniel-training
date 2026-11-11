@@ -309,7 +309,7 @@ grant execute on function public.brahs_public_board() to anon, authenticated;
 alter table public.brahs_settings add column if not exists movember_raised_cents integer;
 alter table public.brahs_settings add column if not exists movember_as_of text;
 update public.brahs_settings
-set movember_raised_cents = 8955900, movember_as_of = 'as of Nov 2026', updated_at = now()
+set movember_raised_cents = 8955900, movember_as_of = 'all-time raised', updated_at = now()
 where id = 'reveal';
 
 create or replace function public.brahs_movember()

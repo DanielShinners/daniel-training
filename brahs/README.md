@@ -28,12 +28,14 @@ order by game_date, voter;
 
 ## Movember
 
-The all-time figure on the site is **$89,559, as of Nov 2026**, from the public team page. The Movember v22 API (`/v22/team/2241550`) returns this campaign only, and it does not send CORS headers, so the browser cannot rely on it. Update the cache in `brahs_meta`:
+The confirmed all-time figure is **$89,559**, stored on `brahs_settings` and labelled **all-time raised**. The page reads it through `brahs_movember()`. Update it there when the Movember team page changes:
 
 ```sql
-insert into public.brahs_meta (id, data)
-values ('movember', '{"allTimeCents":8955900,"allTimeLabel":"as of Nov 2026","campaignCents":286680,"campaignLabel":"this Movember, snapshot 11 Nov 2026"}'::jsonb)
-on conflict (id) do update set data = excluded.data, updated_at = now();
+update public.brahs_settings
+set movember_raised_cents = 8955900,
+    movember_as_of = 'all-time raised',
+    updated_at = now()
+where id = 'reveal';
 ```
 
 Donate links go to the team page, not a personal profile.

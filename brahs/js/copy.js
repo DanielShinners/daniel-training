@@ -1,5 +1,5 @@
 // Public site copy. Edit this file. Pages read window.BRAHS_COPY.
-// Nicknames only. No surnames until Daniel confirms consent.
+// Nicknames only. No surnames on the public site.
 window.BRAHS_COPY = {
   // Hero:
   hero: "Connect, sweat, have a laugh.",
@@ -93,10 +93,10 @@ window.BRAHS_COPY = {
     { nick: "Dan", number: "45", match: "Daniel" },
     { nick: "Dusty", number: "34", match: "Dusty" },
     { nick: "Jamo", number: "40" },
-    { nick: "Max", number: "17", provisional: true },
+    { nick: "Max", number: "17" },
     { nick: "Keith", number: "8", match: "Keith" },
     { nick: "Bill", number: "55", match: "William" },
-    { nick: "Dave", number: "00", match: "David", provisional: true },
+    { nick: "Dave", number: "00", match: "David" },
     { nick: "Flashy", number: "13" },
     { nick: "Jerome", number: "7", match: "Jerome" },
     { nick: "Boof", number: "15" },
