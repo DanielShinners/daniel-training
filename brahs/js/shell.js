@@ -37,10 +37,10 @@
   const foot = document.createElement("footer");
   foot.className = "site-footer";
   foot.innerHTML =
-    '<div class="wrap">' +
-    '<div><a href="' + (C.instagram || "#") + '">' + (F.instagram || "Instagram") + '</a></div>' +
-    '<div><a href="' + (C.movemberTeamUrl || "#") + '">' + (F.movember || "Movember team") + '</a></div>' +
-    "<div>" + (F.partners || "") + "</div>" +
-    "</div>";
+    '<div class="wrap"><p>' + (F.before || "") +
+    '<a href="' + (C.movemberTeamUrl || "#") + '">' + (F.donate || "Donate") + "</a>" +
+    (F.mid || "") +
+    '<a href="' + (C.instagram || "#") + '">' + (F.handle || "@supportbrahs") + "</a>" +
+    (F.after || "") + "</p></div>";
   document.body.appendChild(foot);
 })();

@@ -1,114 +1,94 @@
-// Public wireframe copy. Edit this file. Pages read window.BRAHS_COPY.
-// The research draft file was not on disk, so this is the current wireframe
-// in one place, with the hero Daniel picked. Paste any other lines from that
-// draft into the comments below.
-//
-// No surnames in this file. Nicknames only until Daniel confirms consent.
+// Public site copy. Edit this file. Pages read window.BRAHS_COPY.
+// Nicknames only. No surnames until Daniel confirms consent.
 window.BRAHS_COPY = {
-  // Hero. Chosen line:
+  // Hero:
   hero: "Connect, sweat, have a laugh.",
   // Alternatives:
-  // "Show up. Have a crack."
-  // "Move, grow and connect."
+  // "Supported. Inspired. Elevated."
+  // "A brah in your corner."
+  // "It started as office banter. It became a movement."
 
   home: {
-    kicker: "The real brahs",
-    lede: "A community basketball team for men to move, grow and connect. Corporate games in 2017. Tuesday nights at MSAC now.",
-    motifs: [
-      ["3x3", "Streetball"],
-      ["Mo", "Movember"],
-      ["Brah-B-Q", "The cook-up"]
-    ],
-    donate: "Donate to the team",
+    subline: "We're The Support Brahs: a Melbourne basketball family that hoops on Tuesday nights and raises funds and awareness for men's health. Banter first, bigger conversations when you're ready.",
+    below: "Since 2017 we've used the court — and the odd Brah-B-Q — to look after each other, and to get behind Movember. Join us. Donate. Come watch. Or start something like this where you work.",
+    donate: "Donate",
     next: "Next game",
-    latest: "Latest result",
-    lockerKicker: "Locker room",
-    lockerTitle: "Every jersey, on its own hook.",
-    lockerNote: "Black singlets on a rack. Nickname and number on the back.",
-    lockerCta: "Open the locker room",
-    mvbKicker: "Most Valuable Brah",
-    mvbTitle: "Winner revealed at the Christmas party.",
-    mvbNote: "3-2-1 only. One ballot each, after the game. Votes stay sealed.",
-    vote: "Vote",
-    teaser: "The teaser"
+    latest: "Latest result"
   },
 
   about: {
     kicker: "About",
-    title: "A safe place to have a crack.",
-    lede: "The Support Brahs are a community basketball team. The mission is simple: make room for men to move, grow and connect.",
+    title: "About",
     paragraphs: [
-      "It started with lululemon SSC staff in Melbourne, joking their way into a corporate basketball team. Not everyone could play. Enough of them were willing to show up.",
-      "The Tuesday game became the point of connection. Banter first, then the harder conversations. The team later moved into a weekly domestic comp: MCBA Tuesday Men B at MSAC.",
-      "Age, size and ability are not the test. Show up and have a crack.",
-      "There is a sister team, the Brah-lettes."
-    ],
-    moreTitle: "More than a team",
-    more: "Merchandise, Brah-B-Qs and 3x3 tournaments turned the same group toward Movember. A lululemon story records more than $70,000 raised for men's health. The running total lives on the Movember page."
+      "The Support Brahs started in 2017 as a joke between a handful of guys at lululemon's Melbourne support centre. There weren't that many of them, the calendar was packed, and one day someone said they should start a basketball team. Not all of them could play. Most were willing to have a crack.",
+      "The joke had some heart behind it. They were already talking about mental health — the stigma that still hangs around for blokes, and the simple fact that sometimes a guy just needs a brah. So Tuesday night basketball became more than a hit-out. It became a reason to show up for each other.",
+      "That's still the idea. We create a space to connect, sweat and have a laugh — and from that common ground, the bigger conversations get a little easier. You don't have to spill your guts on night one. You just have to turn up.",
+      "Off the court, the Brahs raise funds and awareness for men's health through Movember, and we've thrown Brah-B-Qs and 3x3 streetball tournaments that bring the wider community in, including our sister side, the Brah-lettes. The purpose is simple: leave people supported, inspired and elevated — through connection, a bit of vulnerability, a lot of sweat, and some high-grade banter.",
+      "It doesn't have to be basketball. It does have to be a place people can actually talk."
+    ]
   },
 
   history: {
     kicker: "History",
-    title: "From the loft to Tuesday night.",
-    lede: "A first pass. Dates we are not sure of are marked placeholder.",
+    title: "History",
     items: [
-      ["2017", "The team starts", "Co-founder Dan and lululemon SSC colleagues turn office banter into a corporate basketball side in Melbourne.", false],
-      ["Soon after", "The Brah-lettes", "A sister team forms on the heels of the Brahs. The office starts treating Tuesday as part of the culture, not a one-off.", true],
-      ["Dates TBC", "Brah-B-Q 1.0, 2.0 and 3.0", "Three editions of the cook-up fundraiser. Years still to be filled in from the archive.", true],
-      ["2023", "3x3 Streetball Tournament", "Support Brahs host a 3x3 streetball event. A second annual edition followed. The year of that second one is still to confirm.", false],
-      ["Year TBC", "3x3 Fire Relief", "A 3x3 event tied to fire relief. Detail and date still to confirm.", true],
-      ["Year TBC", "Movember, Spalding and Support Brahs", "A partnership across the campaign, the ball brand and the team. Date to confirm.", true],
-      ["By 2025", "More than $70,000", "The lululemon story records more than $70,000 for men's health. The live total is the Movember cache, taken from the team page.", false],
-      ["Summer 2026/27", "Tuesday Men B at MSAC", "Support Brahs are in the MCBA domestic grade at Melbourne Sports and Aquatic Centre. Most Valuable Brah runs alongside the season.", false]
+      ["2017", "A Tuesday-night team is born from office banter at lululemon's Melbourne support centre. The Brah-lettes aren't far behind."],
+      ["2019", "The first stories go out, the Brah-B-Qs are on, and we take the show on the road. In November, lululemon and the Brahs host the first 3x3 B-ALL-IN Tour in Port Adelaide: hoops, honest chats, a Brah-B-Q, and donations to Movember."],
+      ["2020", "In January we hit Fawkner Park for 3x3 Fire Relief, raising $1,180 for the Australian Red Cross, with the local brigade looking on. Movember fundraising continues through the year."],
+      ["2022", "Support Brahs 3x3 Streetball, powered by lululemon x Movember, brings a full streetball day back to Melbourne — kits on, community sides in, cameras rolling."],
+      ["2023", "We take over Collingwood Yards for Movement for Change: a day-long 3x3, official Support Brahs balls, and a lululemon x Movember player pack. The campaign portraits from this year still define the look."],
+      ["2025", "A new purple mesh kit lands. Same team, sharper threads."],
+      ["2026", "The Brahs team up with Movember x Spalding to hoop for men's health. Fifteen percent of the special-edition ball sales go to Movember. The Tuesday-night side is still at it at MSAC."]
     ]
   },
 
   movember: {
     kicker: "Movember",
-    title: "Men's health, centre court.",
-    lede: "This is the team page, not a personal Mo page. Donate to The Support Brahs.",
-    donate: "Donate on the team page",
-    note: "The raised figure is the cache in brahs_settings. The Movember team page is the source. Update the cache when that page moves."
+    title: "Movember",
+    paragraphs: [
+      "Every November, the Brahs grow something questionable on the top lip and something better in the bank for men's health. We hoop, we yarn, and we fundraise as a team for Movember — the charity tackling men's health on a global scale.",
+      "Our team page is the Support Brahs Mo Space. So far, this group has raised {raised}. This campaign we're heading for {target}, and every dollar helps.",
+      "If you've got a brah in your life — or you've been one — this is a pretty good place to put a donation."
+    ],
+    donate: "Donate to the Brahs",
+    secondary: "Prefer to grow a mo of your own? Make a Growmitment at movember.com, then come hoop with us."
   },
 
   gallery: {
     kicker: "Gallery",
-    title: "Pictures, when we have them.",
-    intro: "A first handful from the team, plus this season's jersey.",
+    title: "Gallery",
     sections: {
-      All: "Court, campaign and jersey shots we can show now.",
-      Movember: "Mo season. Runs, portraits and the mic.",
-      "3x3 Streetball": "The black court and the outdoor game.",
-      "Brah-B-Q": "Cook-up photos are still to come from the archive.",
-      "Season jerseys": "This season's purple mesh singlet.",
-      "Spalding partnership": "Spalding shots are still to come from the archive."
+      "The early years": "Where it started: Tuesday nights, office support, and the first Brah-B-Qs. Banter with a bit of heart.",
+      "B-ALL-IN Tour, 2019": "Port Adelaide, a mindful 3x3, honest chats, fresh cuts, and the first time we took the Brahs on tour. Get ballin', B-ALL-IN.",
+      "Fire Relief, 2020": "A summer Saturday at Fawkner Park. Six teams, a BBQ, and $1,180 for the Australian Red Cross — with the local fire brigade in the house.",
+      "Movember, 2020": "Mos, kits, and the campaign imagery from a year we kept showing up for men's health.",
+      "3x3 Streetball, 2022": "Powered by lululemon x Movember. Streetball, packed sidelines, and a whole lot of community sides jumping in.",
+      "Movement for Change, 2023": "Collingwood Yards, all day. Official balls, clash jerseys, and a streetball festival with men's health at centre court.",
+      "Campaign portraits, 2023": "The lululemon x Movember portraits. Close-ups, kit shots, and the faces behind the team.",
+      "The kit": "From the first custom tanks and Feelin' Swish tees through to this season's purple mesh. The colours change. The name on the front doesn't.",
+      "Movember x Spalding, 2026": "Hoop for men's health. The latest campaign with Movember and Spalding, shot with the Brahs."
     }
   },
 
-  locker: {
-    kicker: "Locker room",
-    title: "Nicknames on the back.",
-    note: "Numbers are PlayHQ's where a first name matches. Max and Dave are marked provisional. A blank back means the number is not filled in yet."
-  },
+  locker: "Welcome to the sheds. Every brah's jersey is hanging here — name and number on the back, purple mesh, ready for Tuesday. Swipe left or right to move down the lockers. Tap a jersey to turn it around and meet the player.",
 
   mvb: {
     kicker: "Most Valuable Brah",
-    title: "Sealed until the Christmas party.",
-    cardTitle: "Winner revealed at the Christmas party.",
-    body: "3-2-1 only. There is no Effort and Energy pick. Ballots are write-only. The public site cannot read who voted, or who they picked.",
-    voteLede: "3-2-1 only. Three taps. Not yourself, and not the same brah twice.",
-    thanks: "Thanks. Your ballot is sealed with the others.",
+    title: "Most Valuable Brah",
+    body: "Most Valuable Brah is decided by the team. After each game you get one quick 3-2-1 vote. The tallies stay locked away until the Support Brahs Christmas party, when the winner is announced. No peeking, no live leaderboard, no comments — just your vote, and a night to celebrate the people who showed up. Cast yours, then sit tight. We'll see you at the party.",
+    voteLede: "One quick 3-2-1. Not yourself, and not the same brah twice.",
+    thanks: "Cast yours, then sit tight. We'll see you at the party.",
     cta: "Cast a vote"
   },
 
   footer: {
-    instagram: "Instagram @supportbrahs",
-    movember: "Movember team",
-    partners: "Proud partners: lululemon, Movember, Spalding"
+    before: "The Support Brahs — Melbourne hoops, men's health, and a brah in your corner. ",
+    donate: "Donate",
+    mid: ", follow ",
+    handle: "@supportbrahs",
+    after: ", or come watch a Tuesday night."
   },
 
-  // Jersey backs use nick only. match is the PlayHQ first name, when we have one.
-  // provisional: Daniel still needs to confirm the person.
   roster: [
     { nick: "Dan", number: "45", match: "Daniel" },
     { nick: "Dusty", number: "34", match: "Dusty" },

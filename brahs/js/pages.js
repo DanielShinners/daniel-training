@@ -37,23 +37,21 @@
     const hit = rosterRows().find((r) => r.match && r.match.toLowerCase() === first.toLowerCase());
     return hit ? hit.nick : first;
   }
-  function moBlock(id) {
-    return '<div class="stat" id="' + id + '"><b>—</b><span>Raised all-time, from the team page cache.</span></div>';
-  }
-  async function refreshMo(id) {
-    const el = document.getElementById(id);
-    if (!el) return;
+  async function loadMo() {
     try {
       const r = await fetch(C.supabaseUrl + "/rest/v1/rpc/brahs_movember", {
         method: "POST",
         headers: { apikey: C.supabaseKey, Authorization: "Bearer " + C.supabaseKey, "Content-Type": "application/json" },
         body: "{}"
       });
-      if (!r.ok) return;
-      const d = await r.json();
-      if (!d || d.cents == null) return;
-      el.innerHTML = "<b>" + money(d.cents) + "</b><span>raised all-time" + (d.asOf ? ", " + esc(d.asOf) : "") + ". Source: the Movember team page.</span>";
-    } catch (e) {}
+      if (!r.ok) return null;
+      return await r.json();
+    } catch (e) { return null; }
+  }
+  function moLine(template, d) {
+    const raised = d && d.cents != null ? money(d.cents) : "—";
+    const target = d && d.targetCents != null ? money(d.targetCents) : "—";
+    return template.replace("{raised}", raised).replace("{target}", target);
   }
 
   const pages = {
@@ -62,38 +60,28 @@
       const next = upcoming()[0];
       wrap(
         '<img class="shot" src="assets/hero-court.jpg" width="640" height="640" alt="Overhead of the black Support Brahs 3x3 court">' +
-        '<p class="kicker">' + esc(COPY.home.kicker) + '</p>' +
         "<h1>" + esc(COPY.hero) + "</h1>" +
-        '<p class="lede">' + esc(COPY.home.lede) + '</p>' +
-        '<div class="motifs">' + COPY.home.motifs.map((m) => '<div><b>' + esc(m[0]) + '</b><span>' + esc(m[1]) + '</span></div>').join("") + '</div>' +
-        '<section class="card stack">' + moBlock("mo-home") +
-        '<a class="btn" href="' + esc(C.movemberTeamUrl) + '">' + esc(COPY.home.donate) + '</a></section>' +
+        '<p class="lede">' + esc(COPY.home.subline) + '</p>' +
+        '<section class="card stack"><p>' + esc(COPY.home.below) + '</p><a class="btn" href="' + esc(C.movemberTeamUrl) + '">' + esc(COPY.home.donate) + '</a></section>' +
         (next ? '<section class="card"><p class="kicker">' + esc(COPY.home.next) + '</p><h2>' + esc(next.round) + " vs " + esc(next.opponent) + "</h2><p class=\"note\">" + esc([niceDate(next.date), niceTime(next.time), next.court, next.venue].filter(Boolean).join(" · ")) + "</p></section>" : "") +
         (last ? '<section class="card"><p class="kicker">' + esc(COPY.home.latest) + '</p><div class="scoreline"><h2>' + esc(last.round) + " vs " + esc(last.opponent) + '</h2><span class="wl">' + esc(last.outcome || "") + " " + esc(last.scoreFor) + "–" + esc(last.scoreAgainst) + "</span></div><p class=\"note\">" + esc(niceDate(last.date)) + (last.periods.length ? " · " + last.periods.map((p) => p.label + " " + p.for + "–" + p.against).join(", ") : "") + "</p></section>" : "") +
         '<div class="pair"><img src="assets/run-flannel.jpg" width="640" height="640" alt="Teammates running in flannel, one in a Support Brahs tee"><img src="assets/street-dunk.jpg" width="513" height="640" alt="A layup at an outdoor street game"></div>' +
-        '<section class="card stack"><p class="kicker">' + esc(COPY.home.lockerKicker) + '</p><h2>' + esc(COPY.home.lockerTitle) + '</h2><p class="note">' + esc(COPY.home.lockerNote) + '</p><a class="btn" href="locker.html">' + esc(COPY.home.lockerCta) + '</a></section>' +
-        '<section class="card stack"><p class="kicker">' + esc(COPY.home.mvbKicker) + '</p><h2>' + esc(COPY.home.mvbTitle) + '</h2><p class="note">' + esc(COPY.home.mvbNote) + '</p><div class="row"><a class="btn" href="vote.html">' + esc(COPY.home.vote) + '</a><a class="btn ghost" href="board.html">' + esc(COPY.home.teaser) + '</a></div></section>'
+        '<p><a class="btn" href="locker.html">Locker room</a> <a class="btn ghost" href="board.html">Most Valuable Brah</a></p>'
       );
-      refreshMo("mo-home");
     },
     about() {
       wrap(
         '<img class="shot" src="assets/run-flannel.jpg" width="640" height="640" alt="Teammates out for a run, moustaches and a Support Brahs tee">' +
         '<p class="kicker">' + esc(COPY.about.kicker) + '</p><h1>' + esc(COPY.about.title) + '</h1>' +
-        '<p class="lede">' + esc(COPY.about.lede) + '</p>' +
-        '<section class="card stack">' + COPY.about.paragraphs.map((p) => "<p>" + esc(p) + "</p>").join("") + '</section>' +
-        '<section class="card stack"><h2>' + esc(COPY.about.moreTitle) + '</h2><p>' + esc(COPY.about.more) + '</p><a class="btn ghost" href="movember.html">Movember</a></section>'
+        '<section class="card stack">' + COPY.about.paragraphs.map((p) => "<p>" + esc(p) + "</p>").join("") + "</section>"
       );
     },
     history() {
-      const item = (year, title, body, ph) =>
-        "<article><p class=\"kicker\">" + esc(year) + (ph ? ' <span class="ph">placeholder</span>' : "") + "</p><h2>" + esc(title) + "</h2><p class=\"note\">" + body + "</p></article>";
       wrap(
         '<img class="shot" src="assets/court-overhead.jpg" width="360" height="640" alt="The 3x3 court from above, Support Brahs at centre court">' +
         '<p class="kicker">' + esc(COPY.history.kicker) + '</p><h1>' + esc(COPY.history.title) + '</h1>' +
-        '<p class="lede">' + esc(COPY.history.lede) + '</p>' +
         '<div class="tl">' +
-        COPY.history.items.map((row) => item(row[0], row[1], row[2], row[3])).join("") +
+        COPY.history.items.map((row) => '<article><p class="kicker">' + esc(row[0]) + '</p><p>' + esc(row[1]) + "</p></article>").join("") +
         "</div>"
       );
     },
@@ -101,20 +89,23 @@
       wrap(
         '<div class="pair"><img src="assets/mo-thumbs.jpg" width="640" height="640" alt="A teammate with a moustache giving a thumbs up"><img src="assets/mo-portrait.jpg" width="512" height="640" alt="A smiling teammate in a Movember hoodie"></div>' +
         '<p class="kicker">' + esc(COPY.movember.kicker) + '</p><h1>' + esc(COPY.movember.title) + '</h1>' +
-        '<p class="lede">' + esc(COPY.movember.lede) + '</p>' +
-        '<section class="card stack">' + moBlock("mo-page") +
+        '<section class="card stack" id="mo-copy">' + COPY.movember.paragraphs.map((p) => "<p>" + esc(moLine(p, null)) + "</p>").join("") +
         '<a class="btn" href="' + esc(C.movemberTeamUrl) + '">' + esc(COPY.movember.donate) + '</a>' +
-        '<p class="note"><a href="' + esc(C.movemberShortUrl) + '">movember.com/t/supportbrahs</a> · <a href="' + esc(C.movemberTeamUrl) + '">au.movember.com/team/2241550</a></p>' +
-        "<p>" + esc(COPY.movember.note) + "</p></section>"
+        '<p class="note">' + esc(COPY.movember.secondary).replace("movember.com", '<a href="https://movember.com">movember.com</a>') + "</p></section>"
       );
-      refreshMo("mo-page");
+      loadMo().then((d) => {
+        const box = document.getElementById("mo-copy");
+        if (!box || !d) return;
+        const ps = box.querySelectorAll("p");
+        COPY.movember.paragraphs.forEach((p, i) => { if (ps[i]) ps[i].textContent = moLine(p, d); });
+      });
     },
     gallery() {
       const items = (window.BRAHS_GALLERY || []).slice().sort((a, b) => (a.sort || 0) - (b.sort || 0));
-      const camps = ["All"].concat(window.BRAHS_CAMPAIGNS || []);
+      const camps = ["All"].concat(Object.keys(COPY.gallery.sections || {}));
       wrap(
         '<p class="kicker">' + esc(COPY.gallery.kicker) + '</p><h1>' + esc(COPY.gallery.title) + '</h1>' +
-        '<p class="lede" id="g-intro">' + esc(COPY.gallery.intro) + '</p>' +
+        '<p class="lede" id="g-intro"></p>' +
         '<div class="filters" id="g-filters">' + camps.map((c, i) => '<button class="chip" type="button" data-camp="' + esc(c) + '" aria-pressed="' + (i === 0 ? "true" : "false") + '">' + esc(c) + "</button>").join("") + "</div>" +
         '<div class="masonry" id="g-grid"></div>' +
         '<dialog id="g-light"><img alt=""><div class="cap"><p></p><button class="btn ghost" type="button" id="g-close">Close</button></div></dialog>'
@@ -137,7 +128,7 @@
         if (!b) return;
         document.querySelectorAll("#g-filters button").forEach((x) => x.setAttribute("aria-pressed", x === b ? "true" : "false"));
         const intro = document.getElementById("g-intro");
-        if (intro) intro.textContent = (COPY.gallery.sections && COPY.gallery.sections[b.dataset.camp]) || COPY.gallery.intro;
+        if (intro) intro.textContent = (COPY.gallery.sections && COPY.gallery.sections[b.dataset.camp]) || "";
         draw(b.dataset.camp);
       });
       grid.addEventListener("click", (e) => {
@@ -190,7 +181,7 @@
     board() {
       wrap(
         '<p class="kicker">' + esc(COPY.mvb.kicker) + '</p><h1>' + esc(COPY.mvb.title) + '</h1>' +
-        '<section class="card stack"><h2>' + esc(COPY.mvb.cardTitle) + '</h2><p>' + esc(COPY.mvb.body) + '</p><a class="btn" href="vote.html">' + esc(COPY.mvb.cta) + '</a><p class="note" id="ballot-note"></p></section>'
+        '<section class="card stack"><p>' + esc(COPY.mvb.body) + '</p><a class="btn" href="vote.html">' + esc(COPY.mvb.cta) + '</a><p class="note" id="ballot-note"></p></section>'
       );
       fetch(C.supabaseUrl + "/rest/v1/rpc/brahs_ballot_counts", {
         method: "POST",
@@ -385,7 +376,7 @@
       localStorage.setItem(votedKey(), "1");
       wrap(
         '<p class="kicker">' + esc(COPY.mvb.kicker) + '</p><h1>Votes are in.</h1>' +
-        '<section class="card stack"><p>' + esc(COPY.mvb.thanks) + '</p><a class="btn" href="board.html">' + esc(COPY.home.teaser) + '</a></section>'
+        '<section class="card stack"><p>' + esc(COPY.mvb.thanks) + '</p><a class="btn" href="board.html">Most Valuable Brah</a></section>'
       );
     }
     draw();

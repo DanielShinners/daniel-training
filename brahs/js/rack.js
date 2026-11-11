@@ -70,7 +70,7 @@
   }
 
   app.innerHTML =
-    '<div class="locker-wrap">' +
+    '<p class="locker-intro">' + esc(COPY.locker || "") + '</p><div class="locker-wrap">' +
     '<div class="bay-arrows"><button type="button" id="bay-prev" aria-label="Previous bay">←</button><button type="button" id="bay-next" aria-label="Next bay">→</button></div>' +
     '<div class="bay-scroll" id="bays" tabindex="0">' + players.map(bay).join("") + "</div></div>" +
     '<div class="rack-page"><div id="card-slot"></div>' +

@@ -228,6 +228,7 @@ body[data-page="locker"] .site-footer { display: none; }
 body[data-page="locker"] .top { background: #120e0c; border-bottom-color: #2a211c; color: #F2EFE8; }
 body[data-page="locker"] .hamb span { background: #F2EFE8; }
 body[data-page="locker"] .support, body[data-page="locker"] .brahs, body[data-page="locker"] .crown { color: #F2EFE8; }
+.locker-intro { color: #F2EFE8; margin: 0; padding: 16px 16px 8px; max-width: 40em; }
 .locker-wrap { position: relative; }
 .bay-scroll { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
 .bay-scroll::-webkit-scrollbar { display: none; }
