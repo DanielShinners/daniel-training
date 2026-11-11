@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 84" fill="none" aria-label="Support Brahs crest">
+  <path fill="currentColor" d="M6 34 14 12l2 8 8-6 8 10 8-16 8 16 8-10 2-8 8 22v4H6v-4Z"/>
+  <path fill="currentColor" d="M8 38h48v5.5c0 1.2-1 2.2-2.2 2.2H10.2C9 45.7 8 44.7 8 43.5V38Z"/>
+  <circle cx="32" cy="62" r="16.5" stroke="currentColor" stroke-width="3.2"/>
+  <path stroke="currentColor" stroke-width="2.2" stroke-linecap="round" d="M16.5 62h31M32 46.2v31.6M21 51.5c3.6 4.2 7.2 6.3 11 6.3s7.4-2.1 11-6.3M21 72.5c3.6-4.2 7.2-6.3 11-6.3s7.4 2.1 11 6.3"/>
+</svg>

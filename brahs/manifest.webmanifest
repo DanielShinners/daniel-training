@@ -1,0 +1,12 @@
+{
+  "name": "Support Brahs",
+  "short_name": "Brahs",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "background_color": "#F3F0EA",
+  "theme_color": "#442C75",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
