@@ -80,6 +80,7 @@
   .btn.ghost:hover .mo{filter:brightness(0)}
   h2 .mo{height:2.1em;vertical-align:-.66em}
   .hero .movember{display:flex;flex-direction:column;align-items:center;gap:12px}
+  .crest-link{display:inline-flex;transition:transform .18s ease}.crest-link:hover{transform:translateY(-4px) scale(1.04)}.crest-link img{display:block}
   .foot-mo{margin:14px 0 22px;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center}
   .foot-mo .mo{height:48px;vertical-align:0;margin:0}
   .hero .movember .mo{height:38px;vertical-align:0;margin:0}
@@ -346,7 +347,7 @@
   <div class="inner">
     <h1><img src="assets/wordmark-cream.png" alt="Yappers Cup"></h1>
     <div class="tagline">Kicking goals for men's health</div>
-    <div class="sub"><img src="assets/shield-mudguts.png" alt="Mudguts"><span class="vs">vs</span><img src="assets/shield-pissants.png" alt="Pissants"></div>
+    <div class="sub"><a class="crest-link" href="#ground" data-ground data-team="mudguts" aria-label="Sign up for the Mudguts"><img src="assets/shield-mudguts.png" alt="Mudguts"></a><span class="vs">vs</span><a class="crest-link" href="#ground" data-ground data-team="pissants" aria-label="Sign up for the Pissants"><img src="assets/shield-pissants.png" alt="Pissants"></a></div>
     <div class="date">Sunday 29 November 2026 · 1pm bounce</div>
 <div class="venue"><a href="https://www.google.com/maps/search/?api=1&amp;query=Gosch%27s+Paddock+Richmond+VIC" target="_blank" rel="noopener">Gosch's Paddock, Richmond</a><span>Arrive by 12:30pm</span></div>
     <div class="countdown" id="countdown" aria-label="Countdown to match day">
