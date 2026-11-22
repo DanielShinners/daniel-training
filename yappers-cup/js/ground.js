@@ -92,6 +92,7 @@ export async function openGround({ team, onClose } = {}) {
     <div class="yg-grain"></div>
     <button type="button" class="yg-x" data-a="close" aria-label="Close"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
     <div class="yg-head"><p class="yg-k"></p><h2 class="yg-t"></h2><p class="yg-s"></p></div>
+    <img class="yg-crest" alt="" hidden>
     <div class="yg-tools" hidden>
       <button type="button" class="yg-chip yg-team" data-a="switch"></button>
       <button type="button" class="yg-chip" data-a="list">List view</button>
@@ -386,7 +387,7 @@ export async function openGround({ team, onClose } = {}) {
     for (const cv of [canvas, bg]) { cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR); }
     canvas.style.width = W + 'px'; canvas.style.height = H + 'px'; dirty = true;
   }
-  window.addEventListener('resize', resize); resize();
+  window.addEventListener('resize', () => { resize(); placeTools(); }); resize();
   function frame(now) {
     if (!alive) return;
     if (anim) {
@@ -462,7 +463,7 @@ export async function openGround({ team, onClose } = {}) {
   function hideSheet() { sheet.hidden = true; sheet.innerHTML = ''; root.classList.remove('sheet-open'); }
 
   function teamPicker() {
-    mode = 'team'; curTeam = null; picked = null; hideSheet(); idle = true;
+    mode = 'team'; curTeam = null; picked = null; hideSheet(); idle = true; $('.yg-crest').hidden = true;
     $('.yg-tools').hidden = true; $('.yg-legend').hidden = true;
     setHead('Yappers Cup · Sunday 29 November', 'Choose your team', `Then pick your spot on the ground. Every position is a donation to Movember.`);
     const pick = $('.yg-pick'); pick.hidden = false;
@@ -470,11 +471,21 @@ export async function openGround({ team, onClose } = {}) {
     pick.innerHTML = Object.entries(TEAMS).map(([id, T]) => `<button type="button" class="yg-tm" data-team="${id}" style="--tc:${T.ui}"><img src="${T.shield}" alt=""><span class="n">${T.name}</span><span class="l">${T.line}</span><span class="f">${free(id)} spots left</span></button>`).join('<span class="yg-vs">vs</span>');
     fly({ tx: 0, tz: 0, d: fitD() * 1.15, pitch: 0.95, yaw: cam.yaw }, 1600);
   }
+  // on desktop the team/list buttons sit under the heading: place them just below it so they never overlap
+  function placeTools() {
+    const t = $('.yg-tools'), h = $('.yg-head'); if (!t || !h) return;
+    if (matchMedia('(max-width: 720px)').matches) { t.style.top = ''; return; }
+    const rb = root.getBoundingClientRect(), hb = h.getBoundingClientRect();
+    t.style.top = Math.round(hb.bottom - rb.top + 16) + 'px';
+  }
   function chooseTeam(id) {
     curTeam = id; mode = 'field'; picked = null; idle = false; hideSheet();
     const T = TEAMS[id]; $('.yg-pick').hidden = true; $('.yg-tools').hidden = false; $('.yg-legend').hidden = false;
-    $('.yg-team').innerHTML = `<img src="${T.shield}" alt="">${T.name}<em>Switch</em>`;
+    const other = id === 'mudguts' ? 'pissants' : 'mudguts';
+    const crest = $('.yg-crest'); crest.src = T.shield; crest.alt = T.name; crest.hidden = false; crest.classList.remove('in'); void crest.offsetWidth; crest.classList.add('in');
+    $('.yg-team').innerHTML = `<img src="${T.shield}" alt="">${T.name}<em>Switch to ${TEAMS[other].name}</em>`;
     setHead(`${T.name} · ${POSITIONS.filter(p => p.team === id && p.state === 'free').length} spots left`, 'Pick your position', 'Tap a guernsey on the ground. Drag to look around.');
+    placeTools();
     fly({ tx: 0, tz: 0, d: fitD() * 0.92, pitch: 1.08, yaw: homeYaw() }, 1500);
   }
   function select(p) {
@@ -548,7 +559,7 @@ export async function openGround({ team, onClose } = {}) {
     if (b.dataset.pos) { const p = POSITIONS.find(q => q.id === b.dataset.pos); if (p && p.state === 'free') { select(p); } return; }
     const a = b.dataset.a;
     if (a === 'close') close();
-    else if (a === 'switch') teamPicker();
+    else if (a === 'switch') chooseTeam(curTeam === 'mudguts' ? 'pissants' : 'mudguts');
     else if (a === 'list') listView();
     else if (a === 'field') backToField();
     else if (a === 'claim' && picked) claimForm(picked);

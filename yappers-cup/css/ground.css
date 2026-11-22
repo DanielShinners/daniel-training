@@ -83,7 +83,14 @@ html.yg-open, html.yg-open body { overflow: hidden; }
 .yg-li.held, .yg-li.taken { opacity: .55; cursor: default; }
 .yg-li.held em, .yg-li.taken em { color: var(--ink); }
 
+.yg-crest { position: absolute; left: 24px; top: 50%; width: clamp(120px, 13vw, 190px); height: auto; transform: translateY(-50%); z-index: 1; pointer-events: none; filter: drop-shadow(0 12px 24px rgba(0,0,0,.6)); }
+.yg-crest.in { animation: ygcrest .5s cubic-bezier(.2,1.4,.4,1) both; }
+@keyframes ygcrest { from { opacity: 0; transform: translate(-30px, -50%) scale(.8); } }
+.yg.sheet-open .yg-crest { opacity: 0; }
 @media (max-width: 720px) {
+  .yg-crest { left: 12px; top: auto; bottom: max(112px, calc(env(safe-area-inset-bottom) + 104px)); width: 84px; transform: none; }
+  .yg-crest.in { animation-name: ygcrestm; }
+  @keyframes ygcrestm { from { opacity: 0; transform: translateX(-20px) scale(.8); } }
   .yg-head { left: 16px; right: 70px; }
   .yg-t { font-size: 34px; }
   .yg-s { font-size: 13px; }
