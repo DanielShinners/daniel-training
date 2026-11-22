@@ -96,7 +96,7 @@ export async function openGround({ team, onClose } = {}) {
       <button type="button" class="yg-chip yg-team" data-a="switch"></button>
       <button type="button" class="yg-chip" data-a="list">List view</button>
     </div>
-    <div class="yg-legend" hidden><span><i class="free"></i>Available</span><span><i class="held"></i>Held</span><span><i class="taken"></i>Taken</span></div>
+    <div class="yg-legend" hidden><span><i class="free"></i>Available</span><span><i class="held"></i>Reserved</span><span><i class="taken"></i>Taken</span></div>
     <div class="yg-stats"></div>
     <div class="yg-pick" hidden></div>
     <div class="yg-tip" hidden></div>
@@ -346,7 +346,7 @@ export async function openGround({ team, onClose } = {}) {
       c.globalAlpha = p.state === 'held' ? 0.7 : 1; c.fillText(short(p), cx, s[1] - hh * 0.38 - lift); c.globalAlpha = 1;
       const top = s[1] - hh - lift;
       if (p.state === 'taken') pill(c, cx, top - 9, p.who, '#FFF0D7', '#101611', clamp(hh * 0.2, 10, 15));
-      else if (p.state === 'held') pill(c, cx, top - 9, 'HELD', 'rgba(16,22,17,.85)', 'rgba(255,240,215,.8)', clamp(hh * 0.18, 9, 13));
+      else if (p.state === 'held') pill(c, cx, top - 9, 'RESERVED', 'rgba(16,22,17,.85)', 'rgba(255,240,215,.8)', clamp(hh * 0.18, 9, 13));
       else if (sel || hov || h > 44) pill(c, cx, top - 9, money(PRICE[p.tier]), 'rgba(16,22,17,.85)', '#FFF0D7', clamp(hh * 0.18, 9, 13));
       hits.push({ p, x0: cx - hh * 0.4, x1: cx + hh * 0.4, y0: top - 16, y1: s[1] + 4 });
     }
@@ -404,7 +404,7 @@ export async function openGround({ team, onClose } = {}) {
   function showTip(p, x, y) {
     if (!p || matchMedia('(pointer: coarse)').matches) { tip.hidden = true; return; }
     tip.hidden = false; tip.style.left = x + 'px'; tip.style.top = y + 'px';
-    tip.innerHTML = `<b>${esc(p.label)}</b><span>${p.state === 'taken' ? esc(p.who) : p.state === 'held' ? 'Held' : money(PRICE[p.tier])}</span>`;
+    tip.innerHTML = `<b>${esc(p.label)}</b><span>${p.state === 'taken' ? esc(p.who) : p.state === 'held' ? 'Reserved' : money(PRICE[p.tier])}</span>`;
   }
 
   // ---------- data ----------
@@ -455,14 +455,14 @@ export async function openGround({ team, onClose } = {}) {
     fly({ tx: p.x + off[0], tz: p.z + off[1], d, pitch: 0.98 }, 1100);
     if (p.state !== 'free') {
       showSheet(`<p class="yg-sk">${TEAMS[p.team].name} · ${esc(line)}</p><h3>${esc(p.label)}</h3>
-        <p class="yg-note">${p.state === 'taken' ? `<b>${esc(p.who)}</b> has this spot locked in.` : `This spot is held for <b>${esc(p.who)}</b> while their donation comes through.`} Pick another guernsey.</p>
+        <p class="yg-note">${p.state === 'taken' ? `<b>${esc(p.who)}</b> has this spot locked in.` : `This spot is reserved for <b>${esc(p.who)}</b> while their donation comes through.`} Pick another guernsey.</p>
         <div class="yg-btns"><button type="button" class="yg-btn ghost" data-a="field">Back to the ground</button></div>`);
       return;
     }
     showSheet(`<p class="yg-sk">${TEAMS[p.team].name} · ${esc(line)}</p><h3>${esc(p.label)}</h3>
       <p class="yg-blurb">${esc(blurbFor(p.code))}</p>
       <div class="yg-price"><b>${money(s)}</b><span>minimum donation to Movember · same for every position</span></div>
-      <ol class="yg-steps"><li><b>Hold this spot</b> with your details. We keep it for 24 hours, so donate today.</li><li><b>Donate</b> on the Yappers Cup Movember page using the same email.</li><li>Once it lands, <b>your name goes on the team sheet</b>.</li></ol>
+      <ol class="yg-steps"><li><b>Reserve this spot</b> with your details. We keep it for 24 hours, so donate today.</li><li><b>Donate</b> on the Yappers Cup Movember page using the same email.</li><li>Once it lands, <b>your name goes on the team sheet</b>.</li></ol>
       <div class="yg-btns"><button type="button" class="yg-btn" data-a="claim">Claim ${esc(p.label.toLowerCase())}</button><button type="button" class="yg-btn ghost" data-a="field">Back</button></div>`);
   }
   function claimForm(p) {
@@ -474,7 +474,7 @@ export async function openGround({ team, onClose } = {}) {
         <label>Your donation<span class="yg-amts" role="radiogroup">${opts.map((v, i) => `<button type="button" role="radio" aria-checked="${i === 0}" data-v="${v}" class="${i === 0 ? 'on' : ''}">${money(v)}</button>`).join('')}<span class="yg-other">Other $<input name="amount" type="number" inputmode="numeric" min="${min}" step="1" value="${min}"></span></span></label>
         <label class="yg-terms"><input type="checkbox" name="terms" required><span>I've read and accept the <a href="${TERMS_URL}" target="_blank" rel="noopener">terms &amp; conditions</a>, including that I take part at my own risk.</span></label>
         <p class="yg-err" role="alert"></p>
-        <div class="yg-btns"><button type="submit" class="yg-btn">Hold my spot</button><button type="button" class="yg-btn ghost" data-a="back">Back</button></div>
+        <div class="yg-btns"><button type="submit" class="yg-btn">Reserve my spot</button><button type="button" class="yg-btn ghost" data-a="back">Back</button></div>
       </form>`);
     const f = sheet.querySelector('form'), amt = f.elements.amount;
     f.querySelectorAll('.yg-amts button').forEach(b => b.onclick = () => { f.querySelectorAll('.yg-amts button').forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-checked', String(x === b)); }); amt.value = b.dataset.v; });
@@ -487,22 +487,22 @@ export async function openGround({ team, onClose } = {}) {
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.p_email.trim())) return void (err.textContent = 'Add a valid email so we can match your donation.');
       if (body.p_amount < min) return void (err.textContent = `Every position starts at ${money(min)}.`);
       if (!body.p_terms) return void (err.textContent = 'Tick the box to accept the terms and conditions.');
-      btn.disabled = true; btn.textContent = 'Holding…';
+      btn.disabled = true; btn.textContent = 'Reserving…';
       try {
         const r = await rpc('yc_claim', body);
-        if (!r.ok) { err.textContent = r.error || 'That didn\'t go through. Try again.'; btn.disabled = false; btn.textContent = 'Hold my spot'; if (/grabbed/.test(r.error || '')) load(); return; }
+        if (!r.ok) { err.textContent = r.error || 'That didn\'t go through. Try again.'; btn.disabled = false; btn.textContent = 'Reserve my spot'; if (/grabbed/.test(r.error || '')) load(); return; }
         p.state = 'held'; p.who = r.name; if (stats) stats.pledged += body.p_amount; drawBoard(); dirty = true; setStats();
-        showSheet(`<p class="yg-sk">Spot held · ${TEAMS[p.team].name} · ${esc(p.label)}</p><h3>One last step</h3>
-          <p class="yg-note">Donate <b>${money(body.p_amount)}</b> on the Yappers Cup Movember page using <b>${esc(body.p_email.trim())}</b>. Once it comes through, <b>${esc(r.name)}</b> goes on the team sheet. We'll hold the spot for 24 hours.</p>
+        showSheet(`<p class="yg-sk">Spot reserved · ${TEAMS[p.team].name} · ${esc(p.label)}</p><h3>One last step</h3>
+          <p class="yg-note">Donate <b>${money(body.p_amount)}</b> on the Yappers Cup Movember page using <b>${esc(body.p_email.trim())}</b>. Once it comes through, <b>${esc(r.name)}</b> goes on the team sheet. We'll keep it reserved for 24 hours.</p>
           <div class="yg-btns"><a class="yg-btn" href="${DONATE_URL}" target="_blank" rel="noopener">Donate to Movember</a><button type="button" class="yg-btn ghost" data-a="field">Done</button></div>`);
-      } catch (x) { err.textContent = 'That didn\'t go through. Check your connection and try again.'; btn.disabled = false; btn.textContent = 'Hold my spot'; }
+      } catch (x) { err.textContent = 'That didn\'t go through. Check your connection and try again.'; btn.disabled = false; btn.textContent = 'Reserve my spot'; }
     };
   }
   function listView() {
     mode = 'list'; const T = TEAMS[curTeam];
     showSheet(`<p class="yg-sk">${T.name} · team sheet</p><h3>All positions</h3>` + LINES.map(([line, list]) => `<div class="yg-line"><p>${line}</p>${list.map(([code]) => {
       const p = POSITIONS.find(q => q.id === `${curTeam}-${code}`);
-      return `<button type="button" class="yg-li ${p.state}" data-pos="${p.id}" ${p.state === 'free' ? '' : 'aria-disabled="true"'}><span>${esc(p.label)}</span><em>${p.state === 'taken' ? esc(p.who) : p.state === 'held' ? 'Held' : money(PRICE[p.tier])}</em></button>`;
+      return `<button type="button" class="yg-li ${p.state}" data-pos="${p.id}" ${p.state === 'free' ? '' : 'aria-disabled="true"'}><span>${esc(p.label)}</span><em>${p.state === 'taken' ? esc(p.who) : p.state === 'held' ? 'Reserved' : money(PRICE[p.tier])}</em></button>`;
     }).join('')}</div>`).join('') + `<div class="yg-btns"><button type="button" class="yg-btn ghost" data-a="field">Back to the ground</button></div>`);
   }
   function backToField() {
