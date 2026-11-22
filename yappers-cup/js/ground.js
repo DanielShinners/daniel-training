@@ -9,7 +9,7 @@ const SUPA = CFG.supabaseUrl, KEY = CFG.supabaseKey;
 const DONATE_URL = CFG.donateUrl || 'https://au.movember.com/events/view/id/kNxN';
 const ASSET = p => (CFG.assetBase || '') + p;           // lets the page load artwork from a CDN
 const PRICE = { key: 25, field: 25, bench: 25 };          // every position is $25 minimum (matches yc_claim in Supabase)
-const TERMS_VERSION = '2026-11-22', TERMS_URL = 'terms.html';
+const TERMS_VERSION = '2026-11-23', TERMS_URL = 'terms.html';
 
 const TEAMS = {
   mudguts: { name: 'Mudguts', s: 1, body: '#8A2412', yoke: '#0E5A2C', trim: '#0E5A2C', ui: '#8A2412', shield: ASSET('assets/shield-mudguts.png'), line: 'Big moustache energy.' },
@@ -57,6 +57,7 @@ const money = n => '$' + Math.round(n).toLocaleString('en-AU');
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const rpc = (fn, body) => fetch(`${SUPA}/rest/v1/rpc/${fn}`, { method: 'POST', headers: { apikey: KEY, Authorization: `Bearer ${KEY}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) })
   .then(r => r.ok ? r.json() : r.text().then(t => Promise.reject(new Error(t))));
+const pay = body => fetch(`${SUPA}/functions/v1/yc-pay`, { method: 'POST', headers: { apikey: KEY, Authorization: `Bearer ${KEY}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(r => r.json());
 const ease = t => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -534,14 +535,14 @@ export async function openGround({ team, onClose } = {}) {
     fly({ tx: p.x + off[0], tz: p.z + off[1], d, pitch: 0.98 }, 1100);
     if (p.state !== 'free') {
       showSheet(`<p class="yg-sk">${TEAMS[p.team].name} · ${esc(line)}</p><h3>${esc(p.label)}</h3>
-        <p class="yg-note">${p.state === 'taken' ? `<b>${esc(p.who)}</b> has this spot locked in.` : `This spot is reserved for <b>${esc(p.who)}</b> while their donation comes through.`} Pick another guernsey.</p>
+        <p class="yg-note">${p.state === 'taken' ? `<b>${esc(p.who)}</b> has this spot locked in.` : `This spot is reserved for <b>${esc(p.who)}</b> while they finish paying.`} Pick another guernsey.</p>
         <div class="yg-btns"><button type="button" class="yg-btn ghost" data-a="field">Back to the ground</button></div>`);
       return;
     }
     showSheet(`<p class="yg-sk">${TEAMS[p.team].name} · ${esc(line)}</p><h3>${esc(p.label)}</h3>
       <p class="yg-blurb">${esc(blurbFor(p.code))}</p>
-      <div class="yg-price"><b>${money(s)}</b><span>minimum donation to Movember · same for every position</span></div>
-      <ol class="yg-steps"><li><b>Reserve this spot</b> with your details. We keep it for 24 hours, so donate today.</li><li><b>Donate</b> on the Yappers Cup Movember page using the same email.</li><li>Once it lands, <b>your name goes on the team sheet</b>.</li></ol>
+      <div class="yg-price"><b>${money(s)}</b><span>same for every position · all proceeds go to Movember</span></div>
+      <ol class="yg-steps"><li><b>Add your details</b> and accept the terms.</li><li><b>Pay securely</b> by card, Apple Pay or Google Pay.</li><li><b>Your name goes straight on the team sheet.</b></li></ol>
       <div class="yg-btns"><button type="button" class="yg-btn" data-a="claim">Claim ${esc(p.label.toLowerCase())}</button><button type="button" class="yg-btn ghost" data-a="field">Back</button></div>`);
   }
   function claimForm(p) {
@@ -550,31 +551,38 @@ export async function openGround({ team, onClose } = {}) {
       <form class="yg-form" novalidate>
         <label>Name<input name="full" autocomplete="name" maxlength="120" required></label>
         <div class="yg-row"><label>Email<input name="email" type="email" autocomplete="email" required></label><label>Mobile<input name="mobile" type="tel" autocomplete="tel" maxlength="40"></label></div>
-        <label>Your donation<span class="yg-amts" role="radiogroup">${opts.map((v, i) => `<button type="button" role="radio" aria-checked="${i === 0}" data-v="${v}" class="${i === 0 ? 'on' : ''}">${money(v)}</button>`).join('')}<span class="yg-other">Other $<input name="amount" type="number" inputmode="numeric" min="${min}" step="1" value="${min}"></span></span></label>
+        <label>Your entry <small style="opacity:.7;font-weight:400">(all proceeds to Movember)</small><span class="yg-amts" role="radiogroup">${opts.map((v, i) => `<button type="button" role="radio" aria-checked="${i === 0}" data-v="${v}" class="${i === 0 ? 'on' : ''}">${money(v)}</button>`).join('')}<span class="yg-other">Other $<input name="amount" type="number" inputmode="numeric" min="${min}" step="1" value="${min}"></span></span></label>
         <label class="yg-terms"><input type="checkbox" name="terms" required><span>I've read and accept the <a href="${TERMS_URL}" target="_blank" rel="noopener">terms &amp; conditions</a>, including that I take part at my own risk.</span></label>
         <p class="yg-err" role="alert"></p>
-        <div class="yg-btns"><button type="submit" class="yg-btn">Reserve my spot</button><button type="button" class="yg-btn ghost" data-a="back">Back</button></div>
+        <div class="yg-btns"><button type="submit" class="yg-btn">Pay ${money(min)}</button><button type="button" class="yg-btn ghost" data-a="back">Back</button></div>
       </form>`);
     const f = sheet.querySelector('form'), amt = f.elements.amount;
     f.querySelectorAll('.yg-amts button').forEach(b => b.onclick = () => { f.querySelectorAll('.yg-amts button').forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-checked', String(x === b)); }); amt.value = b.dataset.v; });
     amt.oninput = () => f.querySelectorAll('.yg-amts button').forEach(x => { const on = x.dataset.v === amt.value; x.classList.toggle('on', on); x.setAttribute('aria-checked', String(on)); });
+    const payBtn = f.querySelector('[type=submit]'), setPay = () => { payBtn.textContent = `Pay ${money(Math.max(min, Math.round(+amt.value || 0)))}`; };
+    f.addEventListener('click', () => setTimeout(setPay)); amt.addEventListener('input', setPay);
     f.elements.full.focus({ preventScroll: true });
     f.onsubmit = async e => {
       e.preventDefault(); const err = f.querySelector('.yg-err'), btn = f.querySelector('[type=submit]'); err.textContent = '';
       const body = { p_position: p.id, p_name: f.elements.full.value, p_full_name: f.elements.full.value, p_email: f.elements.email.value, p_mobile: f.elements.mobile.value, p_amount: Math.round(+amt.value || 0), p_terms: f.elements.terms.checked, p_terms_version: TERMS_VERSION };
       if (!body.p_full_name.trim()) return void (err.textContent = 'Add your name.');
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.p_email.trim())) return void (err.textContent = 'Add a valid email so we can match your donation.');
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.p_email.trim())) return void (err.textContent = 'Add a valid email for your receipt.');
       if (body.p_amount < min) return void (err.textContent = `Every position starts at ${money(min)}.`);
       if (!body.p_terms) return void (err.textContent = 'Tick the box to accept the terms and conditions.');
-      btn.disabled = true; btn.textContent = 'Reserving…';
+      btn.disabled = true; btn.textContent = 'Opening secure checkout…';
       try {
+        const c = await pay({ action: 'checkout', claim: body }).catch(() => ({ ok: false, error: 'not_configured' }));
+        if (c.ok && c.url) { try { sessionStorage.setItem('yc-pay', JSON.stringify({ pos: p.id })); } catch (_) {} location.href = c.url; return; }
+        if (c.error !== 'not_configured') { err.textContent = c.error || 'That didn\'t go through. Try again.'; btn.disabled = false; setPay(); if (/grabbed/.test(c.error || '')) load(); return; }
+        // card payments not switched on yet: fall back to reserving and donating on Movember
+        btn.textContent = 'Reserving…';
         const r = await rpc('yc_claim', body);
-        if (!r.ok) { err.textContent = r.error || 'That didn\'t go through. Try again.'; btn.disabled = false; btn.textContent = 'Reserve my spot'; if (/grabbed/.test(r.error || '')) load(); return; }
+        if (!r.ok) { err.textContent = r.error || 'That didn\'t go through. Try again.'; btn.disabled = false; setPay(); if (/grabbed/.test(r.error || '')) load(); return; }
         p.state = 'held'; p.who = r.name; if (stats) stats.pledged += body.p_amount; drawBoard(); dirty = true; setStats();
         showSheet(`<p class="yg-sk">Spot reserved · ${TEAMS[p.team].name} · ${esc(p.label)}</p><h3>One last step</h3>
           <p class="yg-note">Donate <b>${money(body.p_amount)}</b> on the Yappers Cup Movember page using <b>${esc(body.p_email.trim())}</b>. Once it comes through, <b>${esc(r.name)}</b> goes on the team sheet. We'll keep it reserved for 24 hours.</p>
           <div class="yg-btns"><a class="yg-btn" href="${DONATE_URL}" target="_blank" rel="noopener">Donate to Movember</a><button type="button" class="yg-btn ghost" data-a="field">Done</button></div>`);
-      } catch (x) { err.textContent = 'That didn\'t go through. Check your connection and try again.'; btn.disabled = false; btn.textContent = 'Reserve my spot'; }
+      } catch (x) { err.textContent = 'That didn\'t go through. Check your connection and try again.'; btn.disabled = false; setPay(); }
     };
   }
   function listView() {
@@ -610,7 +618,29 @@ export async function openGround({ team, onClose } = {}) {
 
   cam.yaw = homeYaw() - 0.6; cam.d = fitD() * 1.6; cam.pitch = 0.95;
   requestAnimationFrame(frame);
-  if (team && TEAMS[team]) { setTimeout(() => chooseTeam(team), 50); } else teamPicker();
+  const qs = new URLSearchParams(location.search), paidId = qs.get('paid'), cancelled = qs.has('cancelled');
+  if (paidId || cancelled) history.replaceState(null, '', location.pathname + location.hash);
+  if (paidId) {
+    teamPicker();
+    showSheet(`<p class="yg-sk">Payment received</p><h3>Locking you in…</h3><p class="yg-note">Hang tight while we put your name on the team sheet.</p>`);
+    const tryConfirm = async (n) => {
+      const r = await pay({ action: 'confirm', session: paidId }).catch(() => ({ ok: false }));
+      if (r.ok) {
+        await load(); const T = TEAMS[r.team], pos = POSITIONS.find(q => q.id === r.position);
+        curTeam = r.team; chooseTeam(r.team); if (pos) setTimeout(() => fly({ tx: pos.x, tz: pos.z, d: portrait() ? 125 : 150, pitch: 0.98 }, 1200), 300);
+        showSheet(`<p class="yg-sk">You're in · ${T.name}</p><h3>${esc(r.name)}, ${esc(pos ? pos.label : r.pos)}</h3>
+          <p class="yg-note">Your name's on the team sheet. Stripe has emailed your receipt. See you at Gosch's Paddock on Sunday 29 November, 12:30pm for a 1pm bounce.</p>
+          <div class="yg-btns"><button type="button" class="yg-btn" data-a="field">See the team sheet</button></div>`);
+      } else if (n < 4) setTimeout(() => tryConfirm(n + 1), 1500);
+      else showSheet(`<p class="yg-sk">Payment received</p><h3>Nearly there</h3><p class="yg-note">Your payment went through but the team sheet is taking a moment to update. Refresh in a minute, or email hello@yapperscup.com if your name isn't up.</p><div class="yg-btns"><button type="button" class="yg-btn" data-a="field">Back to the ground</button></div>`);
+    };
+    tryConfirm(0);
+  } else {
+    if (cancelled) { try { sessionStorage.removeItem('yc-pay'); } catch (_) {} }
+    if (team && TEAMS[team]) { setTimeout(() => chooseTeam(team), 50); } else teamPicker();
+    if (cancelled) setTimeout(() => showSheet(`<p class="yg-sk">Payment cancelled</p><h3>No worries</h3><p class="yg-note">You weren't charged. Your spot is held for a few more minutes if you want to try again, then it opens back up.</p><div class="yg-btns"><button type="button" class="yg-btn" data-a="field">Back to the ground</button></div>`), 400);
+  }
+  pay({ action: 'reconcile' }).then(r => { if (r && r.done) load(); }).catch(() => {});
   void badge;
   return { close };
 }
