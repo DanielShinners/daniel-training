@@ -7,6 +7,34 @@ const TEAMS = {
   mudguts: { name: 'Mudguts', shield: 'assets/shield-mudguts.png', col: '#8A2412' },
   pissants: { name: 'Pissants', shield: 'assets/shield-pissants.png', col: '#1C3B83' },
 };
+const CFG = window.YC_CONFIG || {};
+const rpc = (fn, body) => fetch(`${CFG.supabaseUrl}/rest/v1/rpc/${fn}`, { method: 'POST', headers: { apikey: CFG.supabaseKey, Authorization: `Bearer ${CFG.supabaseKey}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) })
+  .then(r => r.ok ? r.json() : r.text().then(t => Promise.reject(new Error(t))));
+const esc = v => String(v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const ordinal = n => n + (['th', 'st', 'nd', 'rd'][(n % 100 > 10 && n % 100 < 14) ? 0 : n % 10] || 'th');
+export const loadBoard = () => rpc('yc_kick_board');
+export function boardHTML(b, meId) {
+  const rows = (b && b.top) || [];
+  if (!rows.length) return '<p class="kk-empty">No scores yet. Be the first on the board.</p>';
+  return '<ol class="kk-board">' + rows.map((r, i) => `<li class="${r.id === meId ? 'me' : ''}"><span class="kk-rank">${i + 1}</span><img src="${ASSET(TEAMS[r.team].shield)}" alt="${TEAMS[r.team].name}"><span class="kk-nm">${esc(r.name)}</span><span class="kk-sc">${r.goals}.${r.behinds} <b>${r.score}</b></span></li>`).join('') + '</ol>';
+}
+export function teamsHTML(b) {
+  const t = (b && b.teams) || { mudguts: 0, pissants: 0 };
+  return `<div class="kk-tt"><span><img src="${ASSET(TEAMS.mudguts.shield)}" alt="">Mudguts <b>${t.mudguts}</b></span><em>v</em><span><b>${t.pissants}</b> Pissants<img src="${ASSET(TEAMS.pissants.shield)}" alt=""></span></div>`;
+}
+
+/* Full-screen launcher: the game takes over the screen (no page scroll underneath) and has its own exit. */
+export function openKick() {
+  if (document.querySelector('.kk-full')) return;
+  const full = document.createElement('div'); full.className = 'kk-full'; full.setAttribute('role', 'dialog'); full.setAttribute('aria-label', 'Goal-kicking practice');
+  full.innerHTML = '<div class="kick-game"></div><button type="button" class="kk-x" aria-label="Exit goal-kicking practice"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>';
+  document.body.appendChild(full); document.documentElement.classList.add('kk-open');
+  const game = startKick(full.querySelector('.kick-game'));
+  const close = () => { game.stop(); full.remove(); document.documentElement.classList.remove('kk-open'); removeEventListener('keydown', onKey); document.dispatchEvent(new Event('yc-kick-closed')); };
+  const onKey = e => { if (e.key === 'Escape') close(); };
+  full.querySelector('.kk-x').addEventListener('click', close); addEventListener('keydown', onKey);
+}
+
 const G = 9.8, EL = 0.62, POST = 3.2, BEHIND = 9.6, BALL = 0.32;
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const rand = (a, b) => a + Math.random() * (b - a);
@@ -16,15 +44,17 @@ export function startKick(root) {
     <canvas class="kk-stage"></canvas>
     <div class="kk-hud" hidden>
       <div class="kk-score"><img alt=""><div><b class="kk-team"></b><span class="kk-tally">0.0 (0)</span></div></div>
-      <div class="kk-side"><div class="kk-level"></div><div class="kk-wind" hidden><i>➜</i><span></span></div></div>
+      <div class="kk-side"><div class="kk-clock">1:00</div><div class="kk-level"></div><div class="kk-wind" hidden><i>➜</i><span></span></div></div>
     </div>
     <div class="kk-msg" aria-live="polite"></div>
     <div class="kk-hint" hidden>Drag back from the ball to aim · let go to kick</div>
     <div class="kk-meta" hidden><span class="kk-shots"></span><span class="kk-best"></span><button type="button" class="kk-reset">Change team</button></div>
+    <div class="kk-over" hidden><div class="kk-card"></div></div>
     <div class="kk-pick">
       <p class="kk-pk">Goal-kicking practice</p>
       <h3>Pick your team</h3>
       <div class="kk-teams">${Object.entries(TEAMS).map(([id, t]) => `<button type="button" data-team="${id}" aria-label="Kick for the ${t.name}"><img src="${ASSET(t.shield)}" alt=""><span>${t.name}</span></button>`).join('')}</div>
+      <button type="button" class="kk-lbbtn">View leaderboard</button>
     </div>`;
   const $ = s => root.querySelector(s), canvas = $('.kk-stage'), ctx = canvas.getContext('2d');
   let W = 0, H = 0, DPR = 1;
@@ -35,7 +65,8 @@ export function startKick(root) {
   }
 
   // ---------- game state ----------
-  const S = { team: null, goals: 0, behinds: 0, shots: 0, spot: { x: 0, z: -30 }, wind: { x: 0, z: 0 }, level: '', ball: null, aim: null, busy: false, t: 0 };
+  const ROUND = 60;
+  const S = { team: null, goals: 0, behinds: 0, shots: 0, endAt: 0, over: false, spot: { x: 0, z: -30 }, wind: { x: 0, z: 0 }, level: '', ball: null, aim: null, busy: false, t: 0 };
   const best = () => { try { return +localStorage.getItem('yc-kick-best-' + S.team) || 0; } catch (e) { return 0; } };
   const saveBest = v => { try { localStorage.setItem('yc-kick-best-' + S.team, String(v)); } catch (e) {} };
   const pts = () => S.goals * 6 + S.behinds;
@@ -68,7 +99,7 @@ export function startKick(root) {
     if (wm >= 0.1) { w.querySelector('span').textContent = `Wind ${Math.round(wm * 9)} km/h`; camera(); const g0 = P(0, 0, 0), g1 = P(S.wind.x * 4, 0, S.wind.z * 4);   // point the arrow the way the wind pushes the ball on screen
       if (g0 && g1) w.querySelector('i').style.transform = `rotate(${Math.atan2(g1[1] - g0[1], g1[0] - g0[0])}rad)`; }
     $('.kk-shots').textContent = `${S.shots} kick${S.shots === 1 ? '' : 's'}`;
-    $('.kk-best').textContent = `Best ${best()} pts`;
+    $('.kk-best').textContent = `Best ${best()} pts in 60s`;
   }
   let msgT = 0;
   function flash(text, kind) {
@@ -81,7 +112,7 @@ export function startKick(root) {
   function camera() {
     const sp = S.spot, gx = 0, gz = 0, dx = sp.x - gx, dz = sp.z - gz, l = Math.hypot(dx, dz);
     C = { x: sp.x + dx / l * 6.5, y: 2.1, z: sp.z + dz / l * 6.5 };
-    const T = { x: gx * 0.6 + sp.x * 0.4, y: 2.4, z: gz };
+    const T = { x: gx * 0.6 + sp.x * 0.4, y: 2.1, z: gz };       // level camera: posts stay truly vertical, so a high ball lines up with them
     f = norm({ x: T.x - C.x, y: T.y - C.y, z: T.z - C.z });
     r = norm(cross(f, { x: 0, y: 1, z: 0 })); u = cross(r, f);
     F = Math.min(W, H * 1.6) * 0.95;
@@ -119,7 +150,7 @@ export function startKick(root) {
     line([-40, 0.01, 0], [40, 0.01, 0], 0.12, 'rgba(255,255,255,.85)');
     line([-POST, 0.01, 0], [-POST, 0.01, -9], 0.1, 'rgba(255,255,255,.85)'); line([POST, 0.01, 0], [POST, 0.01, -9], 0.1, 'rgba(255,255,255,.85)'); line([-POST, 0.01, -9], [POST, 0.01, -9], 0.1, 'rgba(255,255,255,.85)');
     // posts (behind posts first, they're further out)
-    for (const [x, h, pad] of [[-BEHIND, 7, false], [BEHIND, 7, false], [-POST, 12, true], [POST, 12, true]]) {
+    for (const [x, h, pad] of [[-BEHIND, 9, false], [BEHIND, 9, false], [-POST, 16, true], [POST, 16, true]]) {
       line([x, 0, 0], [x, h, 0], 0.22, '#f4ead6'); if (pad) line([x, 0, 0], [x, 1.8, 0], 0.32, '#CD2A2D');
     }
     if (!S.team) return;
@@ -133,9 +164,11 @@ export function startKick(root) {
     }
     // ball + shadow
     const b = S.ball.p, sh = P(b.x, 0, b.z);
-    if (sh) { const rr = clamp(BALL * 2.4 * F / sh[2], 2, 60); ctx.fillStyle = `rgba(0,0,0,${0.35 * clamp(1 - b.y / 20, 0.1, 1)})`; ctx.beginPath(); ctx.ellipse(sh[0], sh[1], rr, rr * 0.3, 0, 0, Math.PI * 2); ctx.fill(); }
+    if (sh) { const rr = clamp(BALL * clamp(2.4 - (b.z - S.spot.z) / Math.max(8, -S.spot.z) * 1.4, 1, 2.4) * F / sh[2], 2, 60); ctx.fillStyle = `rgba(0,0,0,${0.35 * clamp(1 - b.y / 20, 0.1, 1)})`; ctx.beginPath(); ctx.ellipse(sh[0], sh[1], rr, rr * 0.3, 0, 0, Math.PI * 2); ctx.fill(); }
     const bp = P(b.x, b.y, b.z);
-    if (bp) drawBall(bp[0], bp[1], clamp(BALL * 2.6 * F / bp[2], 3, 70), S.ball.spin);
+    // the ball is drawn larger than life at your feet so it's easy to see, shrinking to true size by the goals so what you see matches the score
+    const grow = clamp(2.6 - (b.z - S.spot.z) / Math.max(8, -S.spot.z) * 1.6, 1, 2.6);
+    if (bp) drawBall(bp[0], bp[1], clamp(BALL * grow * F / bp[2], 4, 70), S.ball.spin);
   }
   function drawBall(x, y, s, a) {
     ctx.save(); ctx.translate(x, y); ctx.rotate(a);
@@ -178,27 +211,81 @@ export function startKick(root) {
     if (p.y < 0) { p.y = 0; v.y = -v.y * 0.35; v.x *= 0.6; v.z *= 0.6; }
     draw();
     if (now - b.t0 < 3200 && (Math.abs(v.z) > 0.5 || p.y > 0.05)) raf = requestAnimationFrame(fly);
-    else { if (!b.done) result(null); setTimeout(setup, 650); }
+    else { if (!b.done) result(null); setTimeout(() => { if (S.over) { S.busy = false; fullTime(); } else setup(); }, 650); }
   }
   function result(x) {
     const b = S.ball; b.done = true; S.shots++;
     if (x === null) flash(b.p.z < 0 ? 'Short' : 'Out on the full', 'miss');
     else {
       const ax = Math.abs(x);
-      if (Math.abs(ax - POST) < 0.28) { S.behinds++; flash('Hit the post · 1 pt', 'behind'); }
+      if (Math.abs(ax - POST) < 0.14) { S.behinds++; flash('Hit the post · 1 pt', 'behind'); }
       else if (ax < POST) { S.goals++; flash('Goal! · 6 pts', 'goal'); }
       else if (ax < BEHIND) { S.behinds++; flash('Behind · 1 pt', 'behind'); }
       else flash('Out on the full', 'miss');
     }
-    if (pts() > best()) saveBest(pts());
     if (S.goals === 2 && x !== null && Math.abs(x) < POST && S.goals * 6 + S.behinds > 0) setTimeout(() => flash('Nice. Try it from an angle', ''), 1350);
     if (S.goals === 3 && x !== null && Math.abs(x) < POST) setTimeout(() => flash("Wind's picking up", ''), 1350);
     hud();
   }
 
+
+  // ---------- 60-second round: the clock starts on your first kick ----------
+  let tick = 0;
+  function startClock() { S.endAt = performance.now() + ROUND * 1000; clearInterval(tick); tick = setInterval(updClock, 200); updClock(); }
+  function updClock() {
+    const left = Math.max(0, Math.ceil((S.endAt - performance.now()) / 1000));
+    const el = $('.kk-clock'); const sec = S.endAt ? left : ROUND; el.textContent = `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`; el.classList.toggle('low', S.endAt && left <= 10);
+    if (S.endAt && left <= 0) { clearInterval(tick); S.over = true; if (!S.busy) fullTime(); }
+  }
+  function fullTime() {
+    S.aim = null; draw();
+    const p = pts(), b = best();
+    if (p > b) saveBest(p);
+    const card = $('.kk-card');
+    card.innerHTML = `<p class="kk-pk">Full time</p>
+      <div class="kk-final"><img src="${ASSET(TEAMS[S.team].shield)}" alt=""><b>${S.goals}.${S.behinds} (${p})</b></div>
+      <p class="kk-sum">${S.goals} goal${S.goals === 1 ? '' : 's'}, ${S.behinds} behind${S.behinds === 1 ? '' : 's'} from ${S.shots} kick${S.shots === 1 ? '' : 's'} for the ${TEAMS[S.team].name}.${p > b ? ' New personal best!' : ''}</p>
+      ${p > 0 ? `<form class="kk-form" novalidate>
+        <label>Name on the board<input name="name" maxlength="18" autocomplete="nickname" required placeholder="e.g. Big Kev"></label>
+        <label>Email<input name="email" type="email" autocomplete="email" inputmode="email" required placeholder="you@example.com"></label>
+        <label class="kk-check"><input type="checkbox" name="agree"><span>I agree to the <a href="terms.html" target="_blank" rel="noopener">terms</a>, including my name and score showing on the leaderboard and the Yappers Cup emailing me about the event. My email is never shown.</span></label>
+        <p class="kk-err" role="alert"></p>
+        <button type="submit" class="kk-btn">Put me on the leaderboard</button>
+      </form>` : ''}
+      <div class="kk-row"><button type="button" class="kk-btn ghost kk-again">Play again</button><button type="button" class="kk-btn ghost kk-showlb">Leaderboard</button></div>`;
+    $('.kk-over').hidden = false; $('.kk-hint').hidden = true; hud();
+    const f = card.querySelector('form');
+    if (f) f.onsubmit = async e => {
+      e.preventDefault(); const err = f.querySelector('.kk-err'), btn = f.querySelector('[type=submit]'); err.textContent = '';
+      const name = f.elements.name.value.trim(), email = f.elements.email.value.trim();
+      if (!name) return void (err.textContent = 'Add a name for the board.');
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return void (err.textContent = 'Add a valid email to go on the board.');
+      if (!f.elements.agree.checked) return void (err.textContent = 'Tick the box to agree to the terms.');
+      btn.disabled = true; btn.textContent = 'Saving…';
+      try {
+        const r = await rpc('yc_submit_kick', { p_name: name, p_team: S.team, p_goals: S.goals, p_behinds: S.behinds, p_kicks: S.shots, p_email: email, p_opt_in: true, p_terms_version: '2026-11-22' });
+        if (!r.ok) { err.textContent = r.error || 'That didn\'t save. Try again.'; btn.disabled = false; btn.textContent = 'Put me on the leaderboard'; return; }
+        f.outerHTML = `<p class="kk-place">You're <strong>${ordinal(r.place)}</strong> of ${r.total} on the leaderboard.</p><div class="kk-lbwrap">Loading…</div>`;
+        showBoard(card.querySelector('.kk-lbwrap'), r.id);
+      } catch (x) { err.textContent = 'That didn\'t save. Check your connection and try again.'; btn.disabled = false; btn.textContent = 'Put me on the leaderboard'; }
+    };
+  }
+  async function showBoard(el, meId) {
+    try { const b = await loadBoard(); el.innerHTML = teamsHTML(b) + boardHTML(b, meId); const me = el.querySelector('li.me'); if (me) me.scrollIntoView({ block: 'nearest' }); }
+    catch (e) { el.innerHTML = '<p class="kk-empty">Couldn\'t load the leaderboard. Try again in a sec.</p>'; }
+  }
+  function leaderboard() {
+    const card = $('.kk-card');
+    card.innerHTML = `<p class="kk-pk">Goal-kicking practice</p><h3 class="kk-lbh">Leaderboard</h3><p class="kk-sum">Top 50 · most points in 60 seconds</p><div class="kk-lbwrap">Loading…</div>
+      <div class="kk-row"><button type="button" class="kk-btn kk-lbplay">${S.team ? 'Play again' : 'Pick a team'}</button></div>`;
+    $('.kk-over').hidden = false; showBoard(card.querySelector('.kk-lbwrap'));
+  }
+  function resetRound() { clearInterval(tick); S.goals = S.behinds = S.shots = 0; S.endAt = 0; S.over = false; $('.kk-over').hidden = true; updClock(); setup(); }
+
   // ---------- input ----------
   canvas.addEventListener('pointerdown', e => {
-    if (!S.team || S.busy) return;
+    if (!S.team || S.busy || S.over) return;
+    if (!S.endAt) startClock();
     canvas.setPointerCapture(e.pointerId);
     S.aim = { x0: e.clientX, y0: e.clientY, v: null, power: 0 };
   });
@@ -219,9 +306,13 @@ export function startKick(root) {
 
   root.addEventListener('click', e => {
     const t = e.target.closest('[data-team]');
-    if (t) { S.team = t.dataset.team; S.goals = S.behinds = S.shots = 0; $('.kk-pick').hidden = true; setup(); flash(`Kicking for the ${TEAMS[S.team].name}`, ''); return; }
-    if (e.target.closest('.kk-reset')) { cancelAnimationFrame(raf); S.team = null; $('.kk-pick').hidden = false; $('.kk-hud').hidden = $('.kk-hint').hidden = $('.kk-meta').hidden = true; draw(); }
+    if (t) { S.team = t.dataset.team; $('.kk-pick').hidden = true; resetRound(); flash(`Kicking for the ${TEAMS[S.team].name}`, ''); return; }
+    if (e.target.closest('.kk-again')) { resetRound(); return; }
+    if (e.target.closest('.kk-showlb, .kk-lbbtn')) { leaderboard(); return; }
+    if (e.target.closest('.kk-lbplay')) { if (S.team) resetRound(); else { $('.kk-over').hidden = true; } return; }
+    if (e.target.closest('.kk-reset')) { cancelAnimationFrame(raf); clearInterval(tick); S.endAt = 0; S.over = false; $('.kk-over').hidden = true; S.team = null; $('.kk-pick').hidden = false; $('.kk-hud').hidden = $('.kk-hint').hidden = $('.kk-meta').hidden = true; draw(); }
   });
-  new ResizeObserver(resize).observe(root); resize();
+  const ro = new ResizeObserver(resize); ro.observe(root); resize();
   setup();
+  return { stop() { cancelAnimationFrame(raf); clearInterval(tick); ro.disconnect(); } };
 }
