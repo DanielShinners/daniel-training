@@ -108,7 +108,7 @@ export function startKick(root) {
   }
 
   // ---------- camera ----------
-  let C, f, r, u, F;
+  let C, f, r, u, F, HZ;
   function camera() {
     const sp = S.spot, gx = 0, gz = 0, dx = sp.x - gx, dz = sp.z - gz, l = Math.hypot(dx, dz);
     C = { x: sp.x + dx / l * 6.5, y: 2.1, z: sp.z + dz / l * 6.5 };
@@ -116,6 +116,14 @@ export function startKick(root) {
     f = norm({ x: T.x - C.x, y: T.y - C.y, z: T.z - C.z });
     r = norm(cross(f, { x: 0, y: 1, z: 0 })); u = cross(r, f);
     F = Math.min(W, H * 1.6) * 0.95;
+    // keep the ball fully on screen with room to pull back: lift the horizon on wide screens if needed
+    HZ = H * 0.56;
+    const v = { x: S.spot.x - C.x, y: BALL - C.y, z: S.spot.z - C.z }, cz = v.x * f.x + v.y * f.y + v.z * f.z;
+    if (cz > 0.2) {
+      const drop = -(v.x * u.x + v.y * u.y + v.z * u.z) * F / cz, s = clamp(BALL * 2.6 * F / cz, 4, 70);
+      const maxY = H - s - Math.max(40, H * 0.08);
+      if (HZ + drop > maxY) HZ = Math.max(H * 0.3, maxY - drop);
+    }
   }
   function norm(v) { const l = Math.hypot(v.x, v.y, v.z) || 1; return { x: v.x / l, y: v.y / l, z: v.z / l }; }
   function cross(a, b) { return { x: a.y * b.z - a.z * b.y, y: a.z * b.x - a.x * b.z, z: a.x * b.y - a.y * b.x }; }
@@ -123,7 +131,7 @@ export function startKick(root) {
     const v = { x: x - C.x, y: y - C.y, z: z - C.z }, cz = v.x * f.x + v.y * f.y + v.z * f.z;
     if (cz < 0.2) return null;
     const cx = v.x * r.x + v.y * r.y + v.z * r.z, cy = v.x * u.x + v.y * u.y + v.z * u.z;
-    return [W / 2 + cx * F / cz, H * 0.56 - cy * F / cz, cz];
+    return [W / 2 + cx * F / cz, HZ - cy * F / cz, cz];
   }
   function poly(pts, fill) { const s = pts.map(p => P(...p)); if (s.some(q => !q)) return; ctx.beginPath(); s.forEach((q, i) => i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1])); ctx.closePath(); ctx.fillStyle = fill; ctx.fill(); }
   function line(a, b, w, col) { const p = P(...a), q = P(...b); if (!p || !q) return; ctx.strokeStyle = col; ctx.lineWidth = clamp(w * F / ((p[2] + q[2]) / 2), 1, 14); ctx.beginPath(); ctx.moveTo(p[0], p[1]); ctx.lineTo(q[0], q[1]); ctx.stroke(); }
