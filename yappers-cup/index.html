@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Yappers Cup 2026 — Mudguts vs Pissants</title>
+<meta name="description" content="Community footy for men's health. Mudguts vs Pissants, Sunday 29 November 2026. Proudly supporting Movember — sign up to play, support or partner.">
+<meta property="og:title" content="Yappers Cup 2026 — Mudguts vs Pissants">
+<meta property="og:description" content="Good mates. Good footy. Bigger conversations. Sunday 29 November 2026 — proudly supporting Movember.">
+<meta property="og:image" content="assets/mascots-matchup.png">
+<meta name="theme-color" content="#101611">
+<link rel="icon" href="assets/favicon.png">
+<link rel="stylesheet" href="css/ground.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#101611; --ink-2:#181F19; --cream:#FFF0D7; --red:#CD2A2D;
+    --maroon:#8A2412; --green:#0E5A2C; --blue:#1C3B83; --orange:#E2600F;
+    --muted:rgba(255,240,215,.72);
+    --display:'Anton',Impact,'Arial Narrow',sans-serif;
+    --body:'Archivo',system-ui,-apple-system,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--ink);color:var(--cream);font-family:var(--body);font-size:17px;line-height:1.55;-webkit-font-smoothing:antialiased}
+  img{max-width:100%;display:block}
+  a{color:inherit}
+  .wrap{width:min(1180px,100% - 40px);margin-inline:auto}
+  h1,h2,h3,.display{font-family:var(--display);font-weight:400;text-transform:uppercase;letter-spacing:.015em;line-height:.95}
+  .eyebrow{font-family:var(--display);text-transform:uppercase;letter-spacing:.1em;font-size:15px;color:var(--red)}
+
+  /* film grain over photo sections */
+  .grain{position:relative;isolation:isolate}
+  .grain::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:1;opacity:.22;mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>")}
+  .grain>*{position:relative;z-index:2}
+
+  .btn{display:inline-block;font-family:var(--display);text-transform:uppercase;letter-spacing:.05em;text-decoration:none;background:var(--red);color:var(--cream);padding:13px 24px;border-radius:4px;border:0;font-size:19px;cursor:pointer;transition:transform .15s,background .15s}
+  .btn:hover{transform:translateY(-2px);background:#b52326}
+  .btn.ghost{background:transparent;box-shadow:inset 0 0 0 2px var(--cream)}
+  .btn.ghost:hover{background:var(--cream);color:var(--ink)}
+
+  /* nav */
+  nav{position:sticky;top:0;z-index:30;background:rgba(16,22,17,.92);backdrop-filter:blur(8px);border-bottom:1px solid rgba(255,240,215,.08)}
+  nav .wrap{display:flex;align-items:center;justify-content:space-between;height:64px}
+  nav .lockup img{height:30px;width:auto}
+  nav .links{display:flex;gap:26px;align-items:center}
+  nav .links a:not(.btn){font-family:var(--display);text-transform:uppercase;letter-spacing:.06em;text-decoration:none;font-size:16px;opacity:.8}
+  nav .links a:not(.btn):hover{opacity:1}
+  nav .btn{padding:8px 16px;font-size:16px}
+
+  /* hero */
+  .hero{min-height:min(92vh,820px);display:grid;place-items:center;text-align:center;overflow:hidden;
+    background:linear-gradient(180deg,rgba(16,22,17,.25),rgba(16,22,17,.55) 70%,var(--ink)),url(assets/hero-run.jpg) center/cover no-repeat}
+  .hero .inner{padding:90px 20px 70px}
+  .hero h1{width:min(980px,92vw);margin:0 auto}
+  .hero h1 img{width:100%}
+  .hero .sub{font-family:var(--display);text-transform:uppercase;font-size:clamp(20px,3.4vw,34px);letter-spacing:.04em;margin-top:22px}
+  .hero .sub .vs{color:var(--red)}
+  .hero .date{margin-top:6px;font-size:13px;letter-spacing:.24em;text-transform:uppercase;font-weight:800;color:var(--muted)}
+  .countdown{display:flex;gap:10px;justify-content:center;margin-top:30px}
+  .countdown div{background:rgba(16,22,17,.55);border:1px solid rgba(255,240,215,.22);border-radius:6px;padding:10px 14px;min-width:78px}
+  .countdown b{display:block;font-family:var(--display);font-weight:400;font-size:36px;line-height:1}
+  .countdown span{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+  .hero .ctas{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:32px}
+  .hero .movember{margin-top:34px;font-size:12px;letter-spacing:.26em;text-transform:uppercase;font-weight:800}
+
+  /* marquee */
+  .marquee{background:var(--red);overflow:hidden;white-space:nowrap;padding:14px 0;border-block:1px solid rgba(0,0,0,.2)}
+  .marquee .track{display:inline-flex;align-items:center;gap:28px;animation:scroll 32s linear infinite;padding-right:28px}
+  .marquee span{font-family:var(--display);font-size:clamp(30px,4.5vw,50px);text-transform:uppercase;line-height:1;color:var(--cream)}
+  .marquee img{height:clamp(26px,3.6vw,40px);width:auto}
+  @keyframes scroll{to{transform:translateX(-50%)}}
+
+  /* about */
+  .split{display:grid;grid-template-columns:1fr 1fr;min-height:560px}
+  .split .copy{padding:clamp(40px,6vw,96px);display:flex;flex-direction:column;justify-content:center}
+  .split h2{font-size:clamp(42px,5.4vw,72px);margin:14px 0 24px}
+  .split p{margin-bottom:16px;max-width:52ch;color:var(--muted)}
+  .split .pic{background-size:cover;background-position:center;min-height:380px}
+  .bw{filter:grayscale(1) contrast(1.05)}
+  .stats{display:flex;gap:36px;margin-top:26px;flex-wrap:wrap}
+  .stats b{font-family:var(--display);font-weight:400;font-size:58px;color:var(--red);line-height:1;display:block}
+  .stats span{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+
+  /* matchup */
+  .matchup{padding:110px 0 100px;text-align:center;
+    background:linear-gradient(180deg,var(--ink),rgba(16,22,17,.6) 30%,rgba(16,22,17,.6) 70%,var(--ink)),url(assets/pack-blur.jpg) center/cover}
+  .matchup h2{font-size:clamp(44px,7vw,96px)}
+  .matchup h2 .m{color:#4FA164}.matchup h2 .p{color:var(--orange)}.matchup h2 .vs{font-size:.45em;vertical-align:.4em;color:var(--cream);opacity:.85;margin:0 .2em}
+  .matchup .lead{max-width:58ch;margin:18px auto 0;color:var(--muted)}
+  .shields{display:grid;grid-template-columns:1fr auto 1fr;gap:clamp(16px,4vw,56px);align-items:center;margin:56px auto 0;max-width:980px}
+  .shield{transition:transform .25s}
+  .shield:hover{transform:rotate(-2deg) scale(1.03)}
+  .shield img{width:min(340px,100%);margin:0 auto;filter:drop-shadow(0 18px 30px rgba(0,0,0,.45))}
+  .shield h3{font-size:30px;margin-top:20px}
+  .shield p{color:var(--muted);font-size:15px;margin-top:6px}
+  .vs-badge{width:clamp(64px,9vw,110px)}
+  .kits{margin-top:70px;background:var(--cream);border-radius:10px;padding:clamp(14px,3vw,30px)}
+  .kits-cap{margin-top:14px;font-size:14px;color:var(--muted)}
+
+  /* photo strip */
+  .strip{display:grid;grid-template-columns:1.2fr .8fr 1fr;height:clamp(260px,38vw,480px)}
+  .strip div{background-size:cover;background-position:center}
+
+  /* signup */
+  .signup{padding:110px 0;background:var(--ink-2)}
+  .signup-grid{display:grid;grid-template-columns:.9fr 1.1fr;gap:64px;align-items:start}
+  .signup h2{font-size:clamp(46px,6vw,84px);margin:14px 0 22px}
+  .signup .intro{color:var(--muted)}
+  .signup ul{list-style:none;margin-top:28px}
+  .signup li{padding:14px 0;border-top:1px solid rgba(255,240,215,.14);display:flex;gap:16px;color:var(--muted)}
+  .signup li b{font-family:var(--display);font-weight:400;font-size:21px;text-transform:uppercase;min-width:112px;color:var(--cream)}
+  .signup .mono{width:90px;margin-top:36px;opacity:.95}
+
+  form{background:var(--cream);color:var(--ink);border-radius:10px;padding:clamp(22px,4vw,38px);box-shadow:0 24px 60px rgba(0,0,0,.4)}
+  fieldset{border:0;margin-bottom:20px}
+  legend,label{display:block;font-weight:800;font-size:12px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .field{margin-bottom:16px}
+  input[type=text],input[type=email],input[type=tel],select,textarea{width:100%;font:inherit;font-size:16px;padding:12px 14px;border:2px solid #E2CCA8;border-radius:6px;background:#fff;color:var(--ink);transition:border-color .15s}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--ink)}
+  textarea{min-height:96px;resize:vertical}
+  .pick{display:grid;gap:10px}
+  .pick input{position:absolute;opacity:0;pointer-events:none}
+  .pick label{margin:0;text-align:center;border:2px solid #E2CCA8;border-radius:6px;padding:12px 6px;cursor:pointer;background:#fff;font-family:var(--display);font-weight:400;font-size:19px;letter-spacing:.04em;transition:all .15s;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+  .pick label small{font-family:var(--body);font-size:11px;letter-spacing:.03em;text-transform:none;font-weight:600;color:#7a6a52}
+  .pick input:checked+label{border-color:var(--ink);background:var(--ink);color:var(--cream)}
+  .pick input:checked+label small{color:var(--muted)}
+  .pick input:focus-visible+label{outline:3px solid var(--red);outline-offset:2px}
+  .roles{grid-template-columns:repeat(3,1fr)}
+  .teams-pick{grid-template-columns:repeat(3,1fr)}
+  .teams-pick label img{height:58px;width:auto}
+  .teams-pick input#t-mudguts:checked+label{background:var(--maroon);border-color:var(--maroon)}
+  .teams-pick input#t-pissants:checked+label{background:var(--blue);border-color:var(--blue)}
+  .teams-pick .either{font-size:30px;line-height:58px;height:58px}
+  .only{display:none}
+  form[data-role=player] .only.player,form[data-role=partner] .only.partner{display:block}
+  .hp{position:absolute;left:-9999px}
+  form .btn{width:100%;font-size:23px;padding:16px}
+  .note{font-size:13px;color:#7a6a52;margin-top:12px;text-align:center}
+  .msg{display:none;margin-top:14px;padding:12px 14px;border-radius:6px;font-weight:600}
+  .msg.err{display:block;background:#fbe0dd;color:#8f1a20}
+  .done{display:none;text-align:center;padding:24px 6px}
+  .done img{width:150px;margin:0 auto 18px}
+  .done h3{font-size:52px}
+  .done p{margin:10px auto 0;max-width:40ch}
+  form.sent>*:not(.done){display:none}
+  form.sent .done{display:block}
+
+
+  /* take the field */
+  .field-cta{padding:110px 0;background:radial-gradient(120% 80% at 80% 50%,#1a2a1c,var(--ink) 70%)}
+  .fc-grid{display:grid;grid-template-columns:.95fr 1.05fr;gap:56px;align-items:center}
+  .field-cta h2{font-size:clamp(46px,6vw,84px);margin:14px 0 20px}
+  .field-cta .intro{color:var(--muted);max-width:50ch}
+  .how{list-style:none;margin-top:26px}
+  .how li{display:flex;gap:16px;padding:14px 0;border-top:1px solid rgba(255,240,215,.14);color:var(--muted)}
+  .how li b{font-family:var(--display);font-weight:400;font-size:22px;color:var(--red);min-width:34px}
+  .how strong{color:var(--cream)}
+  .tiers{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:22px}
+  .tiers div{border:1px solid rgba(255,240,215,.16);border-radius:8px;padding:14px}
+  .tiers b{display:block;font-family:var(--display);font-weight:400;font-size:34px;line-height:1;color:var(--cream)}
+  .tiers span{display:block;margin-top:6px;font-size:12px;color:var(--muted);line-height:1.45}
+  .fc-preview{position:relative;display:block;border-radius:12px;overflow:hidden;box-shadow:0 30px 70px rgba(0,0,0,.55);border:1px solid rgba(255,240,215,.12)}
+  .fc-preview img{width:100%;transition:transform .6s}
+  .fc-preview:hover img{transform:scale(1.03)}
+  .fc-play{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);font-family:var(--display);text-transform:uppercase;letter-spacing:.06em;font-size:20px;background:var(--red);padding:12px 22px;border-radius:4px;text-decoration:none;white-space:nowrap}
+  .roles.two{grid-template-columns:repeat(2,1fr)}
+  @media (max-width:860px){.fc-grid{grid-template-columns:1fr}.tiers{grid-template-columns:1fr}.fc-preview{order:-1}}
+
+  /* donate */
+  .donate .copy{background:var(--ink)}
+  footer{border-top:1px solid rgba(255,240,215,.1);padding:56px 0 40px;text-align:center}
+  footer .wm{width:min(520px,80%);margin:0 auto}
+  footer p{margin-top:18px;font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted)}
+
+  @media (max-width:860px){
+    nav .links a:not(.btn){display:none}
+    .split,.signup-grid{grid-template-columns:1fr}
+    .split .pic{min-height:320px}
+    .split.flip .pic{order:-1}
+    .shields{grid-template-columns:1fr 1fr;gap:20px}
+    .vs-badge{display:none}
+    .strip{grid-template-columns:1fr 1fr}.strip div:last-child{display:none}
+    .row{grid-template-columns:1fr}
+    .countdown div{min-width:66px;padding:8px 10px}
+  }
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.marquee .track{animation:none}.btn,.shield{transition:none}}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <a class="lockup" href="#top" aria-label="Yappers Cup home"><img src="assets/lockup-small.png" alt="Yappers Cup"></a>
+    <div class="links">
+      <a href="#about">About</a>
+      <a href="#teams">Teams</a>
+      <a href="#take-the-field">How it works</a>
+      <a href="#donate">Donate</a>
+      <a class="btn" href="#ground" data-ground>Pick your position</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero grain" id="top">
+  <div class="inner">
+    <h1><img src="assets/wordmark-cream.png" alt="Yappers Cup"></h1>
+    <div class="sub">Mudguts <span class="vs">vs</span> Pissants</div>
+    <div class="date">Sunday 29 November 2026</div>
+    <div class="countdown" id="countdown" aria-label="Countdown to match day">
+      <div><b id="cd-d">–</b><span>Days</span></div>
+      <div><b id="cd-h">–</b><span>Hrs</span></div>
+      <div><b id="cd-m">–</b><span>Mins</span></div>
+    </div>
+    <div class="ctas">
+      <a class="btn" href="#ground" data-ground>Pick your position</a>
+      <a class="btn ghost" href="#donate">Donate to Movember</a>
+    </div>
+    <div class="movember">Proudly supporting Movember</div>
+  </div>
+</header>
+
+<div class="marquee" aria-hidden="true">
+  <div class="track" id="marquee"></div>
+</div>
+
+<section class="split" id="about">
+  <div class="copy">
+    <div class="eyebrow">Good mates. Good footy. Bigger conversations.</div>
+    <h2>Kicking goals for men's health</h2>
+    <p>The Yappers Cup is a community footy match built around a simple idea: bring mates together, have a kick, and create space for conversations that matter.</p>
+    <p>Founded in 2025, the inaugural Yappers Cup brought together more than 30 players, along with friends, family and supporters, for an afternoon of footy, connection and plenty of friendly rivalry — all in support of men's mental health and Movember.</p>
+    <div class="stats">
+      <div><b>30+</b><span>Players in 2025</span></div>
+      <div><b>2</b><span>Teams</span></div>
+      <div><b>1</b><span>Important cause</span></div>
+    </div>
+  </div>
+  <div class="pic bw" style="background-image:url(assets/team.jpg)" role="img" aria-label="The 2025 Yappers Cup players lined up on the oval"></div>
+</section>
+
+<section class="matchup grain" id="teams">
+  <div class="wrap">
+    <div class="eyebrow">Two teams. One community. One important cause.</div>
+    <h2><span class="m">Mudguts</span><span class="vs">vs</span><span class="p">Pissants</span></h2>
+    <p class="lead">Pick your side. Every player pulls on a custom guernsey with their name on the back — tell us your team and size when you sign up.</p>
+    <div class="shields">
+      <div class="shield"><img src="assets/shield-mudguts.png" alt="Mudguts shield: a moustached player in green and maroon"><h3>Mudguts</h3><p>Green &amp; maroon. Big moustache energy.</p></div>
+      <img class="vs-badge" src="assets/monogram-red.png" alt="">
+      <div class="shield"><img src="assets/shield-pissants.png" alt="Pissants shield: a moustached ant in blue and orange"><h3>Pissants</h3><p>Blue &amp; orange. Small, fast, relentless.</p></div>
+    </div>
+    <div class="kits"><img src="assets/kits.jpg" alt="The 2026 kits: Mudguts green and maroon guernsey with maroon shorts, Pissants blue guernsey with orange stripe and blue shorts"></div>
+    <p class="kits-cap">2026 kits — your name goes on the back.</p>
+  </div>
+</section>
+
+<div class="strip grain" aria-hidden="true">
+  <div style="background-image:url(assets/hug.jpg)"></div>
+  <div style="background-image:url(assets/lights.jpg)"></div>
+  <div class="bw" style="background-image:url(assets/marking.jpg)"></div>
+</div>
+
+<section class="field-cta grain" id="take-the-field">
+  <div class="wrap fc-grid">
+    <div>
+      <div class="eyebrow">Sunday 29 November 2026 · Players</div>
+      <h2>Buy your spot on the ground</h2>
+      <p class="intro">Walk out onto the G, pick your side and claim your position. Every spot is a donation to Movember — the bigger the role, the bigger the chip-in.</p>
+      <ol class="how">
+        <li><b>01</b><span><strong>Choose your team.</strong> Mudguts or Pissants.</span></li>
+        <li><b>02</b><span><strong>Pick your position.</strong> Full forward, ruck, wing, back pocket — or the bench.</span></li>
+        <li><b>03</b><span><strong>Donate to lock it in.</strong> We hold your spot for 7 days while your donation comes through, then your name goes on the team sheet and your guernsey.</span></li>
+      </ol>
+      <div class="tiers">
+        <div><b>$100</b><span>Key positions<br>FF · CHF · Ruck · Centre · CHB · FB</span></div>
+        <div><b>$50</b><span>On-field<br>Flanks, pockets, wings, rovers</span></div>
+        <div><b>$25</b><span>Interchange<br>4 spots on each bench</span></div>
+      </div>
+      <p style="margin-top:28px"><a class="btn" href="#ground" data-ground>Enter the ground</a></p>
+    </div>
+    <a class="fc-preview" href="#ground" data-ground aria-label="Enter the ground and pick your position">
+      <img src="assets/ground-preview.jpg" alt="The Yappers Cup ground: an MCG-style stadium under lights with guernseys marking each position">
+      <span class="fc-play">Enter the ground</span>
+    </a>
+  </div>
+</section>
+
+<section class="signup" id="signup">
+  <div class="wrap signup-grid">
+    <div>
+      <div class="eyebrow">Not pulling on the boots?</div>
+      <h2>Supporters &amp; partners</h2>
+      <p class="intro">Coming down to cheer, or want your brand to be part of the day — kits, prizes, refreshments, content and activations? Leave your details and we'll be in touch.</p>
+      <img class="mono" src="assets/monogram-red.png" alt="">
+    </div>
+
+    <form id="signup-form" data-role="supporter" novalidate>
+      <fieldset>
+        <legend>I'm signing up as a</legend>
+        <div class="pick roles two">
+          <input type="radio" name="role" id="r-supporter" value="supporter" checked><label for="r-supporter">Supporter<small>On the boundary</small></label>
+          <input type="radio" name="role" id="r-partner" value="partner"><label for="r-partner">Partner<small>Brand / business</small></label>
+        </div>
+      </fieldset>
+      <div class="field"><label for="full_name">Full name</label><input type="text" id="full_name" name="full_name" autocomplete="name" required maxlength="120"></div>
+      <div class="row">
+        <div class="field"><label for="email">Email</label><input type="email" id="email" name="email" autocomplete="email" required maxlength="200"></div>
+        <div class="field"><label for="mobile">Mobile</label><input type="tel" id="mobile" name="mobile" autocomplete="tel" maxlength="40"></div>
+      </div>
+      <div class="only partner">
+        <div class="field"><label for="company">Brand / company</label><input type="text" id="company" name="company" autocomplete="organization" maxlength="160"></div>
+      </div>
+      <div class="field"><label for="message">Anything else? <span style="font-weight:600;text-transform:none;letter-spacing:0">(optional)</span></label><textarea id="message" name="message" maxlength="1000" placeholder="Who you're bringing, how your brand could get involved…"></textarea></div>
+      <div class="hp" aria-hidden="true"><label for="website">Leave this empty</label><input type="text" id="website" name="website" tabindex="-1" autocomplete="off"></div>
+      <button class="btn" type="submit" id="submit-btn">Count me in</button>
+      <div class="msg" id="form-msg" role="alert"></div>
+      <p class="note">We'll only use your details to contact you about the Yappers Cup.</p>
+      <div class="done" aria-live="polite">
+        <img id="done-img" src="assets/monogram-red.png" alt="">
+        <h3>You're in!</h3>
+        <p id="done-text">Thanks — we'll be in touch before Sunday 29 November.</p>
+        <p style="margin-top:22px"><a class="btn" href="#donate">Chip in for Movember</a></p>
+      </div>
+    </form>
+  </div>
+</section>
+
+<section class="split flip donate" id="donate">
+  <div class="pic bw" style="background-image:url(assets/ball.jpg)" role="img" aria-label="A footy with a Movember moustache on the grass"></div>
+  <div class="copy">
+    <div class="eyebrow">Footy worth talking about</div>
+    <h2>Help us raise funds for Movember</h2>
+    <p>Every dollar raised goes to Movember, funding men's mental health, suicide prevention and men's cancer programs. Can't make it on the day? You can still get behind the team.</p>
+    <p style="margin-top:10px"><a class="btn" id="donate-link" href="https://au.movember.com/" target="_blank" rel="noopener">Donate to Movember</a></p>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <img class="wm" src="assets/wordmark-red.png" alt="Yappers Cup">
+    <p>Good vibes · Big kicks · Bigger conversations</p>
+    <p style="margin-top:6px">Proudly supporting Movember</p>
+  </div>
+</footer>
+
+<script>
+  window.YC_CONFIG = {
+    supabaseUrl: "https://dsbfhvmcxafqeawwgcrf.supabase.co",
+    supabaseKey: "sb_publishable_dy0wvwCT1tU3OlyepK5I0w_jknlpVB2", // public; RLS + RPCs only allow claiming and reading the team sheet
+    donateUrl: "https://au.movember.com/" // TODO: swap for the Yappers Cup Movember team page
+  };
+</script>
+<script type="module">
+  let opening = false;
+  async function enter(team){
+    if (opening || document.querySelector('.yg')) return; opening = true;
+    try { const m = await import('./js/ground.js'); await m.openGround({ team, onClose(){ if (location.hash === '#ground') history.replaceState(null,'',location.pathname); } }); }
+    finally { opening = false; }
+  }
+  document.addEventListener('click', e => { const a = e.target.closest('[data-ground]'); if (!a) return; e.preventDefault(); history.replaceState(null,'','#ground'); enter(a.dataset.team); });
+  if (location.hash === '#ground') enter();
+</script>
+<script>
+  // ---- Config ----
+  const SUPABASE_URL = window.YC_CONFIG.supabaseUrl;
+  const SUPABASE_KEY = window.YC_CONFIG.supabaseKey; // insert-only on the signups table
+  const TABLE = "yappers_cup_signups";
+  const MATCH_DAY = new Date("2026-11-29T00:00:00+11:00");
+
+  document.getElementById("donate-link").href = window.YC_CONFIG.donateUrl;
+
+  // ---- Marquee ----
+  (function(){
+    const unit = '<span>Yappers Cup</span><img src="assets/badge-cream.png" alt=""><span>Mudguts vs Pissants</span><img src="assets/badge-cream.png" alt="">';
+    document.getElementById("marquee").innerHTML = unit.repeat(8);
+  })();
+
+  // ---- Countdown ----
+  function tick(){
+    const ms = MATCH_DAY - new Date();
+    const el = document.getElementById("countdown");
+    if (ms <= 0){ el.innerHTML = '<div><b>Match day</b><span>See you there</span></div>'; return; }
+    document.getElementById("cd-d").textContent = Math.floor(ms/864e5);
+    document.getElementById("cd-h").textContent = Math.floor(ms%864e5/36e5);
+    document.getElementById("cd-m").textContent = Math.floor(ms%36e5/6e4);
+  }
+  tick(); setInterval(tick, 30000);
+
+  // ---- Form ----
+  const form = document.getElementById("signup-form");
+  const msg = document.getElementById("form-msg");
+  const btn = document.getElementById("submit-btn");
+  form.addEventListener("change", e => { if (e.target.name === "role") form.dataset.role = e.target.value; });
+
+  form.addEventListener("submit", async e => {
+    e.preventDefault();
+    msg.className = "msg"; msg.textContent = "";
+    const f = new FormData(form);
+    if (f.get("website")) return; // bot
+    const role = f.get("role");
+    const name = (f.get("full_name")||"").trim();
+    const email = (f.get("email")||"").trim();
+    if (!name) return fail("Pop your name in so we know who's coming.");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return fail("That email doesn't look quite right.");
+    if (role === "player" && !f.get("jersey_size")) return fail("Pick a guernsey size so we can sort your kit.");
+
+    const team = role === "player" ? (f.get("team_pref") || "either") : null;
+    const row = {
+      full_name: name, email, role, team_pref: team,
+      mobile: (f.get("mobile")||"").trim() || null,
+      jersey_size: role === "player" ? f.get("jersey_size") : null,
+      company: role === "partner" ? ((f.get("company")||"").trim() || null) : null,
+      message: (f.get("message")||"").trim() || null
+    };
+
+    btn.disabled = true; btn.textContent = "Sending…";
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/${TABLE}`, {
+        method: "POST",
+        headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json", "Prefer": "return=minimal" },
+        body: JSON.stringify(row)
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const first = name.split(" ")[0];
+      const teamName = team === "mudguts" ? "the Mudguts" : team === "pissants" ? "the Pissants" : null;
+      if (teamName) document.getElementById("done-img").src = `assets/shield-${team}.png`;
+      document.getElementById("done-text").textContent =
+        role === "partner" ? `Cheers ${first} — we'll reach out shortly to chat about how ${row.company || "your brand"} can get involved.`
+      : role === "supporter" ? `Cheers ${first} — we'll send you the match-day details before Sunday 29 November.`
+      : teamName ? `Welcome to ${teamName}, ${first}. We'll be in touch with kick-off time, location and your guernsey.`
+      : `Welcome aboard, ${first}. We'll pick your side and be in touch with kick-off time, location and your guernsey.`;
+      form.classList.add("sent");
+      form.scrollIntoView({behavior:"smooth", block:"center"});
+    } catch (err) {
+      console.error(err);
+      fail("Something went wrong sending that. Give it another go in a sec.");
+    } finally {
+      btn.disabled = false; btn.textContent = "Count me in";
+    }
+  });
+  function fail(t){ msg.textContent = t; msg.className = "msg err"; }
+</script>
+</body>
+</html>
