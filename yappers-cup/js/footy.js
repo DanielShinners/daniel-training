@@ -27,6 +27,7 @@ export function startFooty() {
 
   // ---------- texture: u runs around the ball (4 panels), v runs tip to tip ----------
   const TW = 1024, TH = 512, tex = document.createElement('canvas'); tex.width = TW; tex.height = TH;
+  const MO = new Image(); MO.src = ((window.YC_CONFIG && window.YC_CONFIG.assetBase) || '') + 'assets/movember-white.png';
   function paint() {
     const c = tex.getContext('2d');
     const g = c.createLinearGradient(0, 0, 0, TH); g.addColorStop(0, '#c92a1c'); g.addColorStop(0.5, '#e23a24'); g.addColorStop(1, '#c92a1c');
@@ -64,7 +65,8 @@ export function startFooty() {
         c.font = '12px Archivo, Arial, sans-serif';
         c.fillText('OFFICIAL MATCH BALL', 0, -52); c.fillText('SUNDAY 29 NOVEMBER 2026', 0, -34);
         c.font = '28px Anton, Impact, sans-serif'; c.fillText('MUDGUTS v PISSANTS', 0, 4);
-        c.font = '12px Archivo, Arial, sans-serif'; c.fillText('PROUDLY SUPPORTING MOVEMBER', 0, 38);
+        c.font = '12px Archivo, Arial, sans-serif'; c.fillText('PROUDLY SUPPORTING', 0, 34);
+        if (MO.complete && MO.naturalWidth) { const h = 26, w = h * MO.naturalWidth / MO.naturalHeight; c.globalCompositeOperation = 'source-over'; c.filter = 'brightness(0) opacity(.92)'; c.drawImage(MO, -w / 2, 44, w, h); c.filter = 'none'; }
       });
     }
   }
@@ -113,6 +115,7 @@ export function startFooty() {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE); };
   upload();
   Promise.all([document.fonts.load('80px Anton'), document.fonts.load('20px Archivo')]).then(upload, () => {});
+  MO.onload = () => { upload(); if (!running) draw(); };
   gl.enable(gl.DEPTH_TEST); gl.enable(gl.CULL_FACE); gl.cullFace(gl.BACK); gl.frontFace(gl.CW);
   gl.viewport(0, 0, canvas.width, canvas.height);
 

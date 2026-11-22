@@ -75,6 +75,12 @@
   .hero .ctas{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:32px}
   .hero .ctas .btn{width:300px;max-width:100%;text-align:center}
   .hero .movember{margin-top:34px;font-size:12px;letter-spacing:.26em;text-transform:uppercase;font-weight:800}
+  .mo{display:inline-block;height:2.3em;width:auto;vertical-align:-.78em;margin:0 .06em}
+  .btn .mo{height:1.9em;vertical-align:-.66em}
+  .btn.ghost:hover .mo{filter:brightness(0)}
+  h2 .mo{height:2.1em;vertical-align:-.66em}
+  .hero .movember{display:flex;flex-direction:column;align-items:center;gap:12px}
+  .hero .movember .mo{height:56px;vertical-align:0;margin:0}
 
   /* marquee */
   .marquee{background:var(--red);overflow:hidden;white-space:nowrap;padding:14px 0;border-block:1px solid rgba(0,0,0,.2)}
@@ -331,9 +337,9 @@
     </div>
     <div class="ctas">
       <a class="btn" href="#ground" data-ground>Sign up to play</a>
-      <a class="btn ghost" href="#donate">Donate to Movember</a>
+      <a class="btn ghost" href="#donate">Donate to <img class="mo" src="assets/movember-white.png" alt="Movember"></a>
     </div>
-    <div class="movember">Proudly supporting Movember</div>
+    <div class="movember"><span>Proudly supporting</span><img class="mo" src="assets/movember-white.png" alt="Movember"></div>
   </div>
 </header>
 
@@ -346,14 +352,14 @@
     <div>
       <div class="eyebrow">Sunday 29 November 2026 · Players</div>
       <h2>Sign up and pick your position</h2>
-      <p class="intro">Pick your side and claim your position. Every spot is a $25 donation to Movember. Match day is Sunday 29 November at Gosch's Paddock, Richmond: bounce at 1pm, arrive by 12:30pm.</p>
+      <p class="intro">Pick your side and claim your position. Every spot is a $25 donation to <img class="mo" src="assets/movember-white.png" alt="Movember">. Match day is Sunday 29 November at Gosch's Paddock, Richmond: bounce at 1pm, arrive by 12:30pm.</p>
       <ol class="how">
         <li><b>01</b><span><strong>Choose your team.</strong> Mudguts or Pissants.</span></li>
         <li><b>02</b><span><strong>Pick your position.</strong> Full forward, ruck, wing, back pocket — or the bench.</span></li>
         <li><b>03</b><span><strong>Donate to lock it in.</strong> We reserve your spot for 24 hours while your donation comes through, then your name goes on the team sheet.</span></li>
       </ol>
       <div class="flat">
-        <b>$25</b><span>Every position, from full forward to the bench. Chip in more if you like — it all goes to Movember.</span>
+        <b>$25</b><span>Every position, from full forward to the bench. Chip in more if you like — it all goes to <img class="mo" src="assets/movember-white.png" alt="Movember">.</span>
       </div>
       <p style="margin-top:28px"><a class="btn" href="#ground" data-ground>Sign up to play</a></p>
     </div>
@@ -403,7 +409,7 @@
       <details><summary>What should I bring?</summary><div class="faq-a"><ul><li>Footy boots or runners</li><li>A black top</li><li>A mouthguard (optional)</li></ul><p>We'll likely head to the pub for a beer after the game.</p></div></details>
       <details><summary>What are the rules?</summary><div class="faq-a"><ul><li>Mudguts v Pissants, 22 players per side with rolling interchange.</li><li>Two 20-minute halves.</li><li>6 points for a goal, 1 for a behind.</li><li>Play it like a training practice match. It's not touch footy, but we're all mates and nobody wants an injury.</li><li>No hard sling tackles.</li><li>No dickheads.</li></ul></div></details>
       <details><summary>Who can play?</summary><div class="faq-a"><ul><li>18+ only.</li><li>All abilities welcome.</li><li>All players must sign up and pick a position on this site.</li><li>Every player plays at their own risk. See the <a href="terms.html">terms and conditions</a>.</li></ul></div></details>
-      <details><summary>How much does it cost?</summary><div class="faq-a"><p>Every position is a $25 donation to Movember. Pick your team and position on this site, then donate on the Yappers Cup Movember page with the same email. We reserve your spot for 24 hours while the donation comes through.</p></div></details>
+      <details><summary>How much does it cost?</summary><div class="faq-a"><p>Every position is a $25 donation to <img class="mo" src="assets/movember-white.png" alt="Movember">. Pick your team and position on this site, then donate on the Yappers Cup <img class="mo" src="assets/movember-white.png" alt="Movember"> page with the same email. We reserve your spot for 24 hours while the donation comes through.</p></div></details>
       <details><summary>Can people come and watch?</summary><div class="faq-a"><p>Yes, and please do. Supporters are free. Bring a chair or a rug and cheer from the boundary, and leave your details in the supporters form so we can keep you posted.</p></div></details>
       <details><summary>What if it rains?</summary><div class="faq-a"><p>We play through the rain.</p></div></details>
     </div>
@@ -444,7 +450,7 @@
         <img id="done-img" src="assets/monogram-red.png" alt="">
         <h3>You're in!</h3>
         <p id="done-text">Thanks — we'll be in touch before Sunday 29 November.</p>
-        <p style="margin-top:22px"><a class="btn" href="#donate">Chip in for Movember</a></p>
+        <p style="margin-top:22px"><a class="btn" href="#donate">Chip in for <img class="mo" src="assets/movember-white.png" alt="Movember"></a></p>
       </div>
     </form>
   </div>
@@ -454,9 +460,9 @@
   <div class="pic bw" style="background-image:url(assets/ball.jpg)" role="img" aria-label="A footy with a Movember moustache on the grass"></div>
   <div class="copy">
     <div class="eyebrow">Footy worth talking about</div>
-    <h2>Help us raise funds for Movember</h2>
-    <p>Every dollar raised goes to Movember, funding men's mental health, suicide prevention and men's cancer programs. Can't make it on the day? You can still get behind the team.</p>
-    <p style="margin-top:10px"><a class="btn" id="donate-link" href="https://au.movember.com/" target="_blank" rel="noopener">Donate to Movember</a></p>
+    <h2>Help us raise funds for <img class="mo" src="assets/movember-white.png" alt="Movember"></h2>
+    <p>Every dollar raised goes to <img class="mo" src="assets/movember-white.png" alt="Movember">, funding men's mental health, suicide prevention and men's cancer programs. Can't make it on the day? You can still get behind the team.</p>
+    <p style="margin-top:10px"><a class="btn" id="donate-link" href="https://au.movember.com/" target="_blank" rel="noopener">Donate to <img class="mo" src="assets/movember-white.png" alt="Movember"></a></p>
   </div>
 </section>
 
@@ -466,7 +472,7 @@
     <img class="wm" src="assets/wordmark-red.png" alt="Yappers Cup">
     <p class="ig"><a class="btn ghost" href="https://www.instagram.com/yappers_cup" target="_blank" rel="noopener">Follow @yappers_cup on Instagram</a></p>
     <p>Good vibes · Big kicks · Bigger conversations</p>
-    <p style="margin-top:6px">Proudly supporting Movember</p>
+    <p style="margin-top:6px">Proudly supporting <img class="mo" src="assets/movember-white.png" alt="Movember"></p>
     <p style="margin-top:14px"><a href="terms.html" style="color:inherit">Terms &amp; conditions</a></p>
   </div>
 </footer>

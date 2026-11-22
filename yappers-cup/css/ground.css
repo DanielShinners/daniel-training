@@ -103,3 +103,5 @@ html.yg-open, html.yg-open body { overflow: hidden; }
 }
 @keyframes ygUp { from { transform: translateY(40px); opacity: 0 } to { transform: none; opacity: 1 } }
 @media (prefers-reduced-motion: reduce) { .yg, .yg-sheet { animation: none; } }
+.yg .mo { display: inline-block; height: 2.2em; width: auto; vertical-align: -.74em; margin: 0 .06em; }
+.yg .yg-btn .mo { height: 1.8em; vertical-align: -.62em; }
