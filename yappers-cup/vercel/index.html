@@ -14,10 +14,16 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;600;800&display=swap" rel="stylesheet">
-<style>html,body{margin:0;background:#101611;color:#FFF0D7}html:not(.ready) body::before{content:"";position:fixed;inset:0;background:#101611}</style>
+<style>html,body{margin:0;background:#101611;color:#FFF0D7}
+#yc-loader{position:fixed;inset:0;z-index:99999;background:#101611;display:grid;place-items:center;transition:opacity .35s ease}
+#yc-loader.out{opacity:0;pointer-events:none}
+#yc-loader svg{width:84px;height:84px;animation:ycspin .9s linear infinite;filter:drop-shadow(0 8px 14px rgba(0,0,0,.5))}
+@keyframes ycspin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){#yc-loader svg{animation-duration:2.5s}}</style>
 <script type="module" src="/loader.js"></script>
 </head>
 <body>
+<div id="yc-loader" role="status" aria-label="Loading"><svg viewBox="0 0 100 100" aria-hidden="true"><g transform="rotate(-35 50 50)"><ellipse cx="50" cy="50" rx="44" ry="27" fill="#C8102E"/><ellipse cx="50" cy="50" rx="44" ry="27" fill="none" stroke="#7d0a1c" stroke-width="2"/><path d="M8 50 Q50 38 92 50" fill="none" stroke="#7d0a1c" stroke-width="1.6"/><path d="M8 50 Q50 62 92 50" fill="none" stroke="#7d0a1c" stroke-width="1.6"/><path d="M36 41 H64" stroke="#FFF0D7" stroke-width="2.4" stroke-linecap="round"/><g stroke="#FFF0D7" stroke-width="2.2" stroke-linecap="round"><path d="M40 37 V45"/><path d="M45 36.5 V45.5"/><path d="M50 36 V46"/><path d="M55 36.5 V45.5"/><path d="M60 37 V45"/></g></g></svg></div>
 <noscript><p style="font-family:sans-serif;padding:40px">Yappers Cup — Mudguts vs Pissants, Sunday 29 November 2026, Gosch's Paddock, Richmond. Bounce 1pm, arrive by 12:30pm. Please turn on JavaScript to sign up.</p></noscript>
 </body>
 </html>

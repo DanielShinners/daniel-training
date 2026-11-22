@@ -11,17 +11,29 @@ export async function boot(BASE) {
     .replace('window.YC_CONFIG = {', `window.YC_CONFIG = {\n    assetBase: "${BASE}",`)
     .replace(/href="index\.html"/g, 'href="/"');
   const doc = new DOMParser().parseFromString(html, 'text/html');
-  for (const el of doc.head.querySelectorAll('style, link[rel="stylesheet"]')) document.head.appendChild(el.cloneNode(true));
+  const sheets = [];
+  for (const el of doc.head.querySelectorAll('style, link[rel="stylesheet"]')) {
+    const n = el.cloneNode(true);
+    if (n.tagName === 'LINK') sheets.push(new Promise(r => { n.onload = n.onerror = r; }));
+    document.head.appendChild(n);
+  }
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  await Promise.race([Promise.all(sheets), wait(3000)]);
+  const loader = document.getElementById('yc-loader');
   if (doc.title) document.title = doc.title;
   const scripts = [...doc.body.querySelectorAll('script')];
   scripts.forEach(s => s.remove());
   document.body.innerHTML = doc.body.innerHTML;
+  if (loader) document.body.appendChild(loader);
   for (const s of scripts) {
     const n = document.createElement('script');
     if (s.type) n.type = s.type;
     n.textContent = s.textContent;
     document.body.appendChild(n);
   }
+  await Promise.race([document.fonts ? document.fonts.ready : Promise.resolve(), wait(1500)]);
+  await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
   document.documentElement.classList.add('ready');
+  if (loader) { loader.classList.add('out'); setTimeout(() => loader.remove(), 400); }
   if (location.hash && location.hash !== '#ground') document.querySelector(location.hash)?.scrollIntoView();
 }
