@@ -12,8 +12,8 @@ const PRICE = { key: 25, field: 25, bench: 25 };          // every position is $
 const TERMS_VERSION = '2026-11-22', TERMS_URL = 'terms.html';
 
 const TEAMS = {
-  mudguts: { name: 'Mudguts', s: 1, body: '#8A2412', yoke: '#0E5A2C', trim: '#0E5A2C', ui: '#8A2412', shield: ASSET('assets/shield-mudguts.png'), line: 'Green & maroon. Big moustache energy.' },
-  pissants: { name: 'Pissants', s: -1, body: '#1C3B83', yoke: '#E2600F', trim: '#E2600F', ui: '#1C3B83', shield: ASSET('assets/shield-pissants.png'), line: 'Blue & orange. Small, fast, relentless.' },
+  mudguts: { name: 'Mudguts', s: 1, body: '#8A2412', yoke: '#0E5A2C', trim: '#0E5A2C', ui: '#8A2412', shield: ASSET('assets/shield-mudguts.png'), line: 'Big moustache energy.' },
+  pissants: { name: 'Pissants', s: -1, body: '#1C3B83', yoke: '#E2600F', trim: '#E2600F', ui: '#1C3B83', shield: ASSET('assets/shield-pissants.png'), line: 'Small, fast, relentless.' },
 };
 // positions for a team kicking towards +x (Mudguts). Pissants are the same shape turned 180°. x along the ground, z across it, metres.
 const LINES = [
@@ -233,7 +233,23 @@ export async function openGround({ team, onClose } = {}) {
     line([[-5, 0, 0], [5, 0, 0]], false);
     for (const sx of [1, -1]) {
       const arc = circ(sx * A, 0, 50, 48, 0, Math.PI * 2).filter(p => (p[0] / A) ** 2 + (p[2] / B) ** 2 < 0.995 && Math.sign(p[0]) === sx);
-      arc.sort((p, q) => Math.atan2(p[2], -sx * (p[0] - sx * A)) - Math.atan2(q[2], -sx * (q[0] - sx * A))); line(arc, false);
+      arc.sort((p, q) => Math.atan2(p[2], -sx * (p[0] - sx * A)) - Math.atan2(q[2], -sx * (q[0] - sx * A)));
+      // painted 50m arc like the real thing: blue at the Mudguts' forward end, red at the other, edged in white
+      const col = sx > 0 ? '#2f63d6' : '#d6312c';
+      c.strokeStyle = 'rgba(255,255,255,.9)'; line(arc, false, 1.3);
+      c.strokeStyle = col; line(arc, false, 0.85);
+      for (const t of [-0.62, 0.62]) {                       // "50" markers on the arc, painted on the grass
+        const P0 = [sx * A - sx * 50 * Math.cos(t), 0, 50 * Math.sin(t)], T = [sx * Math.sin(t), 0, Math.cos(t)], Nn = [-sx * Math.cos(t), 0, Math.sin(t)];
+        const s0 = proj(P0), s1 = proj([P0[0] + T[0], 0, P0[2] + T[2]]), s2 = proj([P0[0] + Nn[0], 0, P0[2] + Nn[2]]);
+        if (!s0 || !s1 || !s2) continue;
+        c.save(); c.transform(s1[0] - s0[0], s1[1] - s0[1], s2[0] - s0[0], s2[1] - s0[1], s0[0], s0[1]);
+        c.rotate(sx > 0 ? Math.PI / 2 : -Math.PI / 2);
+        c.fillStyle = '#fff'; c.beginPath(); c.roundRect(-3.3, -2.2, 6.6, 4.4, 0.8); c.fill();
+        c.fillStyle = col; c.beginPath(); c.roundRect(-2.95, -1.85, 5.9, 3.7, 0.6); c.fill();
+        c.fillStyle = '#fff'; c.font = '3.6px Anton, Impact, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('50', 0, 0.15);
+        c.restore();
+      }
+      c.strokeStyle = 'rgba(255,255,255,.82)';
       line([[sx * A, 0, -3.2], [sx * (A - 9), 0, -3.2], [sx * (A - 9), 0, 3.2], [sx * A, 0, 3.2]], false);
     }
 
@@ -430,6 +446,7 @@ export async function openGround({ team, onClose } = {}) {
       stats = { raised: b.raised || 0, pledged: b.pledged || 0 };
     } catch (e) { console.warn('yc board', e); }
     drawBoard(); dirty = true; setStats(); if (mode === 'list') listView();
+    if (mode === 'team') for (const el of root.querySelectorAll('.yg-tm[data-team]')) { const id = el.dataset.team, f = el.querySelector('.f'); if (f) f.textContent = `${POSITIONS.filter(p => p.team === id && p.state === 'free').length} spots left`; }
     if (mode === 'field' && curTeam) $('.yg-k').textContent = `${TEAMS[curTeam].name} · ${POSITIONS.filter(p => p.team === curTeam && p.state === 'free').length} spots left`;
   }
   function setStats() {
@@ -450,7 +467,7 @@ export async function openGround({ team, onClose } = {}) {
     setHead('Yappers Cup · Sunday 29 November', 'Choose your team', `Then pick your spot on the ground. Every position is a donation to Movember.`);
     const pick = $('.yg-pick'); pick.hidden = false;
     const free = id => POSITIONS.filter(p => p.team === id && p.state === 'free').length;
-    pick.innerHTML = Object.entries(TEAMS).map(([id, T]) => `<button type="button" class="yg-tm" data-team="${id}" style="--tc:${T.ui}"><img src="${T.shield}" alt=""><span class="n">${T.name}</span><span class="l">${T.line}</span><span class="f">${free(id)} of 22 spots left</span></button>`).join('<span class="yg-vs">vs</span>');
+    pick.innerHTML = Object.entries(TEAMS).map(([id, T]) => `<button type="button" class="yg-tm" data-team="${id}" style="--tc:${T.ui}"><img src="${T.shield}" alt=""><span class="n">${T.name}</span><span class="l">${T.line}</span><span class="f">${free(id)} spots left</span></button>`).join('<span class="yg-vs">vs</span>');
     fly({ tx: 0, tz: 0, d: fitD() * 1.15, pitch: 0.95, yaw: cam.yaw }, 1600);
   }
   function chooseTeam(id) {

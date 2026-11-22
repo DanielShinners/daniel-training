@@ -115,14 +115,21 @@ export function startKick(root) {
     const T = { x: gx * 0.6 + sp.x * 0.4, y: 2.1, z: gz };       // level camera: posts stay truly vertical, so a high ball lines up with them
     f = norm({ x: T.x - C.x, y: T.y - C.y, z: T.z - C.z });
     r = norm(cross(f, { x: 0, y: 1, z: 0 })); u = cross(r, f);
+    // frame the shot: ball fully on screen with room to pull back, and the tops of the goal posts in view.
+    // Start zoomed in; if both don't fit, zoom out a step and try again.
+    const vb = { x: S.spot.x - C.x, y: BALL - C.y, z: S.spot.z - C.z }, czb = vb.x * f.x + vb.y * f.y + vb.z * f.z;
+    const postTop = x => { const v = { x: x - C.x, y: 16 - C.y, z: -C.z }, cz = v.x * f.x + v.y * f.y + v.z * f.z; return cz > 0.2 ? (v.x * u.x + v.y * u.y + v.z * u.z) / cz : 0; };
+    const rise = Math.max(postTop(-POST), postTop(POST)), top = Math.max(84, H * 0.11), pad = Math.max(40, H * 0.08);
     F = Math.min(W, H * 1.6) * 0.95;
-    // keep the ball fully on screen with room to pull back: lift the horizon on wide screens if needed
-    HZ = H * 0.56;
-    const v = { x: S.spot.x - C.x, y: BALL - C.y, z: S.spot.z - C.z }, cz = v.x * f.x + v.y * f.y + v.z * f.z;
-    if (cz > 0.2) {
-      const drop = -(v.x * u.x + v.y * u.y + v.z * u.z) * F / cz, s = clamp(BALL * 2.6 * F / cz, 4, 70);
-      const maxY = H - s - Math.max(40, H * 0.08);
-      if (HZ + drop > maxY) HZ = Math.max(H * 0.3, maxY - drop);
+    for (let i = 0; i < 30; i++) {
+      HZ = H * 0.56;
+      const drop = czb > 0.2 ? -(vb.x * u.x + vb.y * u.y + vb.z * u.z) * F / czb : 0, s = clamp(BALL * 2.6 * F / Math.max(czb, 0.2), 4, 70);
+      const maxY = H - s - pad;
+      if (HZ + drop > maxY) HZ = maxY - drop;
+      if (HZ - rise * F >= top) break;
+      HZ = Math.max(HZ, top + rise * F);                    // posts first; if the ball no longer fits, zoom out
+      if (HZ + drop <= maxY) break;
+      F *= 0.93;
     }
   }
   function norm(v) { const l = Math.hypot(v.x, v.y, v.z) || 1; return { x: v.x / l, y: v.y / l, z: v.z / l }; }
@@ -139,6 +146,52 @@ export function startKick(root) {
   // crowd dots on the stand behind the goals
   const crowd = Array.from({ length: 900 }, () => ({ x: rand(-70, 70), y: rand(2.5, 16), c: ['#FFF0D7', '#CD2A2D', '#0E5A2C', '#1C3B83', '#E2600F', '#cbb894', '#3a463c'][Math.floor(Math.random() * 7)] }));
 
+  // ---------- boundary fence ticker: Yappers Cup · Movember · Kicking goals for men's health · Mudguts vs Pissants ----------
+  const FZ = 20, FH = 2.6, PPM = 46;                        // fence sits at the boundary behind the goals; 100px of texture per metre
+  const img = src => { const i = new Image(); i.src = ASSET(src); i.onload = buildTicker; return i; };
+  const TI = { mo: img('assets/movember-white.png'), mud: img(TEAMS.mudguts.shield), pis: img(TEAMS.pissants.shield) };
+  const TICK = document.createElement('canvas'); let TW = 1;
+  function buildTicker() {
+    const h = 120, pad = 70, c0 = document.createElement('canvas').getContext('2d');
+    const ok = i => i.complete && i.naturalWidth;
+    const iw = (i, ht) => ok(i) ? ht * i.naturalWidth / i.naturalHeight : 0;
+    c0.font = '78px Anton, Impact, sans-serif'; const w1 = c0.measureText('YAPPERS CUP').width;
+    c0.font = '58px Anton, Impact, sans-serif'; const w3 = c0.measureText("KICKING GOALS FOR MEN'S HEALTH").width, wvs = c0.measureText('VS').width;
+    const segs = [
+      { w: w1 + pad * 2, bg: '#CD2A2D', draw: (c, x) => { c.font = '78px Anton, Impact, sans-serif'; c.fillStyle = '#FFF0D7'; c.fillText('YAPPERS CUP', x + pad, h / 2 + 4); } },
+      { w: (iw(TI.mo, 84) || 300) + pad * 2, bg: '#000000', draw: (c, x) => { if (ok(TI.mo)) c.drawImage(TI.mo, x + pad, 18, iw(TI.mo, 84), 84); else { c.font = '58px Anton'; c.fillStyle = '#fff'; c.fillText('MOVEMBER', x + pad, h / 2 + 4); } } },
+      { w: w3 + pad * 2, bg: '#101611', draw: (c, x) => { c.font = '58px Anton, Impact, sans-serif'; c.fillStyle = '#FFF0D7'; c.fillText("KICKING GOALS FOR MEN'S HEALTH", x + pad, h / 2 + 4); } },
+      { w: iw(TI.mud, 104) + iw(TI.pis, 104) + wvs + 60 + pad * 2, bg: '#FFF0D7', draw: (c, x) => {
+        let xx = x + pad; if (ok(TI.mud)) { c.drawImage(TI.mud, xx, 8, iw(TI.mud, 104), 104); xx += iw(TI.mud, 104) + 30; }
+        c.font = '58px Anton, Impact, sans-serif'; c.fillStyle = '#101611'; c.fillText('VS', xx, h / 2 + 4); xx += wvs + 30;
+        if (ok(TI.pis)) c.drawImage(TI.pis, xx, 8, iw(TI.pis, 104), 104); } },
+    ];
+    TW = Math.ceil(segs.reduce((a, s) => a + s.w, 0));
+    TICK.width = TW * 2; TICK.height = h;                    // drawn twice so any slice can be read without wrapping
+    const c = TICK.getContext('2d'); c.textBaseline = 'middle';
+    for (const off of [0, TW]) { let x = off; for (const s of segs) { c.fillStyle = s.bg; c.fillRect(x, 0, s.w + 1, h); s.draw(c, x); x += s.w; } }
+    c.fillStyle = 'rgba(0,0,0,.35)'; c.fillRect(0, 0, TW * 2, 4); c.fillRect(0, h - 4, TW * 2, 4);
+  }
+  buildTicker(); if (document.fonts) document.fonts.ready.then(buildTicker);
+  let tickOff = 0, tickRaf = 0, tickLast = 0;
+  function tickLoop(now) {
+    tickOff = (tickOff + Math.min(0.05, (now - (tickLast || now)) / 1000) * 3.5 * PPM) % TW; tickLast = now;
+    if (!S.busy) draw();                                     // while the ball's in the air, fly() is already drawing every frame
+    tickRaf = requestAnimationFrame(tickLoop);
+  }
+  tickRaf = requestAnimationFrame(tickLoop);
+  function drawFence() {
+    if (TW < 2) return;
+    const STEP = 2;
+    for (let x = -90; x < 90; x += STEP) {
+      const a = P(x, FH, FZ), b = P(x, 0, FZ), a2 = P(x + STEP, FH, FZ), b2 = P(x + STEP, 0, FZ);
+      if (!a || !b || !a2 || !b2) continue;
+      const x0 = Math.min(a[0], b[0], a2[0], b2[0]), x1 = Math.max(a[0], b[0], a2[0], b2[0]); if (x1 < 0 || x0 > W) continue;
+      const u = (((90 - x - STEP) * PPM + tickOff) % TW + TW) % TW;   // the camera faces the goals, so world +x runs right-to-left on screen
+      ctx.drawImage(TICK, u, 0, STEP * PPM, TICK.height, x0, (a[1] + a2[1]) / 2, x1 - x0 + 0.6, (b[1] + b2[1]) / 2 - (a[1] + a2[1]) / 2);
+    }
+  }
+
   function draw() {
     if (!W) return;
     camera();
@@ -154,11 +207,12 @@ export function startKick(root) {
     { const hz = P(S.spot.x, 0, 600) || P(0, 0, 600); const hy = hz ? hz[1] : H * 0.5; ctx.fillStyle = '#2e6b33'; ctx.fillRect(0, hy, W, H - hy); }
     for (let z = -70, k = 0; z < 22; z += 5, k++) for (let x = -90; x < 90; x += 15) poly([[x, 0, z], [x + 15, 0, z], [x + 15, 0, z + 5], [x, 0, z + 5]], k % 2 ? '#2a6430' : '#327236');
     const wash = ctx.createRadialGradient(W / 2, H * 0.6, 0, W / 2, H * 0.6, W * 0.7); wash.addColorStop(0, 'rgba(255,250,225,.08)'); wash.addColorStop(1, 'rgba(0,0,0,.25)'); ctx.fillStyle = wash; ctx.fillRect(0, H * 0.4, W, H);
+    drawFence();
     // markings: goal line, goal square, 50m arc hint
     line([-40, 0.01, 0], [40, 0.01, 0], 0.12, 'rgba(255,255,255,.85)');
     line([-POST, 0.01, 0], [-POST, 0.01, -9], 0.1, 'rgba(255,255,255,.85)'); line([POST, 0.01, 0], [POST, 0.01, -9], 0.1, 'rgba(255,255,255,.85)'); line([-POST, 0.01, -9], [POST, 0.01, -9], 0.1, 'rgba(255,255,255,.85)');
     // posts (behind posts first, they're further out)
-    for (const [x, h, pad] of [[-BEHIND, 9, false], [BEHIND, 9, false], [-POST, 16, true], [POST, 16, true]]) {
+    for (const [x, h, pad] of [[-BEHIND, 9, true], [BEHIND, 9, true], [-POST, 16, true], [POST, 16, true]]) {
       line([x, 0, 0], [x, h, 0], 0.22, '#f4ead6'); if (pad) line([x, 0, 0], [x, 1.8, 0], 0.32, '#CD2A2D');
     }
     if (!S.team) return;
@@ -262,6 +316,7 @@ export function startKick(root) {
       </form>` : ''}
       <div class="kk-row"><button type="button" class="kk-btn ghost kk-again">Play again</button><button type="button" class="kk-btn ghost kk-showlb">Leaderboard</button></div>`;
     $('.kk-over').hidden = false; $('.kk-hint').hidden = true; hud();
+    if (p > 0) loadBoard().then(bd => { const top = bd && bd.top && bd.top[0] ? bd.top[0].score : 0; if (p > top) celebrate(p); }).catch(() => {});
     const f = card.querySelector('form');
     if (f) f.onsubmit = async e => {
       e.preventDefault(); const err = f.querySelector('.kk-err'), btn = f.querySelector('[type=submit]'); err.textContent = '';
@@ -275,6 +330,7 @@ export function startKick(root) {
         if (!r.ok) { err.textContent = r.error || 'That didn\'t save. Try again.'; btn.disabled = false; btn.textContent = 'Put me on the leaderboard'; return; }
         f.outerHTML = `<p class="kk-place">You're <strong>${ordinal(r.place)}</strong> of ${r.total} on the leaderboard.</p><div class="kk-lbwrap">Loading…</div>`;
         showBoard(card.querySelector('.kk-lbwrap'), r.id);
+        if (r.place === 1) celebrate(p);
       } catch (x) { err.textContent = 'That didn\'t save. Check your connection and try again.'; btn.disabled = false; btn.textContent = 'Put me on the leaderboard'; }
     };
   }
@@ -288,7 +344,65 @@ export function startKick(root) {
       <div class="kk-row"><button type="button" class="kk-btn kk-lbplay">${S.team ? 'Play again' : 'Pick a team'}</button></div>`;
     $('.kk-over').hidden = false; showBoard(card.querySelector('.kk-lbwrap'));
   }
-  function resetRound() { clearInterval(tick); S.goals = S.behinds = S.shots = 0; S.endAt = 0; S.over = false; $('.kk-over').hidden = true; updClock(); setup(); }
+  function resetRound() { partied = false; root.querySelectorAll('.kk-party').forEach(e => e.remove()); clearInterval(tick); S.goals = S.behinds = S.shots = 0; S.endAt = 0; S.over = false; $('.kk-over').hidden = true; updClock(); setup(); }
+
+  // ---------- top score celebration: confetti + the Yappers Cup trophy ----------
+  let partied = false;
+  function trophySVG() {
+    return `<svg class="kk-trophy" viewBox="0 0 240 300" aria-hidden="true">
+      <defs>
+        <linearGradient id="kkg" x1="0" x2="1"><stop offset="0" stop-color="#a8781c"/><stop offset=".35" stop-color="#ffe08a"/><stop offset=".55" stop-color="#f4c542"/><stop offset="1" stop-color="#9a6a12"/></linearGradient>
+        <linearGradient id="kkb" x1="0" x2="1"><stop offset="0" stop-color="#1a1f1b"/><stop offset=".5" stop-color="#2d352f"/><stop offset="1" stop-color="#121613"/></linearGradient>
+      </defs>
+      <path d="M58 40 C20 40 14 70 22 92 C30 116 58 124 74 122" fill="none" stroke="url(#kkg)" stroke-width="13" stroke-linecap="round"/>
+      <path d="M182 40 C220 40 226 70 218 92 C210 116 182 124 166 122" fill="none" stroke="url(#kkg)" stroke-width="13" stroke-linecap="round"/>
+      <path d="M50 26 H190 C190 98 172 146 120 160 C68 146 50 98 50 26 Z" fill="url(#kkg)"/>
+      <ellipse cx="120" cy="26" rx="70" ry="10" fill="#ffe9a8"/><ellipse cx="120" cy="27" rx="60" ry="6" fill="#b8861f"/>
+      <path d="M78 36 C80 90 92 128 112 146" stroke="rgba(255,255,255,.55)" stroke-width="6" fill="none" stroke-linecap="round"/>
+      <circle cx="120" cy="86" r="30" fill="#101611" stroke="#ffe08a" stroke-width="4"/>
+      <text x="120" y="97" text-anchor="middle" font-family="Anton, Impact, sans-serif" font-size="30" fill="#FFF0D7">YC</text>
+      <rect x="108" y="158" width="24" height="34" fill="url(#kkg)"/>
+      <path d="M84 192 H156 L164 212 H76 Z" fill="url(#kkg)"/>
+      <rect x="52" y="212" width="136" height="70" rx="6" fill="url(#kkb)" stroke="#ffe08a" stroke-width="3"/>
+      <text x="120" y="244" text-anchor="middle" font-family="Anton, Impact, sans-serif" font-size="26" fill="#ffe08a" letter-spacing="2">YAPPERS CUP</text>
+      <text x="120" y="268" text-anchor="middle" font-family="Anton, Impact, sans-serif" font-size="15" fill="#FFF0D7" letter-spacing="3">GOAL-KICKING CHAMP</text>
+    </svg>`;
+  }
+  function celebrate(points) {
+    if (partied) return; partied = true;
+    const el = document.createElement('div'); el.className = 'kk-party';
+    el.innerHTML = `<canvas class="kk-confetti"></canvas>
+      <div class="kk-party-in">
+        <div class="kk-rays"></div>
+        ${trophySVG()}
+        <p class="kk-party-k">New top score</p>
+        <h3 class="kk-party-t">${points} pts!</h3>
+        <p class="kk-party-s">You're top of the Yappers Cup leaderboard. Put your name on it.</p>
+        <button type="button" class="kk-btn kk-party-go">Claim the cup</button>
+      </div>`;
+    root.appendChild(el);
+    const cv = el.querySelector('canvas'), cx = cv.getContext('2d'), dpr = Math.min(devicePixelRatio || 1, 2);
+    const fit = () => { cv.width = root.clientWidth * dpr; cv.height = root.clientHeight * dpr; }; fit();
+    const COLS = ['#FFF0D7', '#CD2A2D', '#0E5A2C', '#1C3B83', '#E2600F', '#f4c542', '#ffe08a'];
+    const bits = [], add = (n, x, y, dir) => { for (let i = 0; i < n; i++) { const a = -Math.PI / 2 + dir * (0.25 + Math.random() * 0.55), sp = 9 + Math.random() * 13;
+      bits.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, r: Math.random() * Math.PI, vr: (Math.random() - 0.5) * 0.4, w: 6 + Math.random() * 7, h: 9 + Math.random() * 9, c: COLS[i % COLS.length], s: Math.random() < 0.25 }); } };
+    const Wd = () => cv.width / dpr, Hd = () => cv.height / dpr;
+    add(140, 0, Hd(), 1); add(140, Wd(), Hd(), -1);
+    let waves = 0; const more = setInterval(() => { add(70, Math.random() * Wd(), -20, 0); add(40, 0, Hd() * 0.7, 1); add(40, Wd(), Hd() * 0.7, -1); if (++waves > 4) clearInterval(more); }, 700);
+    let pr = 0, t0 = performance.now();
+    const loop = now => {
+      cx.setTransform(dpr, 0, 0, dpr, 0, 0); cx.clearRect(0, 0, Wd(), Hd());
+      for (const b of bits) { b.vy += 0.32; b.vx *= 0.99; b.vy = Math.min(b.vy, 6 + (b.s ? 0 : 2)); b.x += b.vx + Math.sin((now + b.w * 99) / 300) * 0.6; b.y += b.vy; b.r += b.vr;
+        if (b.y > Hd() + 30) continue; cx.save(); cx.translate(b.x, b.y); cx.rotate(b.r); cx.fillStyle = b.c;
+        if (b.s) { cx.beginPath(); cx.arc(0, 0, b.w / 2, 0, Math.PI * 2); cx.fill(); } else cx.fillRect(-b.w / 2, -b.h / 2 * Math.abs(Math.cos(b.r * 2)), b.w, b.h * Math.abs(Math.cos(b.r * 2)) + 1); cx.restore(); }
+      for (let i = bits.length - 1; i >= 0; i--) if (bits[i].y > Hd() + 30) bits.splice(i, 1);
+      if (bits.length || now - t0 < 4500) pr = requestAnimationFrame(loop);
+    };
+    pr = requestAnimationFrame(loop);
+    if (navigator.vibrate) try { navigator.vibrate([60, 40, 60, 40, 160]); } catch (e) {}
+    const done = () => { cancelAnimationFrame(pr); clearInterval(more); el.classList.add('out'); setTimeout(() => el.remove(), 350); const n = root.querySelector('.kk-form input[name=name]'); if (n) n.focus(); };
+    el.querySelector('.kk-party-go').onclick = done;
+  }
 
   // ---------- input ----------
   canvas.addEventListener('pointerdown', e => {
@@ -310,7 +424,8 @@ export function startKick(root) {
     S.busy = true; S.ball.v = { ...a.v }; S.ball.t0 = performance.now(); last = performance.now(); $('.kk-hint').hidden = true;
     raf = requestAnimationFrame(fly);
   };
-  canvas.addEventListener('pointerup', release); canvas.addEventListener('pointercancel', () => { S.aim = null; draw(); });
+  canvas.addEventListener('pointerup', release); canvas.addEventListener('lostpointercapture', release); addEventListener('pointerup', release);
+  canvas.addEventListener('pointercancel', () => { S.aim = null; draw(); });
 
   root.addEventListener('click', e => {
     const t = e.target.closest('[data-team]');
@@ -322,5 +437,5 @@ export function startKick(root) {
   });
   const ro = new ResizeObserver(resize); ro.observe(root); resize();
   setup();
-  return { stop() { cancelAnimationFrame(raf); clearInterval(tick); ro.disconnect(); } };
+  return { stop() { cancelAnimationFrame(raf); cancelAnimationFrame(tickRaf); clearInterval(tick); ro.disconnect(); removeEventListener('pointerup', release); } };
 }

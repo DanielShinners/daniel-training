@@ -239,6 +239,23 @@
   .kk-teams button:hover,.kk-teams button:focus-visible{transform:translateY(-6px) rotate(-2deg);outline:none}
   .kk-teams img{width:clamp(110px,22vw,190px);filter:drop-shadow(0 14px 24px rgba(0,0,0,.5))}
   .kk-lbbtn{margin-top:26px;font-family:var(--display);text-transform:uppercase;letter-spacing:.06em;font-size:16px;color:var(--cream);background:transparent;border:1px solid rgba(255,240,215,.3);border-radius:999px;padding:9px 18px;cursor:pointer}
+  /* top-score celebration */
+  .kk-party{position:absolute;inset:0;z-index:9;display:grid;place-items:center;background:radial-gradient(circle at 50% 40%,rgba(120,26,28,.97),rgba(8,11,9,.98) 70%);animation:kkfade .3s ease both;overflow:hidden}
+  .kk-party.out{opacity:0;transition:opacity .3s}
+  .kk-confetti{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2}
+  .kk-party-in{position:relative;z-index:1;text-align:center;padding:24px;display:flex;flex-direction:column;align-items:center}
+  .kk-rays{position:absolute;left:50%;top:150px;width:900px;height:900px;margin:-450px 0 0 -450px;background:repeating-conic-gradient(rgba(255,224,138,.16) 0 10deg,transparent 10deg 20deg);border-radius:50%;-webkit-mask:radial-gradient(circle,#000 20%,transparent 65%);mask:radial-gradient(circle,#000 20%,transparent 65%);animation:kkspin 14s linear infinite;z-index:-1}
+  .kk-trophy{width:min(52vw,240px);height:auto;filter:drop-shadow(0 18px 30px rgba(0,0,0,.6)) drop-shadow(0 0 26px rgba(255,214,102,.45));animation:kkdrop 1.1s cubic-bezier(.2,1.5,.4,1) .15s both, kkfloat 2.6s ease-in-out 1.3s infinite}
+  .kk-party-k{font-family:var(--display);text-transform:uppercase;letter-spacing:.14em;color:var(--red);font-size:18px;margin-top:18px;animation:kkpop .5s ease .9s both}
+  .kk-party-t{font-family:var(--display);font-weight:400;font-size:clamp(64px,16vw,120px);line-height:.95;color:#ffe08a;text-shadow:0 4px 0 #9a6a12,0 0 30px rgba(255,214,102,.5);animation:kkpop .6s cubic-bezier(.2,1.6,.4,1) 1.05s both}
+  .kk-party-s{color:var(--cream);max-width:30ch;margin:10px auto 18px;animation:kkpop .5s ease 1.3s both}
+  .kk-party-go{animation:kkpop .5s ease 1.5s both}
+  @keyframes kkfade{from{opacity:0}}
+  @keyframes kkspin{to{transform:rotate(360deg)}}
+  @keyframes kkdrop{0%{transform:translateY(-120vh) rotate(-25deg) scale(.6)}70%{transform:translateY(0) rotate(4deg) scale(1.08)}100%{transform:none}}
+  @keyframes kkfloat{50%{transform:translateY(-8px) rotate(-1.5deg)}}
+  @keyframes kkpop{from{opacity:0;transform:scale(.6)}}
+  @media (prefers-reduced-motion:reduce){.kk-rays,.kk-trophy{animation:none}}
   .kk-over{position:absolute;inset:0;z-index:4;display:grid;place-items:center;background:rgba(10,14,11,.9);padding:16px;overflow:auto}
   .kk-over[hidden]{display:none}
   .kk-card{width:min(440px,100%);text-align:center;padding:56px 0 12px}
