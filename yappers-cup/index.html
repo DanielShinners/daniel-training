@@ -173,7 +173,7 @@
   .fc-preview{position:relative;display:block;border-radius:12px;overflow:hidden;box-shadow:0 30px 70px rgba(0,0,0,.55);border:1px solid rgba(255,240,215,.12)}
   .fc-preview img{width:100%;transition:transform .6s}
   .fc-preview:hover img{transform:scale(1.03)}
-  .fc-play{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);font-family:var(--display);text-transform:uppercase;letter-spacing:.06em;font-size:20px;background:var(--red);padding:12px 22px;border-radius:4px;text-decoration:none;white-space:nowrap}
+  .fc-play{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);font-family:var(--display);text-transform:uppercase;letter-spacing:.05em;font-size:19px;background:var(--red);padding:13px 24px;border-radius:4px;text-decoration:none;white-space:nowrap}
   .roles.two{grid-template-columns:repeat(2,1fr)}
   .flat{display:flex;align-items:center;gap:18px;margin-top:22px;border:1px solid rgba(255,240,215,.16);border-radius:8px;padding:16px 18px}
   .flat b{font-family:var(--display);font-weight:400;font-size:52px;line-height:1;color:var(--red)}
@@ -245,9 +245,11 @@
   .kk-check input{width:20px;height:20px;flex:0 0 20px;accent-color:var(--red)}
   .kk-check a{color:var(--red);font-weight:700}
   .kk-err{color:#a41b20;font-weight:600;font-size:14px}.kk-err:empty{display:none}
-  .kk-btn{font-family:var(--display);text-transform:uppercase;letter-spacing:.05em;font-size:18px;background:var(--red);color:var(--cream);border:0;border-radius:6px;padding:13px 18px;cursor:pointer}
+  .kk-btn{font-family:var(--display);text-transform:uppercase;letter-spacing:.05em;font-size:19px;background:var(--red);color:var(--cream);border:0;border-radius:4px;padding:13px 24px;cursor:pointer;transition:transform .15s,background .15s}
+  .kk-btn:hover{transform:translateY(-2px);background:#b52326}
   .kk-btn:disabled{opacity:.6}
-  .kk-btn.ghost{background:transparent;color:var(--cream);box-shadow:inset 0 0 0 2px rgba(255,240,215,.6)}
+  .kk-btn.ghost{background:transparent;color:var(--cream);box-shadow:inset 0 0 0 2px var(--cream)}
+  .kk-btn.ghost:hover{background:var(--cream);color:var(--ink)}
   .kk-row{display:flex;gap:10px;justify-content:center;margin-top:12px}.kk-row .kk-btn{flex:1}
   .kk-place{font-size:17px;margin:4px 0 12px}
   .kk-lbwrap{text-align:left;max-height:46vh;overflow:auto;border-radius:10px}
@@ -359,11 +361,11 @@
     <p class="kick-intro">Pick your team, then drag back from the ball to line up your kick and let go. Six points for a goal, one for a behind. You've got 60 seconds from your first kick, then put your name on the leaderboard. Kick a couple from straight in front and the angles get tougher. Kick three and the wind comes in.</p>
   </div>
   <div class="wrap kick-launch">
-    <button type="button" class="kick-play" data-kick><img src="assets/kick-preview.jpg" alt="Goal-kicking practice: lining up a shot at goal under lights"><span class="kick-badge">Mini game</span><span class="btn">▶ Play the game</span></button>
+    <button type="button" class="kick-play" data-kick><img src="assets/kick-preview.jpg" alt="Goal-kicking practice: lining up a shot at goal under lights"><span class="kick-badge">Mini game</span><span class="btn">Play the game</span></button>
     <div class="kick-lb">
       <h3>Leaderboard</h3>
       <div id="kick-board"><p class="kk-empty">Loading…</p></div>
-      <button type="button" class="btn ghost" data-kick>▶ Play the game</button>
+      <button type="button" class="btn ghost" data-kick>Play the game</button>
     </div>
   </div>
 </section>
