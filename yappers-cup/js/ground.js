@@ -470,7 +470,7 @@ export async function openGround({ team, onClose } = {}) {
     showSheet(`<p class="yg-sk">${TEAMS[p.team].name} · ${esc(p.label)}</p><h3>Lock in your spot</h3>
       <form class="yg-form" novalidate>
         <label>Name<input name="full" autocomplete="name" maxlength="120" required></label>
-        <div class="yg-row"><label>Email<input name="email" type="email" autocomplete="email" required placeholder="Same as on Movember"></label><label>Mobile<input name="mobile" type="tel" autocomplete="tel" maxlength="40"></label></div>
+        <div class="yg-row"><label>Email<input name="email" type="email" autocomplete="email" required></label><label>Mobile<input name="mobile" type="tel" autocomplete="tel" maxlength="40"></label></div>
         <label>Your donation<span class="yg-amts" role="radiogroup">${opts.map((v, i) => `<button type="button" role="radio" aria-checked="${i === 0}" data-v="${v}" class="${i === 0 ? 'on' : ''}">${money(v)}</button>`).join('')}<span class="yg-other">Other $<input name="amount" type="number" inputmode="numeric" min="${min}" step="1" value="${min}"></span></span></label>
         <label class="yg-terms"><input type="checkbox" name="terms" required><span>I've read and accept the <a href="${TERMS_URL}" target="_blank" rel="noopener">terms &amp; conditions</a>, including that I take part at my own risk.</span></label>
         <p class="yg-err" role="alert"></p>
