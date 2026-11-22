@@ -65,7 +65,8 @@ export function startKick(root) {
     $('.kk-level').textContent = S.level;
     const w = $('.kk-wind'), wm = Math.hypot(S.wind.x, S.wind.z);
     w.hidden = wm < 0.1;
-    if (wm >= 0.1) { w.querySelector('span').textContent = `Wind ${Math.round(wm * 9)} km/h`; w.querySelector('i').style.transform = `rotate(${Math.atan2(-S.wind.z, S.wind.x)}rad)`; }
+    if (wm >= 0.1) { w.querySelector('span').textContent = `Wind ${Math.round(wm * 9)} km/h`; camera(); const g0 = P(0, 0, 0), g1 = P(S.wind.x * 4, 0, S.wind.z * 4);   // point the arrow the way the wind pushes the ball on screen
+      if (g0 && g1) w.querySelector('i').style.transform = `rotate(${Math.atan2(g1[1] - g0[1], g1[0] - g0[0])}rad)`; }
     $('.kk-shots').textContent = `${S.shots} kick${S.shots === 1 ? '' : 's'}`;
     $('.kk-best').textContent = `Best ${best()} pts`;
   }
