@@ -81,6 +81,9 @@
   h2 .mo{height:2.1em;vertical-align:-.66em}
   .hero .movember{display:flex;flex-direction:column;align-items:center;gap:12px}
   .crest-link{display:inline-flex;transition:transform .18s ease}.crest-link:hover{transform:translateY(-4px) scale(1.04)}.crest-link img{display:block}
+  .ig-icon{display:inline-flex;align-items:center;opacity:.85}.ig-icon:hover{opacity:1}
+  .ig-btn{display:inline-grid;place-items:center;width:54px;height:54px;border-radius:50%;box-shadow:inset 0 0 0 2px var(--cream);color:var(--cream);transition:background .15s,color .15s,transform .15s}
+  .ig-btn:hover{background:var(--cream);color:var(--ink);transform:translateY(-2px)}
   .foot-mo{margin:14px 0 22px;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center}
   .foot-mo .mo{height:48px;vertical-align:0;margin:0}
   .hero .movember .mo{height:38px;vertical-align:0;margin:0}
@@ -337,7 +340,7 @@
       <a href="#take-the-field">How it works</a>
       <a href="#faq">FAQs</a>
       <a href="https://au.movember.com/events/view/id/kNxN" target="_blank" rel="noopener">Donate</a>
-      <a href="https://www.instagram.com/yappers_cup" target="_blank" rel="noopener">Instagram</a>
+      <a class="ig-icon" href="https://www.instagram.com/yappers_cup" target="_blank" rel="noopener" aria-label="Yappers Cup on Instagram"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r="1.1" fill="currentColor" stroke="none"/></svg></a>
       <a class="btn" href="#ground" data-ground>Sign up to play</a>
     </div>
   </div>
@@ -490,7 +493,7 @@
 <footer>
   <div class="wrap">
     <img class="wm" src="assets/wordmark-red.png" alt="Yappers Cup">
-    <p class="ig"><a class="btn ghost" href="https://www.instagram.com/yappers_cup" target="_blank" rel="noopener">Follow @yappers_cup on Instagram</a></p>
+    <p class="ig"><a class="ig-btn" href="https://www.instagram.com/yappers_cup" target="_blank" rel="noopener" aria-label="Follow @yappers_cup on Instagram"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r="1.1" fill="currentColor" stroke="none"/></svg></a></p>
     <p>Kicking goals for men's health</p>
     <p class="foot-mo">Proudly supporting<img class="mo" src="assets/movember-white.png" alt="Movember"></p>
     <p style="margin-top:14px"><a href="terms.html" style="color:inherit">Terms &amp; conditions</a></p>
