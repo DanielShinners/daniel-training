@@ -7,12 +7,13 @@
 const CFG = window.YC_CONFIG || {};
 const SUPA = CFG.supabaseUrl, KEY = CFG.supabaseKey;
 const DONATE_URL = CFG.donateUrl || 'https://au.movember.com/';
+const ASSET = p => (CFG.assetBase || '') + p;           // lets the page load artwork from a CDN
 const PRICE = { key: 25, field: 25, bench: 25 };          // every position is $25 minimum (matches yc_claim in Supabase)
 const TERMS_VERSION = '2026-11-22', TERMS_URL = 'terms.html';
 
 const TEAMS = {
-  mudguts: { name: 'Mudguts', s: 1, body: '#8A2412', yoke: '#0E5A2C', trim: '#0E5A2C', ui: '#8A2412', shield: 'assets/shield-mudguts.png', line: 'Green & maroon. Big moustache energy.' },
-  pissants: { name: 'Pissants', s: -1, body: '#1C3B83', yoke: '#E2600F', trim: '#E2600F', ui: '#1C3B83', shield: 'assets/shield-pissants.png', line: 'Blue & orange. Small, fast, relentless.' },
+  mudguts: { name: 'Mudguts', s: 1, body: '#8A2412', yoke: '#0E5A2C', trim: '#0E5A2C', ui: '#8A2412', shield: ASSET('assets/shield-mudguts.png'), line: 'Green & maroon. Big moustache energy.' },
+  pissants: { name: 'Pissants', s: -1, body: '#1C3B83', yoke: '#E2600F', trim: '#E2600F', ui: '#1C3B83', shield: ASSET('assets/shield-pissants.png'), line: 'Blue & orange. Small, fast, relentless.' },
 };
 // positions for a team kicking towards +x (Mudguts). Pissants are the same shape turned 180°. x along the ground, z across it, metres.
 const LINES = [
@@ -82,7 +83,7 @@ const TOWER_TH = [0.55, Math.PI / 2, Math.PI - 0.55, Math.PI + 0.55, Math.PI * 1
 export async function openGround({ team, onClose } = {}) {
   try { await Promise.all([document.fonts.load('40px Anton'), document.fonts.load('600 14px Archivo')]); } catch (e) {}
   const img = src => new Promise(res => { const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = src; });
-  const [badge] = await Promise.all([img('assets/badge-cream.png')]);
+  const [badge] = await Promise.all([img(ASSET('assets/badge-cream.png'))]);
 
   // ---------- page layer ----------
   const root = document.createElement('div'); root.className = 'yg'; root.setAttribute('role', 'dialog'); root.setAttribute('aria-label', 'The ground: pick your position');
