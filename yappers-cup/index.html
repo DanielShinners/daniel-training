@@ -180,6 +180,36 @@
   .terms-tick a{color:var(--red);font-weight:700}
   @media (max-width:860px){.fc-grid{grid-template-columns:1fr}.tiers{grid-template-columns:1fr}.fc-preview{order:-1}}
 
+  /* goal-kicking game */
+  .kick-sec{padding:100px 0 0;background:var(--ink)}
+  .kick-sec h2{font-size:clamp(42px,6vw,80px);margin:12px 0 16px}
+  .kick-intro{color:var(--muted);max-width:60ch;margin-bottom:34px}
+  .kick-game{position:relative;height:min(78vh,680px);min-height:460px;background:#0b0f0c;overflow:hidden;user-select:none;-webkit-user-select:none}
+  .kk-stage{position:absolute;inset:0;display:block;touch-action:none;cursor:crosshair}
+  .kk-hud{position:absolute;left:16px;right:16px;top:14px;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;pointer-events:none}
+  .kk-hud[hidden],.kk-hint[hidden],.kk-meta[hidden],.kk-pick[hidden],.kk-wind[hidden]{display:none}
+  .kk-score{display:flex;align-items:center;gap:10px;background:rgba(16,22,17,.78);border:1px solid rgba(255,240,215,.14);border-radius:10px;padding:8px 14px 8px 8px}
+  .kk-score img{width:42px;height:auto}
+  .kk-score b{display:block;font-family:var(--display);font-weight:400;text-transform:uppercase;font-size:15px;letter-spacing:.06em;color:var(--muted)}
+  .kk-tally{font-family:var(--display);font-size:30px;line-height:1}
+  .kk-side{text-align:right;display:grid;gap:6px;justify-items:end}
+  .kk-level,.kk-wind{background:rgba(16,22,17,.78);border:1px solid rgba(255,240,215,.14);border-radius:999px;padding:6px 12px;font-family:var(--display);text-transform:uppercase;letter-spacing:.05em;font-size:14px}
+  .kk-wind{display:flex;align-items:center;gap:8px;color:#ffd27a}
+  .kk-wind i{font-style:normal;display:inline-block;transition:transform .3s}
+  .kk-msg{position:absolute;left:50%;top:38%;transform:translate(-50%,-50%) scale(.8);opacity:0;pointer-events:none;font-family:var(--display);text-transform:uppercase;font-size:clamp(34px,7vw,72px);text-shadow:0 6px 30px rgba(0,0,0,.7);transition:opacity .2s,transform .25s;white-space:nowrap}
+  .kk-msg.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+  .kk-msg.goal{color:#FFF0D7}.kk-msg.behind{color:#ffd27a}.kk-msg.miss{color:#ff8f86}
+  .kk-hint{position:absolute;left:50%;bottom:52px;transform:translateX(-50%);font-size:13px;color:var(--muted);background:rgba(16,22,17,.7);padding:6px 12px;border-radius:999px;white-space:nowrap;pointer-events:none}
+  .kk-meta{position:absolute;left:16px;right:16px;bottom:12px;display:flex;gap:14px;align-items:center;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+  .kk-reset{margin-left:auto;font:inherit;color:var(--cream);background:rgba(16,22,17,.78);border:1px solid rgba(255,240,215,.2);border-radius:999px;padding:6px 12px;cursor:pointer}
+  .kk-pick{position:absolute;inset:0;display:grid;place-content:center;justify-items:center;text-align:center;background:radial-gradient(70% 60% at 50% 50%,rgba(16,22,17,.55),rgba(16,22,17,.9));padding:20px}
+  .kk-pk{font-family:var(--display);text-transform:uppercase;letter-spacing:.1em;font-size:14px;color:var(--red)}
+  .kk-pick h3{font-size:clamp(36px,6vw,60px);margin:6px 0 22px}
+  .kk-teams{display:flex;gap:clamp(14px,4vw,40px)}
+  .kk-teams button{background:none;border:0;color:var(--cream);cursor:pointer;display:grid;justify-items:center;gap:10px;font-family:var(--display);text-transform:uppercase;font-size:22px;letter-spacing:.04em;transition:transform .2s}
+  .kk-teams button:hover,.kk-teams button:focus-visible{transform:translateY(-6px) rotate(-2deg);outline:none}
+  .kk-teams img{width:clamp(110px,22vw,190px);filter:drop-shadow(0 14px 24px rgba(0,0,0,.5))}
+  html.kick-visible .footy{display:none}
   /* donate */
   .donate .copy{background:var(--ink)}
   footer{border-top:1px solid rgba(255,240,215,.1);padding:56px 0 40px;text-align:center}
@@ -335,6 +365,15 @@
   </div>
 </section>
 
+<section class="kick-sec" id="kick">
+  <div class="wrap">
+    <div class="eyebrow">Warm up before the bounce</div>
+    <h2>Goal-kicking practice</h2>
+    <p class="kick-intro">Pick your team, then drag back from the ball to line up your kick and let go. Six points for a goal, one for a behind. Kick a couple from straight in front and the angles get tougher. Kick three and the wind comes in.</p>
+  </div>
+  <div class="kick-game" id="kick-game"></div>
+</section>
+
 <footer>
   <div class="wrap">
     <img class="wm" src="assets/wordmark-red.png" alt="Yappers Cup">
@@ -361,6 +400,15 @@
   document.addEventListener('click', e => { const a = e.target.closest('[data-ground]'); if (!a) return; e.preventDefault(); history.replaceState(null,'','#ground'); enter(a.dataset.team); });
   if (location.hash === '#ground') enter();
   import('./js/footy.js').then(m => m.startFooty()).catch(() => {});
+  {
+    const box = document.getElementById('kick-game');
+    let started = false;
+    new IntersectionObserver(es => {
+      const on = es.some(x => x.isIntersecting);
+      document.documentElement.classList.toggle('kick-visible', on);
+      if (on && !started) { started = true; import('./js/kick.js').then(m => m.startKick(box)); }
+    }, { rootMargin: '200px 0px' }).observe(box);
+  }
 </script>
 <script>
   // ---- Config ----
