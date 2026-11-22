@@ -237,7 +237,7 @@ export async function openGround({ team, onClose } = {}) {
     line([[-25, 0, -25], [25, 0, -25], [25, 0, 25], [-25, 0, 25]], true);
     const circ = (cx, cz, r, n = 40, a0 = 0, a1 = Math.PI * 2) => Array.from({ length: n + 1 }, (_, i) => { const t = a0 + (a1 - a0) * i / n; return [cx + r * Math.cos(t), 0, cz + r * Math.sin(t)]; });
     line(circ(0, 0, 5), false); line(circ(0, 0, 1.5, 20), false);
-    line([[-5, 0, 0], [5, 0, 0]], false);
+    line([[0, 0, -5], [0, 0, 5]], false);                 // centre-circle line runs across the ground, square to the goals
     for (const sx of [1, -1]) {
       const arc = circ(sx * A, 0, 50, 48, 0, Math.PI * 2).filter(p => (p[0] / A) ** 2 + (p[2] / B) ** 2 < 0.995 && Math.sign(p[0]) === sx);
       arc.sort((p, q) => Math.atan2(p[2], -sx * (p[0] - sx * A)) - Math.atan2(q[2], -sx * (q[0] - sx * A)));
