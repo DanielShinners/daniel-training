@@ -8,6 +8,9 @@ Lives in this repo as a static folder; it shares the daniel-training Supabase pr
 - `css/ground.css` — styles for The Ground
 - `assets/` — artwork from the brand treatment and partnership deck
 
+## Live site
+https://yappers-cup.vercel.app (Vercel project `yappers-cup`). The Vercel copy holds `index.html` and `terms.html`; artwork, `js/` and `css/` load from jsDelivr pinned to a commit of this folder. After changing those files, push, then redeploy with the new commit hash in the URLs.
+
 ## Config
 `window.YC_CONFIG` near the bottom of `index.html`: Supabase URL + publishable key, and `donateUrl` (swap in the Yappers Cup Movember team page).
 
