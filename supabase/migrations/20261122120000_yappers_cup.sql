@@ -82,3 +82,46 @@ revoke all on function public.yc_claim(text,text,text,text,text,text,integer) fr
 revoke all on function public.yc_board() from public;
 grant execute on function public.yc_claim(text,text,text,text,text,text,integer) to anon;
 grant execute on function public.yc_board() to anon;
+
+-- 2026-11-22 (later): every position $25, no guernsey size, terms acceptance recorded
+alter table public.yc_positions add column if not exists terms_accepted_at timestamptz;
+alter table public.yc_positions add column if not exists terms_version text;
+alter table public.yappers_cup_signups add column if not exists terms_accepted_at timestamptz;
+alter table public.yappers_cup_signups add column if not exists terms_version text;
+
+drop function if exists public.yc_claim(text,text,text,text,text,text,integer);
+
+create or replace function public.yc_claim(p_position text, p_name text, p_full_name text, p_email text, p_mobile text, p_amount integer, p_terms boolean, p_terms_version text)
+returns json language plpgsql security definer set search_path = public as $$
+declare
+  tm text; code text; t text; mn int := 25;
+  nm text := upper(left(trim(coalesce(p_name,'')), 16));
+  fn text := left(trim(coalesce(p_full_name,'')), 120);
+  em text := lower(trim(coalesce(p_email,'')));
+  existing text;
+begin
+  if p_position !~ '^(mudguts|pissants)-(FB|BPL|BPR|CHB|HBFL|HBFR|C|WL|WR|CHF|HFFL|HFFR|FF|FPL|FPR|RK|RR|R|I1|I2|I3|I4)$' then
+    return json_build_object('ok', false, 'error', 'That position doesn''t exist.'); end if;
+  tm := split_part(p_position, '-', 1); code := split_part(p_position, '-', 2);
+  t := case when code in ('FF','CHF','RK','C','CHB','FB') then 'key' when code like 'I_' then 'bench' else 'field' end;
+  if fn = '' then return json_build_object('ok', false, 'error', 'Add your full name.'); end if;
+  if nm = '' then return json_build_object('ok', false, 'error', 'Add the name for the back of your guernsey.'); end if;
+  if em !~ '^[^@\s]+@[^@\s]+\.[^@\s]+$' then return json_build_object('ok', false, 'error', 'Add a valid email so we can match your donation.'); end if;
+  if p_amount is null or p_amount < mn then return json_build_object('ok', false, 'error', 'Every position starts at $' || mn || '.'); end if;
+  if p_amount > 100000 then return json_build_object('ok', false, 'error', 'Check the amount.'); end if;
+  if p_terms is not true then return json_build_object('ok', false, 'error', 'Tick the box to accept the terms and conditions.'); end if;
+  delete from yc_positions where status = 'pending' and created_at <= now() - interval '7 days';
+  select position_id into existing from yc_positions where email = em limit 1;
+  if existing is not null then
+    return json_build_object('ok', false, 'error', 'That email already has a spot on the team sheet. One position per player.'); end if;
+  begin
+    insert into yc_positions (position_id, team, pos, tier, display_name, full_name, email, mobile, amount, terms_accepted_at, terms_version)
+    values (p_position, tm, code, t, nm, fn, em, nullif(left(trim(coalesce(p_mobile,'')),40),''), p_amount, now(), left(coalesce(p_terms_version,''), 20));
+  exception when unique_violation then
+    return json_build_object('ok', false, 'error', 'Someone just grabbed that position. Pick another one.');
+  end;
+  return json_build_object('ok', true, 'position', p_position, 'tier', t, 'amount', p_amount, 'name', nm);
+end $$;
+
+revoke all on function public.yc_claim(text,text,text,text,text,integer,boolean,text) from public;
+grant execute on function public.yc_claim(text,text,text,text,text,integer,boolean,text) to anon;

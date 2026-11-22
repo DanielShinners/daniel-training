@@ -70,6 +70,9 @@ html.yg-open, html.yg-open body { overflow: hidden; }
 .yg-sizes button.on, .yg-amts button.on { background: var(--ink); border-color: var(--ink); color: var(--cream); }
 .yg-other { display: inline-flex; align-items: center; gap: 4px; font-family: var(--display); font-size: 16px; letter-spacing: .02em; }
 .yg-other input { width: 90px; padding: 8px 10px; }
+.yg-form label.yg-terms { display: flex; align-items: flex-start; gap: 10px; text-transform: none; letter-spacing: 0; font-weight: 400; font-size: 13px; line-height: 1.45; cursor: pointer; }
+.yg-form .yg-terms input { width: 20px; height: 20px; flex: 0 0 20px; margin-top: 1px; padding: 0; accent-color: var(--red); }
+.yg-terms a { color: var(--red); font-weight: 700; }
 .yg-err { color: #a41b20; font-weight: 600; font-size: 14px; min-height: 0; }
 .yg-err:empty { display: none; }
 .yg-line { margin-top: 12px; }

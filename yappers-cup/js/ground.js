@@ -7,8 +7,8 @@
 const CFG = window.YC_CONFIG || {};
 const SUPA = CFG.supabaseUrl, KEY = CFG.supabaseKey;
 const DONATE_URL = CFG.donateUrl || 'https://au.movember.com/';
-const PRICE = { key: 100, field: 50, bench: 25 };
-const TIER_LABEL = { key: 'Key position', field: 'On-field position', bench: 'Interchange' };
+const PRICE = { key: 25, field: 25, bench: 25 };          // every position is $25 minimum (matches yc_claim in Supabase)
+const TERMS_VERSION = '2026-11-22', TERMS_URL = 'terms.html';
 
 const TEAMS = {
   mudguts: { name: 'Mudguts', s: 1, body: '#8A2412', yoke: '#0E5A2C', trim: '#0E5A2C', ui: '#8A2412', shield: 'assets/shield-mudguts.png', line: 'Green & maroon. Big moustache energy.' },
@@ -346,7 +346,7 @@ export async function openGround({ team, onClose } = {}) {
       const top = s[1] - hh - lift;
       if (p.state === 'taken') pill(c, cx, top - 9, p.who, '#FFF0D7', '#101611', clamp(hh * 0.2, 10, 15));
       else if (p.state === 'held') pill(c, cx, top - 9, 'HELD', 'rgba(16,22,17,.85)', 'rgba(255,240,215,.8)', clamp(hh * 0.18, 9, 13));
-      else if (sel || hov || h > 44) pill(c, cx, top - 9, money(PRICE[p.tier]), p.tier === 'key' ? '#CD2A2D' : 'rgba(16,22,17,.85)', '#FFF0D7', clamp(hh * 0.18, 9, 13));
+      else if (sel || hov || h > 44) pill(c, cx, top - 9, money(PRICE[p.tier]), 'rgba(16,22,17,.85)', '#FFF0D7', clamp(hh * 0.18, 9, 13));
       hits.push({ p, x0: cx - hh * 0.4, x1: cx + hh * 0.4, y0: top - 16, y1: s[1] + 4 });
     }
   }
@@ -403,7 +403,7 @@ export async function openGround({ team, onClose } = {}) {
   function showTip(p, x, y) {
     if (!p || matchMedia('(pointer: coarse)').matches) { tip.hidden = true; return; }
     tip.hidden = false; tip.style.left = x + 'px'; tip.style.top = y + 'px';
-    tip.innerHTML = `<b>${esc(p.label)}</b><span>${p.state === 'taken' ? esc(p.who) : p.state === 'held' ? 'Held' : 'From ' + money(PRICE[p.tier])}</span>`;
+    tip.innerHTML = `<b>${esc(p.label)}</b><span>${p.state === 'taken' ? esc(p.who) : p.state === 'held' ? 'Held' : money(PRICE[p.tier])}</span>`;
   }
 
   // ---------- data ----------
@@ -458,9 +458,9 @@ export async function openGround({ team, onClose } = {}) {
         <div class="yg-btns"><button type="button" class="yg-btn ghost" data-a="field">Back to the ground</button></div>`);
       return;
     }
-    showSheet(`<p class="yg-sk">${TEAMS[p.team].name} · ${esc(line)} · ${TIER_LABEL[p.tier]}</p><h3>${esc(p.label)}</h3>
+    showSheet(`<p class="yg-sk">${TEAMS[p.team].name} · ${esc(line)}</p><h3>${esc(p.label)}</h3>
       <p class="yg-blurb">${esc(blurbFor(p.code))}</p>
-      <div class="yg-price"><b>${money(s)}</b><span>minimum donation to Movember</span></div>
+      <div class="yg-price"><b>${money(s)}</b><span>minimum donation to Movember · same for every position</span></div>
       <ol class="yg-steps"><li><b>Hold this spot</b> with your details. We keep it for 7 days.</li><li><b>Donate</b> on the Yappers Cup Movember page using the same email.</li><li>Once it lands, <b>your name goes on the team sheet</b> and the back of your guernsey.</li></ol>
       <div class="yg-btns"><button type="button" class="yg-btn" data-a="claim">Claim ${esc(p.label.toLowerCase())}</button><button type="button" class="yg-btn ghost" data-a="field">Back</button></div>`);
   }
@@ -471,24 +471,23 @@ export async function openGround({ team, onClose } = {}) {
         <label>Full name<input name="full" autocomplete="name" maxlength="120" required></label>
         <label>Name on your guernsey<input name="name" maxlength="16" required placeholder="e.g. BIG KEV" style="text-transform:uppercase"></label>
         <div class="yg-row"><label>Email<input name="email" type="email" autocomplete="email" required placeholder="Same as on Movember"></label><label>Mobile<input name="mobile" type="tel" autocomplete="tel" maxlength="40"></label></div>
-        <label>Guernsey size<span class="yg-sizes" role="radiogroup">${['S', 'M', 'L', 'XL', 'XXL'].map(z => `<button type="button" role="radio" aria-checked="false" data-z="${z}">${z}</button>`).join('')}</span></label>
         <label>Your donation<span class="yg-amts" role="radiogroup">${opts.map((v, i) => `<button type="button" role="radio" aria-checked="${i === 0}" data-v="${v}" class="${i === 0 ? 'on' : ''}">${money(v)}</button>`).join('')}<span class="yg-other">Other $<input name="amount" type="number" inputmode="numeric" min="${min}" step="1" value="${min}"></span></span></label>
+        <label class="yg-terms"><input type="checkbox" name="terms" required><span>I've read and accept the <a href="${TERMS_URL}" target="_blank" rel="noopener">terms &amp; conditions</a>, including that I take part at my own risk.</span></label>
         <p class="yg-err" role="alert"></p>
         <div class="yg-btns"><button type="submit" class="yg-btn">Hold my spot</button><button type="button" class="yg-btn ghost" data-a="back">Back</button></div>
       </form>`);
-    const f = sheet.querySelector('form'), amt = f.elements.amount; let size = '';
+    const f = sheet.querySelector('form'), amt = f.elements.amount;
     f.querySelectorAll('.yg-amts button').forEach(b => b.onclick = () => { f.querySelectorAll('.yg-amts button').forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-checked', String(x === b)); }); amt.value = b.dataset.v; });
     amt.oninput = () => f.querySelectorAll('.yg-amts button').forEach(x => { const on = x.dataset.v === amt.value; x.classList.toggle('on', on); x.setAttribute('aria-checked', String(on)); });
-    f.querySelectorAll('.yg-sizes button').forEach(b => b.onclick = () => { size = b.dataset.z; f.querySelectorAll('.yg-sizes button').forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-checked', String(x === b)); }); });
     f.elements.full.focus({ preventScroll: true });
     f.onsubmit = async e => {
       e.preventDefault(); const err = f.querySelector('.yg-err'), btn = f.querySelector('[type=submit]'); err.textContent = '';
-      const body = { p_position: p.id, p_name: f.elements.name.value, p_full_name: f.elements.full.value, p_email: f.elements.email.value, p_mobile: f.elements.mobile.value, p_size: size || null, p_amount: Math.round(+amt.value || 0) };
+      const body = { p_position: p.id, p_name: f.elements.name.value, p_full_name: f.elements.full.value, p_email: f.elements.email.value, p_mobile: f.elements.mobile.value, p_amount: Math.round(+amt.value || 0), p_terms: f.elements.terms.checked, p_terms_version: TERMS_VERSION };
       if (!body.p_full_name.trim()) return void (err.textContent = 'Add your full name.');
       if (!body.p_name.trim()) return void (err.textContent = 'Add the name for the back of your guernsey.');
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.p_email.trim())) return void (err.textContent = 'Add a valid email so we can match your donation.');
-      if (!size) return void (err.textContent = 'Pick a guernsey size.');
-      if (body.p_amount < min) return void (err.textContent = `This position starts at ${money(min)}.`);
+      if (body.p_amount < min) return void (err.textContent = `Every position starts at ${money(min)}.`);
+      if (!body.p_terms) return void (err.textContent = 'Tick the box to accept the terms and conditions.');
       btn.disabled = true; btn.textContent = 'Holding…';
       try {
         const r = await rpc('yc_claim', body);

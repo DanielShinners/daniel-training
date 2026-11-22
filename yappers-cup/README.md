@@ -12,8 +12,11 @@ Lives in this repo as a static folder; it shares the daniel-training Supabase pr
 `window.YC_CONFIG` near the bottom of `index.html`: Supabase URL + publishable key, and `donateUrl` (swap in the Yappers Cup Movember team page).
 
 ## Positions
-22 per team (18 on the ground + 4 interchange). Minimum donations: $100 key positions (FF, CHF, Ruck, Centre, CHB, FB), $50 other on-field, $25 interchange.
-Change prices in two places: `PRICE` in `js/ground.js` and `yc_claim()` in Supabase.
+22 per team (18 on the ground + 4 interchange). Every position is a $25 minimum donation.
+To change the price, update `PRICE` in `js/ground.js` and `mn` in `yc_claim()` in Supabase.
+
+## Terms
+`terms.html` holds the terms & conditions (own risk, release, first aid, donations, media, privacy). Both the position claim and the supporter/partner form require ticking the box; the time and terms version are saved with each sign-up (`terms_accepted_at`, `terms_version`). If you change the terms, bump `TERMS_VERSION` in `js/ground.js` and the version in `index.html`.
 
 ## Confirming a player
 A claim is `pending` and held for 7 days. When their donation shows up on Movember, open Supabase → Table Editor → `yc_positions` and set `status` to `confirmed`. Their name then shows on the ground and the scoreboard.

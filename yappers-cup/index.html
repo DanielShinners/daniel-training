@@ -169,6 +169,12 @@
   .fc-preview:hover img{transform:scale(1.03)}
   .fc-play{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);font-family:var(--display);text-transform:uppercase;letter-spacing:.06em;font-size:20px;background:var(--red);padding:12px 22px;border-radius:4px;text-decoration:none;white-space:nowrap}
   .roles.two{grid-template-columns:repeat(2,1fr)}
+  .flat{display:flex;align-items:center;gap:18px;margin-top:22px;border:1px solid rgba(255,240,215,.16);border-radius:8px;padding:16px 18px}
+  .flat b{font-family:var(--display);font-weight:400;font-size:52px;line-height:1;color:var(--red)}
+  .flat span{font-size:14px;color:var(--muted)}
+  .terms-tick{display:flex !important;gap:10px;align-items:flex-start;text-transform:none !important;letter-spacing:0 !important;font-weight:400 !important;font-size:14px !important;margin:4px 0 18px !important;cursor:pointer}
+  .terms-tick input{width:20px;height:20px;flex:0 0 20px;margin-top:1px;accent-color:var(--red)}
+  .terms-tick a{color:var(--red);font-weight:700}
   @media (max-width:860px){.fc-grid{grid-template-columns:1fr}.tiers{grid-template-columns:1fr}.fc-preview{order:-1}}
 
   /* donate */
@@ -269,16 +275,14 @@
     <div>
       <div class="eyebrow">Sunday 29 November 2026 · Players</div>
       <h2>Buy your spot on the ground</h2>
-      <p class="intro">Walk out onto the G, pick your side and claim your position. Every spot is a donation to Movember — the bigger the role, the bigger the chip-in.</p>
+      <p class="intro">Walk out onto the G, pick your side and claim your position. Every spot is a $25 donation to Movember.</p>
       <ol class="how">
         <li><b>01</b><span><strong>Choose your team.</strong> Mudguts or Pissants.</span></li>
         <li><b>02</b><span><strong>Pick your position.</strong> Full forward, ruck, wing, back pocket — or the bench.</span></li>
         <li><b>03</b><span><strong>Donate to lock it in.</strong> We hold your spot for 7 days while your donation comes through, then your name goes on the team sheet and your guernsey.</span></li>
       </ol>
-      <div class="tiers">
-        <div><b>$100</b><span>Key positions<br>FF · CHF · Ruck · Centre · CHB · FB</span></div>
-        <div><b>$50</b><span>On-field<br>Flanks, pockets, wings, rovers</span></div>
-        <div><b>$25</b><span>Interchange<br>4 spots on each bench</span></div>
+      <div class="flat">
+        <b>$25</b><span>Every position, from full forward to the bench. Chip in more if you like — it all goes to Movember.</span>
       </div>
       <p style="margin-top:28px"><a class="btn" href="#ground" data-ground>Enter the ground</a></p>
     </div>
@@ -315,6 +319,7 @@
         <div class="field"><label for="company">Brand / company</label><input type="text" id="company" name="company" autocomplete="organization" maxlength="160"></div>
       </div>
       <div class="field"><label for="message">Anything else? <span style="font-weight:600;text-transform:none;letter-spacing:0">(optional)</span></label><textarea id="message" name="message" maxlength="1000" placeholder="Who you're bringing, how your brand could get involved…"></textarea></div>
+      <label class="terms-tick"><input type="checkbox" name="terms" id="terms"><span>I've read and accept the <a href="terms.html" target="_blank" rel="noopener">terms &amp; conditions</a>, including that I attend at my own risk.</span></label>
       <div class="hp" aria-hidden="true"><label for="website">Leave this empty</label><input type="text" id="website" name="website" tabindex="-1" autocomplete="off"></div>
       <button class="btn" type="submit" id="submit-btn">Count me in</button>
       <div class="msg" id="form-msg" role="alert"></div>
@@ -344,6 +349,7 @@
     <img class="wm" src="assets/wordmark-red.png" alt="Yappers Cup">
     <p>Good vibes · Big kicks · Bigger conversations</p>
     <p style="margin-top:6px">Proudly supporting Movember</p>
+    <p style="margin-top:14px"><a href="terms.html" style="color:inherit">Terms &amp; conditions</a></p>
   </div>
 </footer>
 
@@ -406,15 +412,14 @@
     const email = (f.get("email")||"").trim();
     if (!name) return fail("Pop your name in so we know who's coming.");
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return fail("That email doesn't look quite right.");
-    if (role === "player" && !f.get("jersey_size")) return fail("Pick a guernsey size so we can sort your kit.");
+    if (!f.get("terms")) return fail("Tick the box to accept the terms and conditions.");
 
-    const team = role === "player" ? (f.get("team_pref") || "either") : null;
     const row = {
-      full_name: name, email, role, team_pref: team,
+      full_name: name, email, role,
       mobile: (f.get("mobile")||"").trim() || null,
-      jersey_size: role === "player" ? f.get("jersey_size") : null,
       company: role === "partner" ? ((f.get("company")||"").trim() || null) : null,
-      message: (f.get("message")||"").trim() || null
+      message: (f.get("message")||"").trim() || null,
+      terms_accepted_at: new Date().toISOString(), terms_version: "2026-11-22"
     };
 
     btn.disabled = true; btn.textContent = "Sending…";
@@ -426,13 +431,9 @@
       });
       if (!res.ok) throw new Error(await res.text());
       const first = name.split(" ")[0];
-      const teamName = team === "mudguts" ? "the Mudguts" : team === "pissants" ? "the Pissants" : null;
-      if (teamName) document.getElementById("done-img").src = `assets/shield-${team}.png`;
       document.getElementById("done-text").textContent =
         role === "partner" ? `Cheers ${first} — we'll reach out shortly to chat about how ${row.company || "your brand"} can get involved.`
-      : role === "supporter" ? `Cheers ${first} — we'll send you the match-day details before Sunday 29 November.`
-      : teamName ? `Welcome to ${teamName}, ${first}. We'll be in touch with kick-off time, location and your guernsey.`
-      : `Welcome aboard, ${first}. We'll pick your side and be in touch with kick-off time, location and your guernsey.`;
+      : `Cheers ${first} — we'll send you the match-day details before Sunday 29 November.`;
       form.classList.add("sent");
       form.scrollIntoView({behavior:"smooth", block:"center"});
     } catch (err) {
