@@ -216,6 +216,7 @@ export function startKick(root) {
     // markings: goal line, goal square, 50m arc hint
     line([-40, 0.01, 0], [40, 0.01, 0], 0.12, 'rgba(255,255,255,.85)');
     line([-POST, 0.01, 0], [-POST, 0.01, -9], 0.1, 'rgba(255,255,255,.85)'); line([POST, 0.01, 0], [POST, 0.01, -9], 0.1, 'rgba(255,255,255,.85)'); line([-POST, 0.01, -9], [POST, 0.01, -9], 0.1, 'rgba(255,255,255,.85)');
+    if (S.team && S.ball.p.z > 0) drawBallNow();         // past the goal line: posts draw over the ball
     // posts (behind posts first, they're further out)
     for (const [x, h, pad] of [[-BEHIND, 9, true], [BEHIND, 9, true], [-POST, 16, true], [POST, 16, true]]) {
       line([x, 0, 0], [x, h, 0], 0.22, '#f4ead6'); if (pad) line([x, 0, 0], [x, 1.8, 0], 0.32, '#CD2A2D');
@@ -229,6 +230,9 @@ export function startKick(root) {
       const pw = S.aim.power, bx = W / 2 - 60, by = H - 96;
       ctx.fillStyle = 'rgba(16,22,17,.7)'; ctx.fillRect(bx, by, 120, 8); ctx.fillStyle = pw > 0.85 ? '#CD2A2D' : '#FFF0D7'; ctx.fillRect(bx, by, 120 * pw, 8);
     }
+    if (S.ball.p.z <= 0) drawBallNow();                  // in front of the goal line: ball draws over the posts
+  }
+  function drawBallNow() {
     // ball + shadow
     const b = S.ball.p, sh = P(b.x, 0, b.z);
     if (sh) { const rr = clamp(BALL * clamp(2.4 - (b.z - S.spot.z) / Math.max(8, -S.spot.z) * 1.4, 1, 2.4) * F / sh[2], 2, 60); ctx.fillStyle = `rgba(0,0,0,${0.35 * clamp(1 - b.y / 20, 0.1, 1)})`; ctx.beginPath(); ctx.ellipse(sh[0], sh[1], rr, rr * 0.3, 0, 0, Math.PI * 2); ctx.fill(); }
