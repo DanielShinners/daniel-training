@@ -434,7 +434,7 @@ export async function openGround({ team, onClose } = {}) {
   }
   function setStats() {
     const n = POSITIONS.filter(p => p.state !== 'free').length;
-    $('.yg-stats').innerHTML = `<b>${n}</b> of ${POSITIONS.length} positions filled${stats ? ` · <b>${money(stats.pledged)}</b> pledged for <img class="mo" src="${ASSET('assets/movember-white.png')}" alt="Movember">` : ''}`;
+    $('.yg-stats').innerHTML = `<b>${n}</b> of ${POSITIONS.length} positions filled${stats ? ` · <b>${money(stats.pledged)}</b> pledged for Movember` : ''}`;
   }
   setStats(); load(); const poll = setInterval(load, 30000);
 
@@ -447,7 +447,7 @@ export async function openGround({ team, onClose } = {}) {
   function teamPicker() {
     mode = 'team'; curTeam = null; picked = null; hideSheet(); idle = true;
     $('.yg-tools').hidden = true; $('.yg-legend').hidden = true;
-    setHead('Yappers Cup · Sunday 29 November', 'Choose your team', `Then pick your spot on the ground. Every position is a donation to <img class="mo" src="${ASSET('assets/movember-white.png')}" alt="Movember">.`);
+    setHead('Yappers Cup · Sunday 29 November', 'Choose your team', `Then pick your spot on the ground. Every position is a donation to Movember.`);
     const pick = $('.yg-pick'); pick.hidden = false;
     const free = id => POSITIONS.filter(p => p.team === id && p.state === 'free').length;
     pick.innerHTML = Object.entries(TEAMS).map(([id, T]) => `<button type="button" class="yg-tm" data-team="${id}" style="--tc:${T.ui}"><img src="${T.shield}" alt=""><span class="n">${T.name}</span><span class="l">${T.line}</span><span class="f">${free(id)} of 22 spots left</span></button>`).join('<span class="yg-vs">vs</span>');
@@ -476,8 +476,8 @@ export async function openGround({ team, onClose } = {}) {
     }
     showSheet(`<p class="yg-sk">${TEAMS[p.team].name} · ${esc(line)}</p><h3>${esc(p.label)}</h3>
       <p class="yg-blurb">${esc(blurbFor(p.code))}</p>
-      <div class="yg-price"><b>${money(s)}</b><span>minimum donation to <img class="mo" src="${ASSET('assets/movember-white.png')}" alt="Movember"> · same for every position</span></div>
-      <ol class="yg-steps"><li><b>Reserve this spot</b> with your details. We keep it for 24 hours, so donate today.</li><li><b>Donate</b> on the Yappers Cup <img class="mo" src="${ASSET('assets/movember-white.png')}" alt="Movember"> page using the same email.</li><li>Once it lands, <b>your name goes on the team sheet</b>.</li></ol>
+      <div class="yg-price"><b>${money(s)}</b><span>minimum donation to Movember · same for every position</span></div>
+      <ol class="yg-steps"><li><b>Reserve this spot</b> with your details. We keep it for 24 hours, so donate today.</li><li><b>Donate</b> on the Yappers Cup Movember page using the same email.</li><li>Once it lands, <b>your name goes on the team sheet</b>.</li></ol>
       <div class="yg-btns"><button type="button" class="yg-btn" data-a="claim">Claim ${esc(p.label.toLowerCase())}</button><button type="button" class="yg-btn ghost" data-a="field">Back</button></div>`);
   }
   function claimForm(p) {
@@ -508,8 +508,8 @@ export async function openGround({ team, onClose } = {}) {
         if (!r.ok) { err.textContent = r.error || 'That didn\'t go through. Try again.'; btn.disabled = false; btn.textContent = 'Reserve my spot'; if (/grabbed/.test(r.error || '')) load(); return; }
         p.state = 'held'; p.who = r.name; if (stats) stats.pledged += body.p_amount; drawBoard(); dirty = true; setStats();
         showSheet(`<p class="yg-sk">Spot reserved · ${TEAMS[p.team].name} · ${esc(p.label)}</p><h3>One last step</h3>
-          <p class="yg-note">Donate <b>${money(body.p_amount)}</b> on the Yappers Cup <img class="mo" src="${ASSET('assets/movember-white.png')}" alt="Movember"> page using <b>${esc(body.p_email.trim())}</b>. Once it comes through, <b>${esc(r.name)}</b> goes on the team sheet. We'll keep it reserved for 24 hours.</p>
-          <div class="yg-btns"><a class="yg-btn" href="${DONATE_URL}" target="_blank" rel="noopener">Donate to <img class="mo" src="${ASSET('assets/movember-white.png')}" alt="Movember"></a><button type="button" class="yg-btn ghost" data-a="field">Done</button></div>`);
+          <p class="yg-note">Donate <b>${money(body.p_amount)}</b> on the Yappers Cup Movember page using <b>${esc(body.p_email.trim())}</b>. Once it comes through, <b>${esc(r.name)}</b> goes on the team sheet. We'll keep it reserved for 24 hours.</p>
+          <div class="yg-btns"><a class="yg-btn" href="${DONATE_URL}" target="_blank" rel="noopener">Donate to Movember</a><button type="button" class="yg-btn ghost" data-a="field">Done</button></div>`);
       } catch (x) { err.textContent = 'That didn\'t go through. Check your connection and try again.'; btn.disabled = false; btn.textContent = 'Reserve my spot'; }
     };
   }
