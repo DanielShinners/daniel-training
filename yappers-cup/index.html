@@ -263,6 +263,23 @@
   .kk-tt{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px;margin-bottom:6px;border-radius:10px;background:rgba(255,240,215,.05);font-family:var(--display);text-transform:uppercase;letter-spacing:.04em;font-size:14px}
   .kk-tt span{display:flex;align-items:center;gap:8px}.kk-tt img{width:28px}.kk-tt b{font-weight:400;font-size:22px}.kk-tt em{font-style:normal;color:var(--red)}
   .kk-empty{color:var(--muted);font-size:14px;padding:10px 0}
+  /* faq */
+  .faq{padding:110px 0;background:var(--ink)}
+  .faq-grid{display:grid;grid-template-columns:.8fr 1.2fr;gap:56px;align-items:start}
+  .faq h2{font-size:clamp(46px,6vw,84px);margin:14px 0 18px}
+  .faq .intro{color:var(--muted)}
+  .faq-list details{border-top:1px solid rgba(255,240,215,.14)}
+  .faq-list details:last-child{border-bottom:1px solid rgba(255,240,215,.14)}
+  .faq-list summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:16px;padding:20px 0;font-family:var(--display);text-transform:uppercase;letter-spacing:.03em;font-size:clamp(20px,2.4vw,26px)}
+  .faq-list summary::-webkit-details-marker{display:none}
+  .faq-list summary::after{content:"+";font-size:30px;line-height:1;color:var(--red);transition:transform .2s}
+  .faq-list details[open] summary::after{transform:rotate(45deg)}
+  .faq-a{padding:0 0 22px;color:var(--muted);max-width:62ch}
+  .faq-a p+p,.faq-a ul+p,.faq-a p+ul{margin-top:10px}
+  .faq-a ul{margin:8px 0 0 20px;display:grid;gap:4px}
+  .faq-a a{color:var(--cream);text-decoration-color:var(--red);text-underline-offset:3px}
+  .faq-a strong{color:var(--cream)}
+  @media (max-width:860px){.faq-grid{grid-template-columns:1fr;gap:20px}}
   /* donate */
   .donate .copy{background:var(--ink)}
   footer{border-top:1px solid rgba(255,240,215,.1);padding:56px 0 40px;text-align:center}
@@ -292,6 +309,7 @@
       <a href="#about">About</a>
       <a href="#teams">Teams</a>
       <a href="#take-the-field">How it works</a>
+      <a href="#faq">FAQs</a>
       <a href="#donate">Donate</a>
       <a href="https://www.instagram.com/yappers_cup" target="_blank" rel="noopener">Instagram</a>
       <a class="btn" href="#ground" data-ground>Sign up to play</a>
@@ -423,6 +441,26 @@
         <p style="margin-top:22px"><a class="btn" href="#donate">Chip in for Movember</a></p>
       </div>
     </form>
+  </div>
+</section>
+
+<section class="faq" id="faq">
+  <div class="wrap faq-grid">
+    <div>
+      <div class="eyebrow">Before the bounce</div>
+      <h2>FAQs</h2>
+      <p class="intro">Where to park, what to bring and how the game's played.</p>
+    </div>
+    <div class="faq-list">
+      <details><summary>Where is it?</summary><div class="faq-a"><p>Gosch's Paddock, off Olympic Boulevard next to AAMI Park in the Melbourne &amp; Olympic Parks precinct, on the Richmond side of the river. <a href="https://www.google.com/maps/search/?api=1&amp;query=Gosch%27s+Paddock+Olympic+Blvd+Melbourne" target="_blank" rel="noopener">Open in Google Maps</a>.</p><p>Bounce is 1pm on Sunday 29 November. Please arrive by 12:30pm.</p></div></details>
+      <details><summary>Where do I park?</summary><div class="faq-a"><p>Parking right at the paddock is very limited, so public transport is the easiest option:</p><ul><li><strong>Tram 70</strong> from Flinders Street or Richmond stations to the AAMI Park stop on Olympic Boulevard.</li><li><strong>Train</strong> to Richmond Station, then about a 15-minute walk.</li></ul><p>If you're driving, the closest paid parking is the <strong>Eastern Plaza Car Park (Entrance D, Olympic Boulevard)</strong>; booking ahead is recommended. Yarra Park at the MCG and the paid car parks around the precinct are the backups. Prices can go up when there's an event on at the MCG or AAMI Park, so check before you leave.</p></div></details>
+      <details><summary>What should I bring?</summary><div class="faq-a"><ul><li>Footy boots or runners</li><li>A mouthguard (strongly recommended)</li><li>Water bottle</li><li>Sunscreen, hat and sunnies</li><li>A towel and a change of clothes</li><li>Your mates, family and a picnic rug if they're coming to watch</li></ul></div></details>
+      <details><summary>What are the rules?</summary><div class="faq-a"><p>It's Aussie rules, played in the right spirit:</p><ul><li>Mudguts v Pissants, 18 a side on the ground with rolling interchange off the bench.</li><li>Two halves with a short break at half time.</li><li>Standard scoring: 6 points for a goal, 1 for a behind.</li><li>Keep the contact friendly: no bumping, no sling or dumping tackles, no sliding in, and nothing high.</li><li>The umpire's call is final.</li><li>Any knock to the head means you're done for the day, no arguments.</li></ul><p>It's a social game. Play hard, play fair, look after each other.</p></div></details>
+      <details><summary>Who can play?</summary><div class="faq-a"><p>Anyone 18 or over who's fit enough for a run. All skill levels welcome, from ex-local footy legends to people who haven't kicked a footy since school.</p></div></details>
+      <details><summary>How much does it cost?</summary><div class="faq-a"><p>Every position is a $25 donation to Movember. Pick your team and position on this site, then donate on the Yappers Cup Movember page with the same email. We reserve your spot for 24 hours while the donation comes through.</p></div></details>
+      <details><summary>Can people come and watch?</summary><div class="faq-a"><p>Yes, and please do. Supporters are free. Bring a chair or a rug and cheer from the boundary, and leave your details in the supporters form so we can keep you posted.</p></div></details>
+      <details><summary>What if it rains?</summary><div class="faq-a"><p>We play on unless the ground or weather makes it unsafe. Any changes will go up on our <a href="https://www.instagram.com/yappers_cup" target="_blank" rel="noopener">Instagram</a>, and we'll email everyone who's signed up.</p></div></details>
+    </div>
   </div>
 </section>
 
