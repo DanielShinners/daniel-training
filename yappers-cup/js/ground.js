@@ -1,7 +1,7 @@
 /* Yappers Cup — The Ground.
    A hand-drawn 2.5D MCG: pick your team, then pick your position on the ground and claim it with a donation to Movember.
    No libraries: a small perspective camera projects the stadium onto a 2D canvas.
-   Data: Supabase RPCs yc_board() (read) and yc_claim() (write). A claim holds the position for 7 days ('pending')
+   Data: Supabase RPCs yc_board() (read) and yc_claim() (write). A claim holds the position for 1 day ('pending')
    until the Movember donation is matched and the row is marked 'confirmed' in Supabase. */
 
 const CFG = window.YC_CONFIG || {};
@@ -462,7 +462,7 @@ export async function openGround({ team, onClose } = {}) {
     showSheet(`<p class="yg-sk">${TEAMS[p.team].name} · ${esc(line)}</p><h3>${esc(p.label)}</h3>
       <p class="yg-blurb">${esc(blurbFor(p.code))}</p>
       <div class="yg-price"><b>${money(s)}</b><span>minimum donation to Movember · same for every position</span></div>
-      <ol class="yg-steps"><li><b>Hold this spot</b> with your details. We keep it for 7 days.</li><li><b>Donate</b> on the Yappers Cup Movember page using the same email.</li><li>Once it lands, <b>your name goes on the team sheet</b>.</li></ol>
+      <ol class="yg-steps"><li><b>Hold this spot</b> with your details. We keep it for 24 hours, so donate today.</li><li><b>Donate</b> on the Yappers Cup Movember page using the same email.</li><li>Once it lands, <b>your name goes on the team sheet</b>.</li></ol>
       <div class="yg-btns"><button type="button" class="yg-btn" data-a="claim">Claim ${esc(p.label.toLowerCase())}</button><button type="button" class="yg-btn ghost" data-a="field">Back</button></div>`);
   }
   function claimForm(p) {
@@ -493,7 +493,7 @@ export async function openGround({ team, onClose } = {}) {
         if (!r.ok) { err.textContent = r.error || 'That didn\'t go through. Try again.'; btn.disabled = false; btn.textContent = 'Hold my spot'; if (/grabbed/.test(r.error || '')) load(); return; }
         p.state = 'held'; p.who = r.name; if (stats) stats.pledged += body.p_amount; drawBoard(); dirty = true; setStats();
         showSheet(`<p class="yg-sk">Spot held · ${TEAMS[p.team].name} · ${esc(p.label)}</p><h3>One last step</h3>
-          <p class="yg-note">Donate <b>${money(body.p_amount)}</b> on the Yappers Cup Movember page using <b>${esc(body.p_email.trim())}</b>. Once it comes through, <b>${esc(r.name)}</b> goes on the team sheet. We'll hold the spot for 7 days.</p>
+          <p class="yg-note">Donate <b>${money(body.p_amount)}</b> on the Yappers Cup Movember page using <b>${esc(body.p_email.trim())}</b>. Once it comes through, <b>${esc(r.name)}</b> goes on the team sheet. We'll hold the spot for 24 hours.</p>
           <div class="yg-btns"><a class="yg-btn" href="${DONATE_URL}" target="_blank" rel="noopener">Donate to Movember</a><button type="button" class="yg-btn ghost" data-a="field">Done</button></div>`);
       } catch (x) { err.textContent = 'That didn\'t go through. Check your connection and try again.'; btn.disabled = false; btn.textContent = 'Hold my spot'; }
     };
