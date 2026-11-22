@@ -6,7 +6,7 @@
 
 const CFG = window.YC_CONFIG || {};
 const SUPA = CFG.supabaseUrl, KEY = CFG.supabaseKey;
-const DONATE_URL = CFG.donateUrl || 'https://au.movember.com/';
+const DONATE_URL = CFG.donateUrl || 'https://au.movember.com/events/view/id/kNxN';
 const ASSET = p => (CFG.assetBase || '') + p;           // lets the page load artwork from a CDN
 const PRICE = { key: 25, field: 25, bench: 25 };          // every position is $25 minimum (matches yc_claim in Supabase)
 const TERMS_VERSION = '2026-11-22', TERMS_URL = 'terms.html';
