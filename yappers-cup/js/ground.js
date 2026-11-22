@@ -380,6 +380,9 @@ export async function openGround({ team, onClose } = {}) {
   const fitD = () => { const t = Math.tan(FOV / 2), a = W / H, need = portrait() ? Math.max(118 / t, 96 / (t * a)) : Math.max(92 / t, 128 / (t * a)); return need * 1.05; };
 
   // ---------- input ----------
+  // keep the camera high above the ground so the stands never swing in front of the players
+  const PITCH_MIN = 0.95, PITCH_MAX = 1.45;
+  const zoomRange = () => mode === 'team' ? [fitD() * 0.9, fitD() * 1.3] : [Math.min(110, fitD() * 0.55), fitD() * 1.05];
   let drag = null; const pts = new Map();
   canvas.addEventListener('pointerdown', e => { canvas.setPointerCapture(e.pointerId); pts.set(e.pointerId, [e.clientX, e.clientY]); drag = { x: e.clientX, y: e.clientY, moved: 0, yaw: cam.yaw, pitch: cam.pitch, d: cam.d, pinch: pts.size === 2 ? dist() : 0 }; lastInput = performance.now(); idle = false; anim = null; });
   const dist = () => { const [a, b] = [...pts.values()]; return Math.hypot(a[0] - b[0], a[1] - b[1]); };
@@ -387,9 +390,9 @@ export async function openGround({ team, onClose } = {}) {
     const r = canvas.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top;
     if (!drag) { const h = hitAt(mx, my); if (h !== hover) { hover = h; canvas.style.cursor = h ? 'pointer' : 'grab'; showTip(h, mx, my); } else if (h) showTip(h, mx, my); return; }
     pts.set(e.pointerId, [e.clientX, e.clientY]);
-    if (pts.size === 2) { if (!drag.pinch) drag.pinch = dist(); cam.d = clamp(drag.d * drag.pinch / dist(), 50, 340); drag.moved = 99; dirty = true; return; }
+    if (pts.size === 2) { if (!drag.pinch) drag.pinch = dist(); cam.d = clamp(drag.d * drag.pinch / dist(), ...zoomRange()); drag.moved = 99; dirty = true; return; }
     const dx = e.clientX - drag.x, dy = e.clientY - drag.y; drag.moved = Math.max(drag.moved, Math.hypot(dx, dy));
-    if (drag.moved > 5) { cam.yaw = drag.yaw - dx * 0.006; cam.pitch = clamp(drag.pitch + dy * 0.004, 0.42, 1.38); dirty = true; canvas.style.cursor = 'grabbing'; }
+    if (drag.moved > 5) { cam.yaw = drag.yaw - dx * 0.006; cam.pitch = clamp(drag.pitch + dy * 0.004, PITCH_MIN, PITCH_MAX); dirty = true; canvas.style.cursor = 'grabbing'; }
   });
   const up = e => {
     pts.delete(e.pointerId); if (!drag) return;
@@ -398,7 +401,7 @@ export async function openGround({ team, onClose } = {}) {
     if (pts.size === 0) { drag = null; canvas.style.cursor = 'grab'; }
   };
   canvas.addEventListener('pointerup', up); canvas.addEventListener('pointercancel', up);
-  canvas.addEventListener('wheel', e => { e.preventDefault(); anim = null; cam.d = clamp(cam.d * Math.exp(e.deltaY * 0.0012), 50, 340); dirty = true; idle = false; }, { passive: false });
+  canvas.addEventListener('wheel', e => { e.preventDefault(); anim = null; cam.d = clamp(cam.d * Math.exp(e.deltaY * 0.0012), ...zoomRange()); dirty = true; idle = false; }, { passive: false });
   function hitAt(x, y) { for (let i = hits.length - 1; i >= 0; i--) { const h = hits[i]; if (x >= h.x0 && x <= h.x1 && y >= h.y0 && y <= h.y1) return h.p; } return null; }
   const tip = $('.yg-tip');
   function showTip(p, x, y) {
@@ -416,6 +419,7 @@ export async function openGround({ team, onClose } = {}) {
       stats = { raised: b.raised || 0, pledged: b.pledged || 0 };
     } catch (e) { console.warn('yc board', e); }
     drawBoard(); dirty = true; setStats(); if (mode === 'list') listView();
+    if (mode === 'field' && curTeam) $('.yg-k').textContent = `${TEAMS[curTeam].name} · ${POSITIONS.filter(p => p.team === curTeam && p.state === 'free').length} spots left`;
   }
   function setStats() {
     const n = POSITIONS.filter(p => p.state !== 'free').length;
@@ -436,7 +440,7 @@ export async function openGround({ team, onClose } = {}) {
     const pick = $('.yg-pick'); pick.hidden = false;
     const free = id => POSITIONS.filter(p => p.team === id && p.state === 'free').length;
     pick.innerHTML = Object.entries(TEAMS).map(([id, T]) => `<button type="button" class="yg-tm" data-team="${id}" style="--tc:${T.ui}"><img src="${T.shield}" alt=""><span class="n">${T.name}</span><span class="l">${T.line}</span><span class="f">${free(id)} of 22 spots left</span></button>`).join('<span class="yg-vs">vs</span>');
-    fly({ tx: 0, tz: 0, d: fitD() * 1.15, pitch: 0.62, yaw: cam.yaw }, 1600);
+    fly({ tx: 0, tz: 0, d: fitD() * 1.15, pitch: 0.95, yaw: cam.yaw }, 1600);
   }
   function chooseTeam(id) {
     curTeam = id; mode = 'field'; picked = null; idle = false; hideSheet();
@@ -529,7 +533,7 @@ export async function openGround({ team, onClose } = {}) {
     root.classList.add('out'); setTimeout(() => { root.remove(); document.documentElement.classList.remove('yg-open'); onClose && onClose(); }, 280);
   }
 
-  cam.yaw = homeYaw() - 0.6; cam.d = fitD() * 1.6; cam.pitch = 0.5;
+  cam.yaw = homeYaw() - 0.6; cam.d = fitD() * 1.6; cam.pitch = 0.95;
   requestAnimationFrame(frame);
   if (team && TEAMS[team]) { setTimeout(() => chooseTeam(team), 50); } else teamPicker();
   void badge;
