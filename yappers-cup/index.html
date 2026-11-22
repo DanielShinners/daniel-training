@@ -61,9 +61,10 @@
   .hero .sub{font-family:var(--display);text-transform:uppercase;font-size:clamp(20px,3.4vw,34px);letter-spacing:.04em;margin-top:22px}
   .hero .sub{display:flex;align-items:center;justify-content:center;gap:.4em}
   .hero .sub .tm{display:inline-flex;align-items:center;gap:.35em}
-  .hero .sub img{height:1.7em;width:auto;filter:drop-shadow(0 4px 10px rgba(0,0,0,.45))}
+  .hero .sub img{height:5.1em;width:auto;filter:drop-shadow(0 6px 14px rgba(0,0,0,.5))}
+  @media (max-width:600px){.hero .sub{gap:.3em}.hero .sub .tm{flex-direction:column;gap:.25em}.hero .sub .tm:last-child{flex-direction:column-reverse}}
   .hero .sub .vs{color:var(--red)}
-  .hero .date{margin-top:6px;font-size:13px;letter-spacing:.24em;text-transform:uppercase;font-weight:800;color:var(--muted)}
+  .hero .date{margin-top:14px;font-size:13px;letter-spacing:.24em;text-transform:uppercase;font-weight:800;color:var(--muted)}
   .hero .venue{margin-top:12px;display:flex;gap:10px 18px;justify-content:center;flex-wrap:wrap;font-family:var(--display);text-transform:uppercase;letter-spacing:.06em;font-size:clamp(17px,2.2vw,22px)}
 .hero .venue a{text-decoration:none;border-bottom:2px solid var(--red)}
 .hero .venue span{color:var(--muted)}
