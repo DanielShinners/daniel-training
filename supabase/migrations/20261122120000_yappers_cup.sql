@@ -125,3 +125,7 @@ end $$;
 
 revoke all on function public.yc_claim(text,text,text,text,text,integer,boolean,text) from public;
 grant execute on function public.yc_claim(text,text,text,text,text,integer,boolean,text) to anon;
+
+-- 2026-11-22 (later): display name is first name + last initial from the single "Name" field,
+-- and positions are held for 1 day instead of 7. Live definitions of yc_claim/yc_board use
+-- interval '1 day' everywhere the earlier versions above say '7 days'.
