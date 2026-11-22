@@ -58,6 +58,11 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;'
 const rpc = (fn, body) => fetch(`${SUPA}/rest/v1/rpc/${fn}`, { method: 'POST', headers: { apikey: KEY, Authorization: `Bearer ${KEY}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) })
   .then(r => r.ok ? r.json() : r.text().then(t => Promise.reject(new Error(t))));
 const pay = body => fetch(`${SUPA}/functions/v1/yc-pay`, { method: 'POST', headers: { apikey: KEY, Authorization: `Bearer ${KEY}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(r => r.json());
+function centreText(c, text, x, y) {
+  c.textAlign = 'left'; c.textBaseline = 'alphabetic';
+  const m = c.measureText(text);
+  c.fillText(text, x - (m.actualBoundingBoxRight - m.actualBoundingBoxLeft) / 2, y + (m.actualBoundingBoxAscent - m.actualBoundingBoxDescent) / 2);
+}
 const ease = t => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -248,7 +253,8 @@ export async function openGround({ team, onClose } = {}) {
         c.rotate(sx > 0 ? Math.PI / 2 : -Math.PI / 2);
         c.fillStyle = '#fff'; c.beginPath(); c.roundRect(-3.3, -2.2, 6.6, 4.4, 0.8); c.fill();
         c.fillStyle = col; c.beginPath(); c.roundRect(-2.95, -1.85, 5.9, 3.7, 0.6); c.fill();
-        c.fillStyle = '#fff'; c.font = '3.6px Anton, Impact, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('50', 0, 0.15);
+        c.fillStyle = '#fff'; c.font = '3.6px Anton, Impact, sans-serif'; c.textAlign = 'left'; c.textBaseline = 'alphabetic';
+        centreText(c, '50', 0, 0);
         c.restore();
       }
       c.strokeStyle = 'rgba(255,255,255,.82)';
@@ -387,7 +393,7 @@ export async function openGround({ team, onClose } = {}) {
   function pill(c, x, y, text, bgc, fg, size) {
     c.font = `${size}px Anton`; const w = c.measureText(text).width + size * 0.9, h = size * 1.45;
     c.fillStyle = bgc; c.beginPath(); c.roundRect(x - w / 2, y - h / 2, w, h, h / 2); c.fill();
-    c.fillStyle = fg; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(text, x, y + size * 0.04);
+    c.fillStyle = fg; centreText(c, text, x, y);
     return w;
   }
   let hits = [], hover = null, picked = null, curTeam = null, mode = 'team', T0 = performance.now();
@@ -408,7 +414,7 @@ export async function openGround({ team, onClose } = {}) {
       guernsey(c, cx, s[1] - hh * 0.5 - lift, hh, T, p.state === 'held' ? 0.55 : 1);
       // code on the chest
       c.font = `${Math.round(hh * (short(p).length > 2 ? 0.22 : 0.28))}px Anton`; c.fillStyle = '#FFF0D7'; c.textAlign = 'center'; c.textBaseline = 'middle';
-      c.globalAlpha = p.state === 'held' ? 0.7 : 1; c.fillText(short(p), cx, s[1] - hh * 0.38 - lift); c.globalAlpha = 1;
+      c.globalAlpha = p.state === 'held' ? 0.7 : 1; centreText(c, short(p), cx, s[1] - hh * 0.38 - lift); c.globalAlpha = 1;
       const top = s[1] - hh - lift;
       if (p.state === 'taken') pill(c, cx, top - 9, p.who, '#FFF0D7', '#101611', clamp(hh * 0.2, 10, 15));
       else if (p.state === 'held') pill(c, cx, top - 9, 'RESERVED', 'rgba(16,22,17,.85)', 'rgba(255,240,215,.8)', clamp(hh * 0.18, 9, 13));
