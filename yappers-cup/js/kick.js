@@ -202,7 +202,12 @@ export function startKick(root) {
     poly([[-90, 0, 22], [90, 0, 22], [90, 18, 40], [-90, 18, 40]], '#141b16');
     for (const d of crowd) { const p = P(d.x, d.y, 22 + (d.y / 18) * 18); if (!p) continue; const s = clamp(0.5 * F / p[2], 1, 4); ctx.fillStyle = d.c; ctx.fillRect(p[0], p[1], s, s); }
     // light towers
-    for (const lx of [-55, 55]) { const p = P(lx, 30, 45); if (!p) continue; const g = ctx.createRadialGradient(p[0], p[1], 0, p[0], p[1], 120); g.addColorStop(0, 'rgba(255,248,230,.6)'); g.addColorStop(1, 'rgba(255,248,230,0)'); ctx.fillStyle = g; ctx.fillRect(p[0] - 120, p[1] - 120, 240, 240); ctx.fillStyle = '#fff6e2'; ctx.fillRect(p[0] - 10, p[1] - 6, 20, 12); }
+    for (const lx of [-55, 55]) { const p = P(lx, 30, 45); if (!p) continue; const g = ctx.createRadialGradient(p[0], p[1], 0, p[0], p[1], 120); g.addColorStop(0, 'rgba(225,236,255,.5)'); g.addColorStop(1, 'rgba(200,218,255,0)'); ctx.fillStyle = g; ctx.fillRect(p[0] - 120, p[1] - 120, 240, 240);
+      const sc = clamp(F / p[2] * 0.6, 0.6, 2.2), cw = 6 * sc, hw = cw * 3 + 3 * sc, hh = cw * 2 + 3 * sc;
+      ctx.fillStyle = '#151a17'; ctx.fillRect(p[0] - hw / 2, p[1] - hh / 2, hw, hh);
+      ctx.fillStyle = '#262d29'; ctx.fillRect(p[0] - sc, p[1] + hh / 2, 2 * sc, H);
+      for (let rr = 0; rr < 2; rr++) for (let cc = 0; cc < 3; cc++) { const lx2 = p[0] - hw / 2 + 1.5 * sc + cw * (cc + 0.5), ly = p[1] - hh / 2 + 1.5 * sc + cw * (rr + 0.5);
+        ctx.fillStyle = '#eef4ff'; ctx.beginPath(); ctx.arc(lx2, ly, cw * 0.4, 0, Math.PI * 2); ctx.fill(); } }
     // grass with mowing stripes
     { const hz = P(S.spot.x, 0, 600) || P(0, 0, 600); const hy = hz ? hz[1] : H * 0.5; ctx.fillStyle = '#2e6b33'; ctx.fillRect(0, hy, W, H - hy); }
     for (let z = -70, k = 0; z < 22; z += 5, k++) for (let x = -90; x < 90; x += 15) poly([[x, 0, z], [x + 15, 0, z], [x + 15, 0, z + 5], [x, 0, z + 5]], k % 2 ? '#2a6430' : '#327236');

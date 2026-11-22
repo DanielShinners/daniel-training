@@ -194,7 +194,7 @@ export async function openGround({ team, onClose } = {}) {
 
   function addTowerGlow(c, s, r) {
     const g = c.createRadialGradient(s[0], s[1], 0, s[0], s[1], r);
-    g.addColorStop(0, 'rgba(255,248,230,.55)'); g.addColorStop(0.25, 'rgba(255,240,215,.18)'); g.addColorStop(1, 'rgba(255,240,215,0)');
+    g.addColorStop(0, 'rgba(225,236,255,.42)'); g.addColorStop(0.22, 'rgba(200,218,255,.14)'); g.addColorStop(1, 'rgba(200,218,255,0)');
     c.fillStyle = g; c.fillRect(s[0] - r, s[1] - r, r * 2, r * 2);
   }
 
@@ -299,14 +299,34 @@ export async function openGround({ team, onClose } = {}) {
         const [base, top, t] = it.tower, a = proj(base), b = proj(top); if (!a || !b) continue;
         const nx = -Math.cos(t), nz = -Math.sin(t), tx = -nz, tz = nx;          // panel faces the ground
         if (nx * (E[0] - top[0]) + nz * (E[2] - top[2]) <= 0) continue;         // towers on our side of the ground are behind us
-        c.strokeStyle = '#2d362f'; c.lineWidth = clamp(2.2 * F / a[2], 1, 10); c.beginPath(); c.moveTo(a[0], a[1]); c.lineTo(b[0], b[1]); c.stroke();
+        // pole: tapered steel with a lit edge
+        const pw = clamp(2.4 * F / a[2], 1.2, 14), pt = clamp(1.3 * F / b[2], 0.8, 8);
+        const ddx = b[0] - a[0], ddy = b[1] - a[1], dl = Math.hypot(ddx, ddy) || 1, ox = -ddy / dl, oy = ddx / dl;
+        c.fillStyle = '#262d29'; c.beginPath(); c.moveTo(a[0] - ox * pw / 2, a[1] - oy * pw / 2); c.lineTo(a[0] + ox * pw / 2, a[1] + oy * pw / 2); c.lineTo(b[0] + ox * pt / 2, b[1] + oy * pt / 2); c.lineTo(b[0] - ox * pt / 2, b[1] - oy * pt / 2); c.closePath(); c.fill();
+        c.strokeStyle = 'rgba(190,205,215,.22)'; c.lineWidth = Math.max(0.6, pt * 0.25); c.beginPath(); c.moveTo(a[0] + ox * pw * 0.3, a[1] + oy * pw * 0.3); c.lineTo(b[0] + ox * pt * 0.3, b[1] + oy * pt * 0.3); c.stroke();
         const hp = (u, v) => [top[0] + tx * u, top[1] + v, top[2] + tz * u];
-        const panel = clipPoly([hp(-8, -5), hp(8, -5), hp(8, 6), hp(-8, 6)]);
         const facing = nx * (E[0] - top[0]) + nz * (E[2] - top[2]) > 0;
         if (!facing) continue;
+        // head: steel frame with rows of round floodlights, like a real AFL tower
+        const panel = clipPoly([hp(-8.5, -6), hp(8.5, -6), hp(8.5, 6.5), hp(-8.5, 6.5)]);
         if (panel.length > 2) {
-          pathPoly(c, panel); c.fillStyle = facing ? '#fff6e2' : '#2a322c'; c.fill();
-          if (facing) { c.fillStyle = 'rgba(16,22,17,.35)'; for (let u = -6; u <= 6; u += 3) for (let v = -3; v <= 4; v += 3.5) { const p = proj(hp(u, v)); if (p) { const r = clamp(0.5 * F / p[2], 0.4, 3); c.fillRect(p[0] - r / 2, p[1] - r / 2, r, r); } } glows.push([proj(hp(0, 0)), facing]); }
+          pathPoly(c, panel); c.fillStyle = '#151a17'; c.fill();
+          const lw = clamp(0.25 * F / b[2], 0.5, 2.5);
+          c.strokeStyle = '#3a443e'; c.lineWidth = lw;
+          for (const v of [-6, -2, 2.2, 6.5]) { const p = proj(hp(-8.5, v)), q = proj(hp(8.5, v)); if (p && q) { c.beginPath(); c.moveTo(p[0], p[1]); c.lineTo(q[0], q[1]); c.stroke(); } }
+          for (let u = -8.5; u <= 8.6; u += 4.25) { const p = proj(hp(u, -6)), q = proj(hp(u, 6.5)); if (p && q) { c.beginPath(); c.moveTo(p[0], p[1]); c.lineTo(q[0], q[1]); c.stroke(); } }
+          c.strokeStyle = 'rgba(58,68,62,.6)';
+          for (let u = -8.5; u < 8.5; u += 4.25) for (const [v0, v1] of [[-6, -2], [2.2, 6.5]]) { const p = proj(hp(u, v0)), q = proj(hp(u + 4.25, v1)); if (p && q) { c.beginPath(); c.moveTo(p[0], p[1]); c.lineTo(q[0], q[1]); c.stroke(); } }
+          const lamps = [];
+          for (const v of [4.3, 0.1, -4]) for (let k = 0; k < 6; k++) { const u = -6.75 + k * 2.7, p = proj(hp(u, v)); if (p) lamps.push(p); }
+          for (const p of lamps) {
+            const r = clamp(1.15 * F / p[2], 0.6, 9);
+            c.fillStyle = '#0b0e0c'; c.beginPath(); c.arc(p[0], p[1], r * 1.18, 0, Math.PI * 2); c.fill();
+            const lg = c.createRadialGradient(p[0] - r * 0.2, p[1] - r * 0.2, 0, p[0], p[1], r);
+            lg.addColorStop(0, '#ffffff'); lg.addColorStop(0.6, '#eef4ff'); lg.addColorStop(1, '#b9cdf2');
+            c.fillStyle = lg; c.beginPath(); c.arc(p[0], p[1], r, 0, Math.PI * 2); c.fill();
+          }
+          glows.push([proj(hp(0, 0.2)), facing, lamps, [proj(hp(-8.5, -6)), proj(hp(8.5, -6))]]);
         }
       } else if (it.board) {
         const [p0, p1, p2] = it.board.map(proj); if (!p0 || !p1 || !p2) continue;
@@ -320,7 +340,23 @@ export async function openGround({ team, onClose } = {}) {
       }
     }
     c.globalCompositeOperation = 'lighter';
-    for (const [p] of glows) if (p) addTowerGlow(c, p, clamp(40 * F / p[2], 18, 220));
+    const fieldC = proj([0, 0, 0]);
+    for (const [p, , lamps, edge] of glows) {
+      if (!p) continue;
+      // soft light beams pouring down onto the ground
+      if (fieldC && edge && edge[0] && edge[1]) {
+        const spread = clamp(70 * F / Math.max(fieldC[2], 1), 30, 900);
+        const bg = c.createLinearGradient(p[0], p[1], fieldC[0], fieldC[1]);
+        bg.addColorStop(0, 'rgba(190,210,255,.16)'); bg.addColorStop(0.6, 'rgba(190,210,255,.04)'); bg.addColorStop(1, 'rgba(190,210,255,0)');
+        c.fillStyle = bg; c.beginPath(); c.moveTo(edge[0][0], edge[0][1]); c.lineTo(edge[1][0], edge[1][1]); c.lineTo(fieldC[0] + spread, fieldC[1]); c.lineTo(fieldC[0] - spread, fieldC[1]); c.closePath(); c.fill();
+      }
+      addTowerGlow(c, p, clamp(55 * F / p[2], 24, 320));
+      for (const q of lamps || []) {                        // each lamp blooms
+        const r = clamp(4.2 * F / q[2], 3, 40), lg = c.createRadialGradient(q[0], q[1], 0, q[0], q[1], r);
+        lg.addColorStop(0, 'rgba(235,242,255,.55)'); lg.addColorStop(0.35, 'rgba(200,220,255,.16)'); lg.addColorStop(1, 'rgba(200,220,255,0)');
+        c.fillStyle = lg; c.fillRect(q[0] - r, q[1] - r, r * 2, r * 2);
+      }
+    }
     c.globalCompositeOperation = 'source-over';
     // vignette
     const v = c.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.35, W / 2, H / 2, Math.max(W, H) * 0.75);
