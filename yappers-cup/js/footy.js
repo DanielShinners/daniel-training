@@ -13,7 +13,7 @@ export function startFooty() {
   document.body.appendChild(wrap);
   const style = document.createElement('style');
   style.textContent = `.footy{position:fixed;inset:0;pointer-events:none;z-index:25;overflow:hidden}
-    .footy-ball{position:absolute;left:0;top:0;width:${S}px;height:${S}px;will-change:transform}
+    .footy-ball{position:absolute;left:0;top:0;width:${S}px;height:${S}px;will-change:transform;pointer-events:auto;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
     .footy-shadow{position:absolute;left:0;top:0;width:${S * 0.7}px;height:${S * 0.12}px;border-radius:50%;
       background:radial-gradient(closest-side,rgba(0,0,0,.55),rgba(0,0,0,0));will-change:transform,opacity}
     html.yg-open .footy{display:none}`;
@@ -132,10 +132,16 @@ export function startFooty() {
   let W = innerWidth, H = innerHeight;
   const floor = () => H - R - 14;
   const st = { x: Math.min(90, W * 0.2), y: floor(), vx: 0, vy: 0, tumble: Math.PI / 2, wT: 0, spin: 0, wS: 0, tilt: 0.55 };
-  let lastY = scrollY, last = performance.now(), running = false;
+  let lastY = scrollY, last = performance.now(), running = false, gone = null;
+  // tap the ball and it's punted away into the distance
+  canvas.addEventListener('pointerdown', e => {
+    e.preventDefault(); if (gone) return;
+    gone = { t0: performance.now(), x0: st.x, y0: st.y, x1: W * (0.35 + Math.random() * 0.3), y1: H * 0.22 };
+    st.wT = (Math.random() < 0.5 ? -1 : 1) * 22; st.wS = 14; kick();
+  });
   addEventListener('resize', () => { W = innerWidth; H = innerHeight; st.y = Math.min(st.y, floor()); kick(); });
   addEventListener('scroll', () => {
-    const dy = scrollY - lastY; lastY = scrollY;
+    const dy = scrollY - lastY; lastY = scrollY; if (gone) return;
     st.vx = Math.max(-1300, Math.min(1300, st.vx + dy * 7));
     if (st.y >= floor() - 3 && Math.abs(dy) > 3) { st.vy = -Math.min(1050, 320 + Math.abs(dy) * 16); st.wT += (Math.random() - 0.5) * 14; }
     st.wS += dy * 0.06;
@@ -145,6 +151,7 @@ export function startFooty() {
 
   function step(now) {
     const dt = Math.min(0.033, (now - last) / 1000); last = now;
+    if (gone) return flyAway(now, dt);
     const fl = floor(), onFloor = st.y >= fl - 0.5;
     st.vy += 2600 * dt; st.x += st.vx * dt; st.y += st.vy * dt;
     if (st.y > fl) {
@@ -165,11 +172,22 @@ export function startFooty() {
     if (settled) { running = false; return; }
     requestAnimationFrame(step);
   }
-  function draw() {
-    canvas.style.transform = `translate3d(${st.x - S / 2}px,${st.y - S / 2}px,0)`;
+  function flyAway(now, dt) {
+    const t = Math.min(1, (now - gone.t0) / 1100), e = 1 - Math.pow(1 - t, 3);
+    st.x = gone.x0 + (gone.x1 - gone.x0) * e;
+    st.y = gone.y0 + (gone.y1 - gone.y0) * e - Math.sin(t * Math.PI) * H * 0.18;   // a little arc as it sails off
+    st.tumble += st.wT * dt; st.spin += st.wS * dt;
+    const k = Math.max(0.02, 1 - e * 0.98);
+    draw(k);
+    canvas.style.opacity = String(t < 0.75 ? 1 : 1 - (t - 0.75) / 0.25);
+    shadow.style.opacity = String(Math.max(0, 0.8 - t * 2));
+    if (t < 1) requestAnimationFrame(step); else { wrap.remove(); style.remove(); }
+  }
+  function draw(scale = 1) {
+    canvas.style.transform = `translate3d(${st.x - S / 2}px,${st.y - S / 2}px,0) scale(${scale})`;
     const h = Math.max(0, floor() - st.y), k = Math.max(0.35, 1 - h / 500);
-    shadow.style.transform = `translate3d(${st.x - S * 0.35}px,${floor() + R * 0.8}px,0) scale(${k})`;
-    shadow.style.opacity = String(0.25 + 0.6 * k);
+    shadow.style.transform = `translate3d(${st.x - S * 0.35}px,${floor() + R * 0.8}px,0) scale(${k * scale})`;
+    if (!gone) shadow.style.opacity = String(0.25 + 0.6 * k);
     gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.uniformMatrix4fv(uM, false, mul(mul(rz(st.tumble), rx(st.tilt)), ry(st.spin)));
     gl.drawElements(gl.TRIANGLES, idx.length, gl.UNSIGNED_SHORT, 0);
