@@ -132,16 +132,16 @@ export function startFooty() {
   let W = innerWidth, H = innerHeight;
   const floor = () => H - R - 14;
   const st = { x: Math.min(90, W * 0.2), y: floor(), vx: 0, vy: 0, tumble: Math.PI / 2, wT: 0, spin: 0, wS: 0, tilt: 0.55 };
-  let lastY = scrollY, last = performance.now(), running = false, gone = null;
+  let lastY = scrollY, last = performance.now(), running = false, gone = null, back = null;
   // tap the ball and it's punted away into the distance
   canvas.addEventListener('pointerdown', e => {
-    e.preventDefault(); if (gone) return;
+    e.preventDefault(); if (gone || back) return;
     gone = { t0: performance.now(), x0: st.x, y0: st.y, x1: W * (0.35 + Math.random() * 0.3), y1: H * 0.22 };
     st.wT = (Math.random() < 0.5 ? -1 : 1) * 22; st.wS = 14; kick();
   });
   addEventListener('resize', () => { W = innerWidth; H = innerHeight; st.y = Math.min(st.y, floor()); kick(); });
   addEventListener('scroll', () => {
-    const dy = scrollY - lastY; lastY = scrollY; if (gone) return;
+    const dy = scrollY - lastY; lastY = scrollY; if (gone || back) return;
     st.vx = Math.max(-1300, Math.min(1300, st.vx + dy * 7));
     if (st.y >= floor() - 3 && Math.abs(dy) > 3) { st.vy = -Math.min(1050, 320 + Math.abs(dy) * 16); st.wT += (Math.random() - 0.5) * 14; }
     st.wS += dy * 0.06;
@@ -152,6 +152,7 @@ export function startFooty() {
   function step(now) {
     const dt = Math.min(0.033, (now - last) / 1000); last = now;
     if (gone) return flyAway(now, dt);
+    if (back) return flyBack(now, dt);
     const fl = floor(), onFloor = st.y >= fl - 0.5;
     st.vy += 2600 * dt; st.x += st.vx * dt; st.y += st.vy * dt;
     if (st.y > fl) {
@@ -181,7 +182,28 @@ export function startFooty() {
     draw(k);
     canvas.style.opacity = String(t < 0.75 ? 1 : 1 - (t - 0.75) / 0.25);
     shadow.style.opacity = String(Math.max(0, 0.8 - t * 2));
-    if (t < 1) requestAnimationFrame(step); else { wrap.remove(); style.remove(); }
+    if (t < 1) return requestAnimationFrame(step);
+    canvas.style.visibility = 'hidden';
+    setTimeout(comeBack, 3000);                                    // 3 seconds later it's punted back in
+  }
+  function comeBack() {
+    const fromLeft = Math.random() < 0.5;
+    gone = null;
+    back = { t0: performance.now(), x0: W * (0.35 + Math.random() * 0.3), y0: H * 0.22, x1: fromLeft ? W * 0.25 : W * 0.75, y1: floor() - H * 0.15 };
+    canvas.style.visibility = ''; canvas.style.opacity = '1';
+    st.wT = (fromLeft ? 1 : -1) * 18; st.wS = -12;
+    running = true; last = performance.now(); requestAnimationFrame(step);
+  }
+  function flyBack(now, dt) {
+    const t = Math.min(1, (now - back.t0) / 1000), e = t * t;       // accelerate towards the viewer
+    st.x = back.x0 + (back.x1 - back.x0) * e;
+    st.y = back.y0 + (back.y1 - back.y0) * e - Math.sin(t * Math.PI) * H * 0.12;
+    st.tumble += st.wT * dt; st.spin += st.wS * dt;
+    draw(Math.max(0.02, 0.02 + 0.98 * e));
+    shadow.style.opacity = String(Math.min(0.8, t));
+    if (t < 1) return requestAnimationFrame(step);
+    st.vx = (back.x1 - back.x0) * 0.9; st.vy = 700; back = null;   // land and let physics take over
+    requestAnimationFrame(step);
   }
   function draw(scale = 1) {
     canvas.style.transform = `translate3d(${st.x - S / 2}px,${st.y - S / 2}px,0) scale(${scale})`;
