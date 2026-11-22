@@ -368,13 +368,13 @@ export function startKick(root) {
       <path d="M50 26 H190 C190 98 172 146 120 160 C68 146 50 98 50 26 Z" fill="url(#kkg)"/>
       <ellipse cx="120" cy="26" rx="70" ry="10" fill="#ffe9a8"/><ellipse cx="120" cy="27" rx="60" ry="6" fill="#b8861f"/>
       <path d="M78 36 C80 90 92 128 112 146" stroke="rgba(255,255,255,.55)" stroke-width="6" fill="none" stroke-linecap="round"/>
-      <circle cx="120" cy="86" r="30" fill="#101611" stroke="#ffe08a" stroke-width="4"/>
-      <text x="120" y="97" text-anchor="middle" font-family="Anton, Impact, sans-serif" font-size="30" fill="#FFF0D7">YC</text>
+      <circle cx="120" cy="86" r="31" fill="#101611" stroke="#ffe08a" stroke-width="4"/>
+      <image href="${ASSET('assets/badge-cream.png')}" x="94" y="60" width="52" height="52"/>
       <rect x="108" y="158" width="24" height="34" fill="url(#kkg)"/>
       <path d="M84 192 H156 L164 212 H76 Z" fill="url(#kkg)"/>
       <rect x="52" y="212" width="136" height="70" rx="6" fill="url(#kkb)" stroke="#ffe08a" stroke-width="3"/>
-      <text x="120" y="244" text-anchor="middle" font-family="Anton, Impact, sans-serif" font-size="26" fill="#ffe08a" letter-spacing="2">YAPPERS CUP</text>
-      <text x="120" y="268" text-anchor="middle" font-family="Anton, Impact, sans-serif" font-size="15" fill="#FFF0D7" letter-spacing="3">GOAL-KICKING CHAMP</text>
+      <text x="120" y="245" text-anchor="middle" font-family="Anton, Impact, sans-serif" font-size="22" fill="#ffe08a" textLength="108" lengthAdjust="spacingAndGlyphs">YAPPERS CUP</text>
+      <text x="120" y="267" text-anchor="middle" font-family="Anton, Impact, sans-serif" font-size="12" fill="#FFF0D7" textLength="104" lengthAdjust="spacingAndGlyphs">GOAL-KICKING CHAMP</text>
     </svg>`;
   }
   function celebrate(points) {
@@ -383,7 +383,7 @@ export function startKick(root) {
     el.innerHTML = `<canvas class="kk-confetti"></canvas>
       <div class="kk-party-in">
         <div class="kk-rays"></div>
-        ${trophySVG()}
+        <div class="kk-hold kk-hold-${S.team}"><img class="kk-mascot" src="${ASSET('assets/mascot-' + S.team + '.webp')}" alt="">${trophySVG()}</div>
         <p class="kk-party-k">New top score</p>
         <h3 class="kk-party-t">${points} pts!</h3>
         <p class="kk-party-s">You're top of the Yappers Cup leaderboard. Put your name on it.</p>
