@@ -462,15 +462,14 @@ export async function openGround({ team, onClose } = {}) {
     showSheet(`<p class="yg-sk">${TEAMS[p.team].name} · ${esc(line)}</p><h3>${esc(p.label)}</h3>
       <p class="yg-blurb">${esc(blurbFor(p.code))}</p>
       <div class="yg-price"><b>${money(s)}</b><span>minimum donation to Movember · same for every position</span></div>
-      <ol class="yg-steps"><li><b>Hold this spot</b> with your details. We keep it for 7 days.</li><li><b>Donate</b> on the Yappers Cup Movember page using the same email.</li><li>Once it lands, <b>your name goes on the team sheet</b> and the back of your guernsey.</li></ol>
+      <ol class="yg-steps"><li><b>Hold this spot</b> with your details. We keep it for 7 days.</li><li><b>Donate</b> on the Yappers Cup Movember page using the same email.</li><li>Once it lands, <b>your name goes on the team sheet</b>.</li></ol>
       <div class="yg-btns"><button type="button" class="yg-btn" data-a="claim">Claim ${esc(p.label.toLowerCase())}</button><button type="button" class="yg-btn ghost" data-a="field">Back</button></div>`);
   }
   function claimForm(p) {
     const min = PRICE[p.tier], opts = [min, min * 2, min * 4];
     showSheet(`<p class="yg-sk">${TEAMS[p.team].name} · ${esc(p.label)}</p><h3>Lock in your spot</h3>
       <form class="yg-form" novalidate>
-        <label>Full name<input name="full" autocomplete="name" maxlength="120" required></label>
-        <label>Name on your guernsey<input name="name" maxlength="16" required placeholder="e.g. BIG KEV" style="text-transform:uppercase"></label>
+        <label>Name<input name="full" autocomplete="name" maxlength="120" required></label>
         <div class="yg-row"><label>Email<input name="email" type="email" autocomplete="email" required placeholder="Same as on Movember"></label><label>Mobile<input name="mobile" type="tel" autocomplete="tel" maxlength="40"></label></div>
         <label>Your donation<span class="yg-amts" role="radiogroup">${opts.map((v, i) => `<button type="button" role="radio" aria-checked="${i === 0}" data-v="${v}" class="${i === 0 ? 'on' : ''}">${money(v)}</button>`).join('')}<span class="yg-other">Other $<input name="amount" type="number" inputmode="numeric" min="${min}" step="1" value="${min}"></span></span></label>
         <label class="yg-terms"><input type="checkbox" name="terms" required><span>I've read and accept the <a href="${TERMS_URL}" target="_blank" rel="noopener">terms &amp; conditions</a>, including that I take part at my own risk.</span></label>
@@ -483,9 +482,8 @@ export async function openGround({ team, onClose } = {}) {
     f.elements.full.focus({ preventScroll: true });
     f.onsubmit = async e => {
       e.preventDefault(); const err = f.querySelector('.yg-err'), btn = f.querySelector('[type=submit]'); err.textContent = '';
-      const body = { p_position: p.id, p_name: f.elements.name.value, p_full_name: f.elements.full.value, p_email: f.elements.email.value, p_mobile: f.elements.mobile.value, p_amount: Math.round(+amt.value || 0), p_terms: f.elements.terms.checked, p_terms_version: TERMS_VERSION };
-      if (!body.p_full_name.trim()) return void (err.textContent = 'Add your full name.');
-      if (!body.p_name.trim()) return void (err.textContent = 'Add the name for the back of your guernsey.');
+      const body = { p_position: p.id, p_name: f.elements.full.value, p_full_name: f.elements.full.value, p_email: f.elements.email.value, p_mobile: f.elements.mobile.value, p_amount: Math.round(+amt.value || 0), p_terms: f.elements.terms.checked, p_terms_version: TERMS_VERSION };
+      if (!body.p_full_name.trim()) return void (err.textContent = 'Add your name.');
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.p_email.trim())) return void (err.textContent = 'Add a valid email so we can match your donation.');
       if (body.p_amount < min) return void (err.textContent = `Every position starts at ${money(min)}.`);
       if (!body.p_terms) return void (err.textContent = 'Tick the box to accept the terms and conditions.');
