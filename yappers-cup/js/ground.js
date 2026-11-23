@@ -49,7 +49,7 @@ for (const [line, list] of LINES) for (const [code, label, x, z] of list) {
   for (const id of Object.keys(TEAMS)) {
     const T = TEAMS[id], bench = code[0] === 'I';
     const wx = bench ? (T.s > 0 ? x : -x) : x * T.s, wz = bench ? z : z * T.s;
-    POSITIONS.push({ id: `${id}-${code}`, team: id, code, label, line, x: wx, z: wz, tier: bench ? 'bench' : KEY_POS.includes(code) ? 'key' : 'field', state: 'free', who: '' });
+    POSITIONS.push({ id: `${id}-${code}`, team: id, code, label, line, x: wx, z: wz, tier: bench ? 'bench' : KEY_POS.includes(code) ? 'key' : 'field', state: 'free', who: '', photo: '' });
   }
 }
 const short = p => p.code[0] === 'I' ? 'INT' : p.code.replace(/^(HBF|HFF|BP|FP)[LR]$/, '$1').replace(/^W[LR]$/, 'W');
@@ -65,6 +65,19 @@ function centreText(c, text, x, y) {
 }
 const ease = t => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const wait = ms => new Promise(r => setTimeout(r, ms));
+// shrink a picked photo to a 360px square JPEG: centre crop, nudged up so heads don't get cut off
+async function squarePhoto(file) {
+  const url = URL.createObjectURL(file);
+  try {
+    const im = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url; });
+    const S = 360, side = Math.min(im.naturalWidth, im.naturalHeight);
+    const sx = (im.naturalWidth - side) / 2, sy = Math.max(0, (im.naturalHeight - side) * 0.3);
+    const cv = document.createElement('canvas'); cv.width = cv.height = S;
+    const g = cv.getContext('2d'); g.imageSmoothingQuality = 'high'; g.drawImage(im, sx, sy, side, side, 0, 0, S, S);
+    return cv.toDataURL('image/jpeg', 0.84);
+  } finally { URL.revokeObjectURL(url); }
+}
 const lerp = (a, b, t) => a + (b - a) * t;
 function rng(seed) { let s = seed >>> 0; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296); }
 
@@ -396,6 +409,14 @@ export async function openGround({ team, onClose } = {}) {
     c.fillStyle = fg; centreText(c, text, x, y);
     return w;
   }
+  // player headshots, loaded once and drawn as a head on the guernsey
+  const faces = new Map();
+  const face = url => {
+    if (!url) return null;
+    let f = faces.get(url);
+    if (!f) { f = new Image(); f.decoding = 'async'; f.onload = () => { dirty = true; }; f.src = url; faces.set(url, f); }
+    return f.complete && f.naturalWidth ? f : null;
+  };
   let hits = [], hover = null, picked = null, curTeam = null, mode = 'team', T0 = performance.now();
   function renderMarkers(now) {
     hits = [];
@@ -415,7 +436,15 @@ export async function openGround({ team, onClose } = {}) {
       // code on the chest
       c.font = `${Math.round(hh * (short(p).length > 2 ? 0.22 : 0.28))}px Anton`; c.fillStyle = '#FFF0D7'; c.textAlign = 'center'; c.textBaseline = 'middle';
       c.globalAlpha = p.state === 'held' ? 0.7 : 1; centreText(c, short(p), cx, s[1] - hh * 0.38 - lift); c.globalAlpha = 1;
-      const top = s[1] - hh - lift;
+      let top = s[1] - hh - lift;
+      const fimg = p.state !== 'free' ? face(p.photo) : null;
+      if (fimg) {
+        const hr = hh * 0.27, hy = top - hr * 0.5;
+        c.save(); c.globalAlpha = p.state === 'held' ? 0.7 : 1;
+        c.beginPath(); c.arc(cx, hy, hr + Math.max(1.5, hh * 0.035), 0, Math.PI * 2); c.fillStyle = '#FFF0D7'; c.fill();
+        c.beginPath(); c.arc(cx, hy, hr, 0, Math.PI * 2); c.clip(); c.drawImage(fimg, cx - hr, hy - hr, hr * 2, hr * 2);
+        c.restore(); top = hy - hr - 3;
+      }
       if (p.state === 'taken') pill(c, cx, top - 9, p.who, '#FFF0D7', '#101611', clamp(hh * 0.2, 10, 15));
       else if (p.state === 'held') pill(c, cx, top - 9, 'RESERVED', 'rgba(16,22,17,.85)', 'rgba(255,240,215,.8)', clamp(hh * 0.18, 9, 13));
       else if (sel || hov || h > 44) pill(c, cx, top - 9, money(PRICE[p.tier]), 'rgba(16,22,17,.85)', '#FFF0D7', clamp(hh * 0.18, 9, 13));
@@ -485,8 +514,8 @@ export async function openGround({ team, onClose } = {}) {
   async function load() {
     try {
       const b = await rpc('yc_board');
-      for (const p of POSITIONS) { p.state = 'free'; p.who = ''; }
-      for (const r of b.positions || []) { const p = POSITIONS.find(q => q.id === r.id); if (p) { p.state = r.status === 'confirmed' ? 'taken' : 'held'; p.who = r.name; } }
+      for (const p of POSITIONS) { p.state = 'free'; p.who = ''; p.photo = ''; }
+      for (const r of b.positions || []) { const p = POSITIONS.find(q => q.id === r.id); if (p) { p.state = r.status === 'confirmed' ? 'taken' : 'held'; p.who = r.name; p.photo = r.photo || ''; } }
       stats = { raised: b.raised || 0, pledged: b.pledged || 0 };
     } catch (e) { console.warn('yc board', e); }
     drawBoard(); dirty = true; setStats(); if (mode === 'list') listView();
@@ -540,7 +569,7 @@ export async function openGround({ team, onClose } = {}) {
     const off = mobile ? [toward[0] * d * 0.42, toward[1] * d * 0.42] : [right[0] * d * 0.26, right[1] * d * 0.26];
     fly({ tx: p.x + off[0], tz: p.z + off[1], d, pitch: 0.98 }, 1100);
     if (p.state !== 'free') {
-      showSheet(`<p class="yg-sk">${TEAMS[p.team].name} · ${esc(line)}</p><h3>${esc(p.label)}</h3>
+      showSheet(`<p class="yg-sk">${TEAMS[p.team].name} · ${esc(line)}</p>${p.photo ? `<img class="yg-face" src="${esc(p.photo)}" alt="${esc(p.who)}">` : ''}<h3>${esc(p.label)}</h3>
         <p class="yg-note">${p.state === 'taken' ? `<b>${esc(p.who)}</b> has this spot locked in.` : `This spot is reserved for <b>${esc(p.who)}</b> while they finish paying.`} Pick another guernsey.</p>
         <div class="yg-btns"><button type="button" class="yg-btn ghost" data-a="field">Back to the ground</button></div>`);
       return;
@@ -555,6 +584,7 @@ export async function openGround({ team, onClose } = {}) {
     const min = PRICE[p.tier], opts = [min, min * 2, min * 4];
     showSheet(`<p class="yg-sk">${TEAMS[p.team].name} · ${esc(p.label)}</p><h3>Lock in your spot</h3>
       <form class="yg-form" novalidate>
+        <div class="yg-photo"><span class="yg-ph" aria-hidden="true">+</span><div><b>Add a photo <small>(optional)</small></b><p>A headshot so everyone can put a face to the name. It shows on the team sheet.</p><label class="yg-ph-btn"><span>Take or choose photo</span><input type="file" name="photo" accept="image/*" hidden></label></div></div>
         <label>Name<input name="full" autocomplete="name" maxlength="120" required></label>
         <div class="yg-row"><label>Email<input name="email" type="email" autocomplete="email" required></label><label>Mobile<input name="mobile" type="tel" autocomplete="tel" maxlength="40"></label></div>
         <label>Your entry <small style="opacity:.7;font-weight:400">(all proceeds to Movember)</small><span class="yg-amts" role="radiogroup">${opts.map((v, i) => `<button type="button" role="radio" aria-checked="${i === 0}" data-v="${v}" class="${i === 0 ? 'on' : ''}">${money(v)}</button>`).join('')}<span class="yg-other">Other $<input name="amount" type="number" inputmode="numeric" min="${min}" step="1" value="${min}"></span></span></label>
@@ -568,6 +598,13 @@ export async function openGround({ team, onClose } = {}) {
     const payBtn = f.querySelector('[type=submit]'), setPay = () => { payBtn.textContent = `Pay ${money(Math.max(min, Math.round(+amt.value || 0)))}`; };
     f.addEventListener('click', () => setTimeout(setPay)); amt.addEventListener('input', setPay);
     f.elements.full.focus({ preventScroll: true });
+    let photoData = null;
+    const ph = f.querySelector('.yg-ph'), phBtn = f.querySelector('.yg-ph-btn span');
+    f.elements.photo.onchange = async () => {
+      const file = f.elements.photo.files[0]; if (!file) return;
+      try { photoData = await squarePhoto(file); ph.style.backgroundImage = `url(${photoData})`; ph.textContent = ''; ph.classList.add('has'); phBtn.textContent = 'Change photo'; }
+      catch (_) { photoData = null; f.querySelector('.yg-err').textContent = 'That photo didn\'t work. Try another, or skip it.'; }
+    };
     f.onsubmit = async e => {
       e.preventDefault(); const err = f.querySelector('.yg-err'), btn = f.querySelector('[type=submit]'); err.textContent = '';
       const body = { p_position: p.id, p_name: f.elements.full.value, p_full_name: f.elements.full.value, p_email: f.elements.email.value, p_mobile: f.elements.mobile.value, p_amount: Math.round(+amt.value || 0), p_terms: f.elements.terms.checked, p_terms_version: TERMS_VERSION };
@@ -578,7 +615,11 @@ export async function openGround({ team, onClose } = {}) {
       btn.disabled = true; btn.textContent = 'Opening secure checkout…';
       try {
         const c = await pay({ action: 'checkout', claim: body }).catch(() => ({ ok: false, error: 'not_configured' }));
-        if (c.ok && c.url) { try { sessionStorage.setItem('yc-pay', JSON.stringify({ pos: p.id })); } catch (_) {} location.href = c.url; return; }
+        if (c.ok && c.url) {
+          if (photoData && c.token) { btn.textContent = 'Saving your photo…'; await Promise.race([pay({ action: 'photo', position: p.id, token: c.token, image: photoData }), wait(12000)]).catch(() => {}); }
+          try { sessionStorage.setItem('yc-pay', JSON.stringify({ pos: p.id, token: c.token || '' })); } catch (_) {}
+          location.href = c.url; return;
+        }
         if (c.error !== 'not_configured') { err.textContent = c.error || 'That didn\'t go through. Try again.'; btn.disabled = false; setPay(); if (/grabbed/.test(c.error || '')) load(); return; }
         // card payments not switched on yet: fall back to reserving and donating on Movember
         btn.textContent = 'Reserving…';
@@ -591,11 +632,40 @@ export async function openGround({ team, onClose } = {}) {
       } catch (x) { err.textContent = 'That didn\'t go through. Check your connection and try again.'; btn.disabled = false; setPay(); }
     };
   }
+  async function photoSheet(pos, token) {
+    showSheet(`<p class="yg-sk">Team sheet photo</p><h3>One sec…</h3>`);
+    const info = await pay({ action: 'photo', position: pos, token }).catch(() => ({ ok: false }));
+    if (!info.ok) {
+      showSheet(`<p class="yg-sk">Team sheet photo</p><h3>That link isn't working</h3><p class="yg-note">${esc(info.error || 'Check your connection and try again.')} Email hello@yapperscup.com and we'll sort it.</p><div class="yg-btns"><button type="button" class="yg-btn" data-a="field">Back to the ground</button></div>`);
+      return;
+    }
+    const P = POSITIONS.find(q => q.id === pos), T = TEAMS[info.team];
+    const render = photo => {
+      showSheet(`<p class="yg-sk">${T.name} · ${esc(P ? P.label : info.pos)} · ${esc(info.name)}</p><h3>${photo ? 'Your team sheet photo' : 'Add your photo'}</h3>
+        <p class="yg-note">${photo ? 'Looking sharp. It\'s up on the ground for everyone to see.' : `Put a face to the name, ${esc(info.first || 'legend')}. A clear headshot works best.`}</p>
+        <div class="yg-photo big"><span class="yg-ph${photo ? ' has' : ''}" style="${photo ? `background-image:url('${esc(photo)}')` : ''}">${photo ? '' : '+'}</span></div>
+        <p class="yg-err" role="alert"></p>
+        <div class="yg-btns"><label class="yg-btn">${photo ? 'Change photo' : 'Take or choose photo'}<input type="file" accept="image/*" hidden></label>${photo ? '<button type="button" class="yg-btn ghost" data-x="remove">Remove</button>' : ''}<button type="button" class="yg-btn ghost" data-a="field">${photo ? 'Done' : 'Skip for now'}</button></div>`);
+      const inp = sheet.querySelector('input[type=file]'), err = sheet.querySelector('.yg-err');
+      inp.onchange = async () => {
+        const file = inp.files[0]; if (!file) return;
+        err.textContent = 'Uploading…';
+        try {
+          const r = await pay({ action: 'photo', position: pos, token, image: await squarePhoto(file) });
+          if (!r.ok) { err.textContent = r.error || 'Couldn\'t save that photo. Try again.'; return; }
+          if (P) P.photo = r.photo; dirty = true; render(r.photo);
+        } catch (_) { err.textContent = 'That photo didn\'t work. Try another.'; }
+      };
+      const rm = sheet.querySelector('[data-x=remove]');
+      if (rm) rm.onclick = async () => { const r = await pay({ action: 'photo', position: pos, token, remove: true }).catch(() => ({ ok: false })); if (r.ok) { if (P) P.photo = ''; dirty = true; render(null); } };
+    };
+    render(info.photo);
+  }
   function listView() {
     mode = 'list'; const T = TEAMS[curTeam];
     showSheet(`<p class="yg-sk">${T.name} · team sheet</p><h3>All positions</h3>` + LINES.map(([line, list]) => `<div class="yg-line"><p>${line}</p>${list.map(([code]) => {
       const p = POSITIONS.find(q => q.id === `${curTeam}-${code}`);
-      return `<button type="button" class="yg-li ${p.state}" data-pos="${p.id}" ${p.state === 'free' ? '' : 'aria-disabled="true"'}><span>${esc(p.label)}</span><em>${p.state === 'taken' ? esc(p.who) : p.state === 'held' ? 'Reserved' : money(PRICE[p.tier])}</em></button>`;
+      return `<button type="button" class="yg-li ${p.state}" data-pos="${p.id}" ${p.state === 'free' ? '' : 'aria-disabled="true"'}><span class="yg-li-l">${p.photo && p.state !== 'free' ? `<img class="yg-av" src="${esc(p.photo)}" alt="" loading="lazy">` : ''}${esc(p.label)}</span><em>${p.state === 'taken' ? esc(p.who) : p.state === 'held' ? 'Reserved' : money(PRICE[p.tier])}</em></button>`;
     }).join('')}</div>`).join('') + `<div class="yg-btns"><button type="button" class="yg-btn ghost" data-a="field">Back to the ground</button></div>`);
   }
   function backToField() {
@@ -624,11 +694,12 @@ export async function openGround({ team, onClose } = {}) {
 
   cam.yaw = homeYaw() - 0.6; cam.d = fitD() * 1.6; cam.pitch = 0.95;
   requestAnimationFrame(frame);
-  const qs = new URLSearchParams(location.search), paidId = qs.get('paid'), cancelled = qs.has('cancelled');
-  if (paidId || cancelled) history.replaceState(null, '', location.pathname + location.hash);
+  const qs = new URLSearchParams(location.search), paidId = qs.get('paid'), cancelled = qs.has('cancelled'), photoQ = /^([a-z]+-[A-Z0-9]+)\.([0-9a-f-]{36})$/i.exec(qs.get('photo') || '');
+  if (paidId || cancelled || qs.has('photo')) history.replaceState(null, '', location.pathname + location.hash);
   if (paidId) {
     teamPicker();
     showSheet(`<p class="yg-sk">Payment received</p><h3>Locking you in…</h3><p class="yg-note">Hang tight while we put your name on the team sheet.</p>`);
+    let saved = {}; try { saved = JSON.parse(sessionStorage.getItem('yc-pay') || '{}') || {}; } catch (_) {}
     const tryConfirm = async (n) => {
       const r = await pay({ action: 'confirm', session: paidId }).catch(() => ({ ok: false }));
       if (r.ok) {
@@ -636,11 +707,19 @@ export async function openGround({ team, onClose } = {}) {
         curTeam = r.team; chooseTeam(r.team); if (pos) setTimeout(() => fly({ tx: pos.x, tz: pos.z, d: portrait() ? 125 : 150, pitch: 0.98 }, 1200), 300);
         showSheet(`<p class="yg-sk">You're in · ${T.name}</p><h3>${esc(r.name)}, ${esc(pos ? pos.label : r.pos)}</h3>
           <p class="yg-note">Your name's on the team sheet. Stripe has emailed your receipt. See you at Gosch's Paddock on Sunday 29 November, 12:30pm for a 1pm bounce.</p>
-          <div class="yg-btns"><button type="button" class="yg-btn" data-a="field">See the team sheet</button></div>`);
+          <div class="yg-btns"><button type="button" class="yg-btn" data-a="field">See the team sheet</button>${saved.token && saved.pos === r.position ? `<button type="button" class="yg-btn ghost" data-x="photo">${pos && pos.photo ? 'Change your photo' : 'Add your photo'}</button>` : ''}</div>`);
+        const pb = sheet.querySelector('[data-x=photo]'); if (pb) pb.onclick = () => photoSheet(r.position, saved.token);
       } else if (n < 4) setTimeout(() => tryConfirm(n + 1), 1500);
       else showSheet(`<p class="yg-sk">Payment received</p><h3>Nearly there</h3><p class="yg-note">Your payment went through but the team sheet is taking a moment to update. Refresh in a minute, or email hello@yapperscup.com if your name isn't up.</p><div class="yg-btns"><button type="button" class="yg-btn" data-a="field">Back to the ground</button></div>`);
     };
     tryConfirm(0);
+  } else if (photoQ) {
+    const [, pos, token] = photoQ, tm = pos.split('-')[0];
+    if (TEAMS[tm]) { curTeam = tm; chooseTeam(tm); }
+    await load();
+    const P = POSITIONS.find(q => q.id === pos);
+    if (P) setTimeout(() => fly({ tx: P.x, tz: P.z, d: portrait() ? 125 : 150, pitch: 0.98 }, 1200), 300);
+    photoSheet(pos, token);
   } else {
     if (cancelled) { try { sessionStorage.removeItem('yc-pay'); } catch (_) {} }
     if (team && TEAMS[team]) { setTimeout(() => chooseTeam(team), 50); } else teamPicker();

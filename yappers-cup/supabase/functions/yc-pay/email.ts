@@ -17,7 +17,7 @@ const DONATE = 'https://au.movember.com/events/view/id/kNxN', IG = 'https://www.
 const INK = '#101611', INK2 = '#181F19', CREAM = '#FFF0D7', RED = '#CD2A2D', MUTED = '#c9bfad', LINE = '#2f362f';
 const DISPLAY = "Anton,Impact,'Arial Narrow Bold','Arial Narrow',Arial,sans-serif", BODY = "Archivo,Arial,Helvetica,sans-serif";
 
-export function welcomeEmail(p: { first: string; team: string; pos: string; display: string; cents: number }, img = ASSETS) {
+export function welcomeEmail(p: { first: string; team: string; pos: string; display: string; cents: number; photoLink?: string; hasPhoto?: boolean }, img = ASSETS) {
   const team = p.team === 'mudguts' ? 'Mudguts' : 'Pissants', posName = NAMES[p.pos] || p.pos, paid = '$' + (p.cents / 100).toFixed(2).replace(/\.00$/, '');
   const mine = p.team === 'mudguts' ? 'shield-mudguts.png' : 'shield-pissants.png';
   const subject = `You're in! ${team} · ${posName} · Yappers Cup 2026`;
@@ -67,6 +67,7 @@ ${section(`
     <td align="right" style="padding:16px 18px;font:400 40px/1 ${DISPLAY};color:${RED}">${paid}</td>
   </tr></table>
   <p style="margin:10px 0 0;font:13px/1.5 ${BODY};color:${MUTED}">Your payment receipt from Stripe comes in a separate email.</p>
+  ${p.photoLink ? `<p style="margin:18px 0 0;font:15px/1.55 ${BODY};color:${MUTED}">${p.hasPhoto ? 'Your photo is up on the team sheet. Want a different one?' : 'Put a face to the name. Add a headshot and it shows on the team sheet.'}</p>${btn(p.photoLink, p.hasPhoto ? 'Change your photo' : 'Add your photo', true)}` : ''}
 `)}
 
 ${section(`
@@ -137,7 +138,7 @@ ${section(`
 Your spot is locked in.
 ${posName} · ${team} · on the team sheet as ${p.display} · paid ${paid}
 (Stripe receipt sent separately)
-
+${p.photoLink ? `\n${p.hasPhoto ? 'Change your photo' : 'Add your photo to the team sheet'}: ${p.photoLink}\n` : ''}
 MATCH DAY · Sunday 29 November 2026
 - Arrive by 12:30pm. First bounce 1pm. Two 20-minute halves.
 - Gosch's Paddock, off Olympic Boulevard next to AAMI Park.

@@ -1,9 +1,14 @@
 // Yappers Cup: pay for a position with Stripe Checkout, then send the welcome email.
-// actions: checkout (reserve + open Stripe), confirm (after redirect back), reconcile (catch payments where the tab was closed).
+// actions: checkout (reserve + open Stripe), confirm (after redirect back), reconcile (catch payments where the tab was closed),
+// photo (add, change or remove a player's headshot with their private photo token).
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { welcomeEmail } from './email.ts';
 
 const ORIGINS = ['https://yapperscup.com', 'https://www.yapperscup.com', 'https://yappers-cup.vercel.app'];
+const SITE = 'https://yapperscup.com';
+const POS_RE = /^(mudguts|pissants)-(FB|BPL|BPR|CHB|HBFL|HBFR|C|WL|WR|CHF|HFFL|HFFR|FF|FPL|FPR|RK|RR|R|I1|I2|I3|I4)$/;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const BUCKET = 'yc-photos';
 const okOrigin = (o: string | null) => !!o && (ORIGINS.includes(o) || /^http:\/\/localhost(:\d+)?$/.test(o));
 const cors = (origin: string | null) => ({
   'Access-Control-Allow-Origin': okOrigin(origin) ? origin! : ORIGINS[0],
@@ -35,10 +40,10 @@ async function sendWelcome(sb: any, session: string) {
   if (!key) return;
   const { data: rows } = await sb.from('yc_positions').update({ welcome_sent_at: new Date().toISOString() })
     .eq('stripe_session', session).eq('status', 'confirmed').is('welcome_sent_at', null)
-    .select('full_name,email,team,pos,display_name,paid_cents,amount');
+    .select('position_id,full_name,email,team,pos,display_name,paid_cents,amount,photo_url,photo_token');
   const r = rows && rows[0]; if (!r) return;
   const first = String(r.full_name || '').trim().split(/\s+/)[0] || 'legend';
-  const m = welcomeEmail({ first, team: r.team, pos: r.pos, display: r.display_name, cents: r.paid_cents ?? r.amount * 100 });
+  const m = welcomeEmail({ first, team: r.team, pos: r.pos, display: r.display_name, cents: r.paid_cents ?? r.amount * 100, hasPhoto: !!r.photo_url, photoLink: `${SITE}/?photo=${r.position_id}.${r.photo_token}#ground` });
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST', headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' },
     body: JSON.stringify({ from: 'Yappers Cup <hello@yapperscup.com>', to: [r.email], reply_to: 'hello@yapperscup.com', subject: m.subject, html: m.html, text: m.text }),
@@ -93,11 +98,37 @@ Deno.serve(async (req) => {
           cancel_url: `${base}/?cancelled=1#ground`,
         });
         await sb.rpc('yc_set_session', { p_position: c.p_position, p_email: c.p_email, p_session: s.id });
-        return out({ ok: true, url: s.url, name: r.name });
+        const { data: t } = await sb.from('yc_positions').select('photo_token').eq('position_id', c.p_position).eq('email', String(c.p_email).trim().toLowerCase()).maybeSingle();
+        return out({ ok: true, url: s.url, name: r.name, token: t?.photo_token });
       } catch (e) {
         await sb.from('yc_positions').delete().eq('position_id', c.p_position).eq('status', 'pending').is('stripe_session', null);
         throw e;
       }
+    }
+    if (body.action === 'photo') {
+      const pos = String(body.position || ''), token = String(body.token || '');
+      if (!POS_RE.test(pos) || !UUID_RE.test(token)) return out({ ok: false, error: 'That photo link isn\'t right.' });
+      const { data: row } = await sb.from('yc_positions').select('position_id,team,pos,display_name,full_name,status,photo_url').eq('position_id', pos).eq('photo_token', token).maybeSingle();
+      if (!row) return out({ ok: false, error: 'That photo link has expired or isn\'t right.' });
+      const info = { ok: true, position: row.position_id, team: row.team, pos: row.pos, name: row.display_name, first: String(row.full_name || '').trim().split(/\s+/)[0], photo: row.photo_url };
+      const oldPath = row.photo_url && row.photo_url.includes(`/${BUCKET}/`) ? row.photo_url.split(`/${BUCKET}/`)[1] : null;
+      if (body.remove === true) {
+        await sb.from('yc_positions').update({ photo_url: null }).eq('position_id', pos).eq('photo_token', token);
+        if (oldPath) await sb.storage.from(BUCKET).remove([oldPath]);
+        return out({ ...info, photo: null });
+      }
+      if (typeof body.image !== 'string') return out(info);
+      const b64 = body.image.replace(/^data:image\/jpeg;base64,/, '');
+      let bytes: Uint8Array;
+      try { bytes = Uint8Array.from(atob(b64), (ch) => ch.charCodeAt(0)); } catch { return out({ ok: false, error: 'That photo didn\'t come through. Try another.' }); }
+      if (bytes.length < 1000 || bytes.length > 500000 || bytes[0] !== 0xff || bytes[1] !== 0xd8) return out({ ok: false, error: 'That photo didn\'t come through. Try another.' });
+      const path = `${pos}/${crypto.randomUUID()}.jpg`;
+      const up = await sb.storage.from(BUCKET).upload(path, bytes, { contentType: 'image/jpeg', cacheControl: '31536000' });
+      if (up.error) { console.error('photo upload', up.error.message); return out({ ok: false, error: 'Couldn\'t save that photo. Try again.' }); }
+      const url = sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+      await sb.from('yc_positions').update({ photo_url: url }).eq('position_id', pos).eq('photo_token', token);
+      if (oldPath) await sb.storage.from(BUCKET).remove([oldPath]);
+      return out({ ...info, photo: url });
     }
     if (body.action === 'confirm' && typeof body.session === 'string' && body.session.startsWith('cs_')) return out(await confirm(body.session));
     if (body.action === 'reconcile') {

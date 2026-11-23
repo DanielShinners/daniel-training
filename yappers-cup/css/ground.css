@@ -112,3 +112,18 @@ html.yg-open, html.yg-open body { overflow: hidden; }
 @media (prefers-reduced-motion: reduce) { .yg, .yg-sheet { animation: none; } }
 .yg .mo { display: inline-block; height: 2.2em; width: auto; vertical-align: -.74em; margin: 0 .06em; }
 .yg .yg-btn .mo { height: 1.8em; vertical-align: -.62em; }
+
+/* player photos */
+.yg-photo { display: flex; align-items: center; gap: 14px; text-transform: none; letter-spacing: 0; }
+.yg-photo b { display: block; font-size: 14px; }
+.yg-photo b small { font-weight: 400; opacity: .65; }
+.yg-photo p { margin: 2px 0 8px; font-size: 13px; line-height: 1.4; font-weight: 400; opacity: .8; }
+.yg-ph { width: 72px; height: 72px; flex: 0 0 72px; border-radius: 50%; border: 2px dashed rgba(16,22,17,.35); background: #fff center / cover no-repeat; display: flex; align-items: center; justify-content: center; font: 400 28px/1 var(--display); color: rgba(16,22,17,.45); box-sizing: border-box; }
+.yg-ph.has { border: 3px solid var(--ink); }
+.yg-photo.big { justify-content: center; margin: 8px 0 4px; }
+.yg-photo.big .yg-ph { width: 140px; height: 140px; flex-basis: 140px; font-size: 46px; }
+.yg-form label.yg-ph-btn, .yg-ph-btn { display: inline-block; border: 1.5px solid var(--ink); border-radius: 999px; padding: 6px 14px; font-size: 12px; font-weight: 700; letter-spacing: .02em; text-transform: none; cursor: pointer; }
+label.yg-btn { cursor: pointer; }
+.yg-face { display: block; width: 96px; height: 96px; border-radius: 50%; object-fit: cover; margin: 8px 0 12px; border: 3px solid var(--ink); }
+.yg-li-l { display: flex; align-items: center; gap: 10px; }
+.yg-av { width: 28px; height: 28px; flex: 0 0 28px; border-radius: 50%; object-fit: cover; }
