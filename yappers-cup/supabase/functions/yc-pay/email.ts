@@ -107,11 +107,19 @@ ${section(`
 `, INK2)}
 
 ${section(`
+  ${eyebrow('Mini game · Warm up before the bounce')}
+  ${h2('Goal-kicking practice')}
+  <a href="${SITE}/#kick" style="display:block;text-decoration:none"><img src="${img}kick-preview.jpg" width="560" alt="Play the Yappers Cup goal-kicking game" style="display:block;width:100%;max-width:560px;height:auto;border-radius:8px;border:1px solid #3a413a"></a>
+  <p style="margin:14px 0 0;font:16px/1.55 ${BODY};color:${MUTED}">Pick your team, drag back to aim and let go. 60 seconds to rack up goals and get your name on the leaderboard. Top the board and you'll see why it's worth it.</p>
+  <p style="margin:14px 0 0">${btn(SITE + '/#kick', 'Play the game')}</p>
+`)}
+
+${section(`
   ${eyebrow('Footy worth talking about')}
   ${h2('Help us raise more')}
   <p style="margin:0;font:16px/1.55 ${BODY};color:${MUTED}">All profits raised go to Movember, funding men's mental health, suicide prevention and men's cancer programs. Know someone who wants to play, or mates and family who'd like to chip in?</p>
   <p style="margin:14px 0 0">${btn(SITE, 'Share the sign-up')}${btn(DONATE, 'Donate to Movember', true)}</p>
-`)}
+`, INK2)}
 
 <tr><td style="padding:40px 30px 36px;text-align:center;border-top:1px solid ${LINE}">
   <img src="${img}wordmark-red.png" width="260" alt="Yappers Cup" style="display:block;margin:0 auto;width:60%;max-width:260px;height:auto">
@@ -159,7 +167,7 @@ GOOD TO KNOW
 - Everyone plays at their own risk: ${SITE}/terms.html
 - Can't make it? Reply and let us know.
 
-All profits raised go to Movember. Share the sign-up: ${SITE}  Donate: ${DONATE}
+GOAL-KICKING PRACTICE\nWarm up with the mini game: 60 seconds to top the leaderboard. ${SITE}/#kick\n\nAll profits raised go to Movember. Share the sign-up: ${SITE}  Donate: ${DONATE}
 
 Questions? Reply or email hello@yapperscup.com`;
   return { subject, html, text };
