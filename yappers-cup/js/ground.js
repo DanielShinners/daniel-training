@@ -632,14 +632,15 @@ export async function openGround({ team, onClose } = {}) {
       } catch (x) { err.textContent = 'That didn\'t go through. Check your connection and try again.'; btn.disabled = false; setPay(); }
     };
   }
-  async function photoSheet(pos, token) {
+  async function photoSheet(pos, token, fromLink = false) {
     showSheet(`<p class="yg-sk">Team sheet photo</p><h3>One sec…</h3>`);
     const info = await pay({ action: 'photo', position: pos, token }).catch(() => ({ ok: false }));
     if (!info.ok) {
       showSheet(`<p class="yg-sk">Team sheet photo</p><h3>That link isn't working</h3><p class="yg-note">${esc(info.error || 'Check your connection and try again.')} Email hello@yapperscup.com and we'll sort it.</p><div class="yg-btns"><button type="button" class="yg-btn" data-a="field">Back to the ground</button></div>`);
       return;
     }
-    const P = POSITIONS.find(q => q.id === pos), T = TEAMS[info.team];
+    const P = POSITIONS.find(q => q.id === info.position), T = TEAMS[info.team];
+    if (fromLink) { if (curTeam !== info.team) chooseTeam(info.team); if (P) setTimeout(() => fly({ tx: P.x, tz: P.z, d: portrait() ? 125 : 150, pitch: 0.98 }, 1200), 300); }
     const render = photo => {
       showSheet(`<p class="yg-sk">${T.name} · ${esc(P ? P.label : info.pos)} · ${esc(info.name)}</p><h3>${photo ? 'Your team sheet photo' : 'Add your photo'}</h3>
         <p class="yg-note">${photo ? 'Looking sharp. It\'s up on the ground for everyone to see.' : `Put a face to the name, ${esc(info.first || 'legend')}. A clear headshot works best.`}</p>
@@ -717,9 +718,7 @@ export async function openGround({ team, onClose } = {}) {
     const [, pos, token] = photoQ, tm = pos.split('-')[0];
     if (TEAMS[tm]) { curTeam = tm; chooseTeam(tm); }
     await load();
-    const P = POSITIONS.find(q => q.id === pos);
-    if (P) setTimeout(() => fly({ tx: P.x, tz: P.z, d: portrait() ? 125 : 150, pitch: 0.98 }, 1200), 300);
-    photoSheet(pos, token);
+    photoSheet(pos, token, true);
   } else {
     if (cancelled) { try { sessionStorage.removeItem('yc-pay'); } catch (_) {} }
     if (team && TEAMS[team]) { setTimeout(() => chooseTeam(team), 50); } else teamPicker();

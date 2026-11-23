@@ -106,14 +106,15 @@ Deno.serve(async (req) => {
       }
     }
     if (body.action === 'photo') {
-      const pos = String(body.position || ''), token = String(body.token || '');
-      if (!POS_RE.test(pos) || !UUID_RE.test(token)) return out({ ok: false, error: 'That photo link isn\'t right.' });
-      const { data: row } = await sb.from('yc_positions').select('position_id,team,pos,display_name,full_name,status,photo_url').eq('position_id', pos).eq('photo_token', token).maybeSingle();
+      const token = String(body.token || '');
+      // the token alone finds the player, so links keep working if they're moved to another position
+      if (!UUID_RE.test(token)) return out({ ok: false, error: 'That photo link isn\'t right.' });
+      const { data: row } = await sb.from('yc_positions').select('position_id,team,pos,display_name,full_name,status,photo_url').eq('photo_token', token).maybeSingle();
       if (!row) return out({ ok: false, error: 'That photo link has expired or isn\'t right.' });
       const info = { ok: true, position: row.position_id, team: row.team, pos: row.pos, name: row.display_name, first: String(row.full_name || '').trim().split(/\s+/)[0], photo: row.photo_url };
       const oldPath = row.photo_url && row.photo_url.includes(`/${BUCKET}/`) ? row.photo_url.split(`/${BUCKET}/`)[1] : null;
       if (body.remove === true) {
-        await sb.from('yc_positions').update({ photo_url: null }).eq('position_id', pos).eq('photo_token', token);
+        await sb.from('yc_positions').update({ photo_url: null }).eq('photo_token', token);
         if (oldPath) await sb.storage.from(BUCKET).remove([oldPath]);
         return out({ ...info, photo: null });
       }
@@ -122,11 +123,11 @@ Deno.serve(async (req) => {
       let bytes: Uint8Array;
       try { bytes = Uint8Array.from(atob(b64), (ch) => ch.charCodeAt(0)); } catch { return out({ ok: false, error: 'That photo didn\'t come through. Try another.' }); }
       if (bytes.length < 1000 || bytes.length > 500000 || bytes[0] !== 0xff || bytes[1] !== 0xd8) return out({ ok: false, error: 'That photo didn\'t come through. Try another.' });
-      const path = `${pos}/${crypto.randomUUID()}.jpg`;
+      const path = `${row.position_id}/${crypto.randomUUID()}.jpg`;
       const up = await sb.storage.from(BUCKET).upload(path, bytes, { contentType: 'image/jpeg', cacheControl: '31536000' });
       if (up.error) { console.error('photo upload', up.error.message); return out({ ok: false, error: 'Couldn\'t save that photo. Try again.' }); }
       const url = sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
-      await sb.from('yc_positions').update({ photo_url: url }).eq('position_id', pos).eq('photo_token', token);
+      await sb.from('yc_positions').update({ photo_url: url }).eq('photo_token', token);
       if (oldPath) await sb.storage.from(BUCKET).remove([oldPath]);
       return out({ ...info, photo: url });
     }

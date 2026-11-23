@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#101611">
+<title>Team HQ · Yappers Cup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root { --ink:#101611; --ink2:#181F19; --line:#2c352d; --cream:#FFF0D7; --muted:#b9b09f; --red:#CD2A2D; --mud:#0E5A2C; --mud2:#8A2412; --pis:#E2600F; --pis2:#1C3B83; --display:Anton,Impact,sans-serif; }
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--ink); color: var(--cream); font: 15px/1.45 Archivo, system-ui, sans-serif; -webkit-text-size-adjust: 100%; }
+button { font: inherit; color: inherit; }
+.wrap { max-width: 760px; margin: 0 auto; padding: 18px 16px calc(120px + env(safe-area-inset-bottom)); }
+.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.brand { font-family: var(--display); text-transform: uppercase; font-size: 30px; line-height: 1; letter-spacing: .02em; margin: 0; }
+.brand small { display: block; font-size: 13px; letter-spacing: .14em; color: var(--red); margin-bottom: 4px; }
+.icon-btn { border: 1.5px solid var(--line); background: var(--ink2); border-radius: 999px; padding: 8px 14px; cursor: pointer; font-weight: 600; font-size: 13px; }
+.tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 18px 0 6px; }
+.tab { border: 0; border-radius: 10px; padding: 12px 10px; cursor: pointer; background: var(--ink2); font-family: var(--display); text-transform: uppercase; font-size: 20px; letter-spacing: .03em; box-shadow: inset 0 0 0 1.5px var(--line); }
+.tab small { display: block; font: 600 12px/1.2 Archivo, sans-serif; text-transform: none; letter-spacing: 0; color: var(--muted); margin-top: 3px; }
+.tab.on.mudguts { background: var(--mud); box-shadow: inset 0 0 0 2px var(--mud2); }
+.tab.on.pissants { background: var(--pis); box-shadow: inset 0 0 0 2px var(--pis2); }
+.tab.on small { color: rgba(255,240,215,.85); }
+h2 { font-family: var(--display); font-weight: 400; text-transform: uppercase; font-size: 22px; letter-spacing: .03em; margin: 26px 0 4px; }
+.hint { color: var(--muted); font-size: 13px; margin: 0 0 10px; }
+.line { margin-top: 14px; }
+.line > p { margin: 0 0 6px; font-weight: 800; font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+.row { width: 100%; display: flex; align-items: center; gap: 12px; padding: 10px 12px; margin-top: 6px; background: var(--ink2); border: 1.5px solid var(--line); border-radius: 10px; cursor: pointer; text-align: left; min-height: 60px; }
+.row .code { flex: 0 0 46px; height: 38px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-family: var(--display); font-size: 15px; letter-spacing: .03em; background: rgba(255,240,215,.08); }
+.mudguts .row.filled .code { background: var(--mud); box-shadow: inset 0 0 0 2px var(--mud2); }
+.pissants .row.filled .code { background: var(--pis); box-shadow: inset 0 0 0 2px var(--pis2); }
+.row .who { flex: 1; min-width: 0; }
+.row .who b { display: block; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row .who span { display: block; font-size: 12px; color: var(--muted); }
+.row .face { flex: 0 0 38px; width: 38px; height: 38px; border-radius: 50%; object-fit: cover; background: rgba(255,240,215,.1); display: flex; align-items: center; justify-content: center; font-family: var(--display); font-size: 15px; color: var(--muted); }
+.row.empty .who b { color: var(--muted); font-weight: 400; }
+.row.empty .face { background: transparent; border: 1.5px dashed rgba(255,240,215,.25); }
+.pill { font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; background: rgba(226,160,40,.16); color: #f0b54a; }
+.row.src { border-color: var(--cream); background: #253026; }
+body.moving .row:not(.src) { border-style: dashed; border-color: rgba(255,240,215,.4); }
+body.moving .row:not(.src):hover { border-color: var(--cream); }
+.bar { position: fixed; left: 0; right: 0; bottom: 0; padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); background: var(--cream); color: var(--ink); display: flex; align-items: center; gap: 12px; box-shadow: 0 -8px 30px rgba(0,0,0,.4); z-index: 5; }
+.bar p { margin: 0; flex: 1; font-size: 14px; }
+.bar b { font-family: var(--display); font-weight: 400; font-size: 18px; text-transform: uppercase; letter-spacing: .02em; }
+.btn { border: 0; border-radius: 6px; padding: 11px 18px; font-family: var(--display); font-size: 16px; text-transform: uppercase; letter-spacing: .04em; cursor: pointer; background: var(--red); color: var(--cream); }
+.btn.ghost { background: transparent; box-shadow: inset 0 0 0 2px currentColor; color: inherit; }
+.btn:disabled { opacity: .6; }
+.modal { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: flex; align-items: flex-end; justify-content: center; z-index: 10; }
+.sheet { width: 100%; max-width: 520px; background: var(--cream); color: var(--ink); border-radius: 16px 16px 0 0; padding: 22px 20px calc(22px + env(safe-area-inset-bottom)); }
+@media (min-width: 600px) { .modal { align-items: center; } .sheet { border-radius: 16px; } }
+.sheet h3 { margin: 0 0 8px; font-family: var(--display); font-weight: 400; text-transform: uppercase; font-size: 26px; line-height: 1.05; }
+.sheet p { margin: 0 0 16px; }
+.sheet .btns { display: flex; gap: 10px; flex-wrap: wrap; }
+.sheet .err { color: var(--red); font-weight: 600; }
+.notes { width: 100%; min-height: 260px; resize: vertical; background: var(--ink2); color: var(--cream); border: 1.5px solid var(--line); border-radius: 10px; padding: 14px; font: 16px/1.55 Archivo, sans-serif; }
+.notes:focus { outline: none; border-color: var(--cream); }
+.notes-meta { display: flex; justify-content: space-between; gap: 10px; font-size: 12px; color: var(--muted); margin-top: 6px; }
+.speech { display: none; }
+body.speaking .speech { display: block; position: fixed; inset: 0; z-index: 20; background: var(--ink); overflow: auto; padding: 24px 22px calc(40px + env(safe-area-inset-bottom)); }
+.speech pre { white-space: pre-wrap; word-wrap: break-word; font: 400 26px/1.45 Archivo, sans-serif; margin: 16px 0 0; }
+.speech .top { position: sticky; top: -24px; background: var(--ink); padding: 8px 0; }
+.log { margin-top: 10px; font-size: 13px; color: var(--muted); }
+.log div { padding: 6px 0; border-top: 1px solid var(--line); }
+.state { padding: 60px 0; text-align: center; color: var(--muted); }
+.state b { display: block; font-family: var(--display); font-weight: 400; font-size: 26px; text-transform: uppercase; color: var(--cream); margin-bottom: 8px; }
+.toast { position: fixed; left: 50%; top: 16px; transform: translateX(-50%); background: var(--cream); color: var(--ink); padding: 10px 16px; border-radius: 999px; font-weight: 600; font-size: 14px; z-index: 30; box-shadow: 0 6px 20px rgba(0,0,0,.4); }
+</style>
+</head>
+<body>
+<div class="wrap" id="app"><div class="state"><b>Loading team HQ</b>One sec…</div></div>
+<div class="speech" id="speech" aria-live="polite"></div>
+<script>
+(() => {
+  const SUPA = 'https://dsbfhvmcxafqeawwgcrf.supabase.co', ANON = 'sb_publishable_dy0wvwCT1tU3OlyepK5I0w_jknlpVB2';
+  const KEY = decodeURIComponent((location.hash || '').slice(1));
+  const TEAMS = { mudguts: 'Mudguts', pissants: 'Pissants' };
+  const LINES = [
+    ['Forwards', [['FPL','Forward pocket'],['FF','Full forward'],['FPR','Forward pocket']]],
+    ['Half-forwards', [['HFFL','Half-forward flank'],['CHF','Centre half-forward'],['HFFR','Half-forward flank']]],
+    ['Centre line', [['WL','Wing'],['C','Centre'],['WR','Wing']]],
+    ['Followers', [['RK','Ruck'],['RR','Ruck rover'],['R','Rover']]],
+    ['Half-backs', [['HBFL','Half-back flank'],['CHB','Centre half-back'],['HBFR','Half-back flank']]],
+    ['Backs', [['BPL','Back pocket'],['FB','Full back'],['BPR','Back pocket']]],
+    ['Interchange', [['I1','Interchange 1'],['I2','Interchange 2'],['I3','Interchange 3'],['I4','Interchange 4']]],
+  ];
+  const LABEL = Object.fromEntries(LINES.flatMap(([, l]) => l));
+  const short = c => c[0] === 'I' ? 'INT' : c;
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const place = id => { const [t, c] = id.split('-'); return `${TEAMS[t]} · ${LABEL[c] || c}`; };
+  const rpc = (fn, body) => fetch(`${SUPA}/rest/v1/rpc/${fn}`, { method: 'POST', headers: { apikey: ANON, Authorization: `Bearer ${ANON}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(r => r.json());
+  const app = document.getElementById('app'), speech = document.getElementById('speech');
+  let team = 'mudguts', board = null, moving = null, notesDirty = false, saveTimer = null;
+  try { const t = sessionStorage.getItem('yc-hq-team'); if (TEAMS[t]) team = t; } catch (_) {}
+
+  const toast = msg => { const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg; document.body.append(t); setTimeout(() => t.remove(), 2200); };
+
+  async function load(quiet) {
+    if (!KEY) { app.innerHTML = '<div class="state"><b>Link not complete</b>Open the full link you were sent.</div>'; return; }
+    try {
+      const b = await rpc('yc_admin_board', { p_key: KEY });
+      if (!b || !b.ok) { app.innerHTML = `<div class="state"><b>No access</b>${esc((b && b.error) || 'This link isn\'t valid.')}</div>`; return; }
+      board = b; render();
+    } catch (e) { if (!quiet) app.innerHTML = '<div class="state"><b>Couldn\'t load</b>Check your signal and refresh.</div>'; }
+  }
+
+  function render() {
+    const by = new Map(board.positions.map(p => [p.id, p]));
+    const count = t => board.positions.filter(p => p.team === t).length;
+    const notes = (board.notes && board.notes[team]) || { text: '', at: null };
+    const focusNotes = document.activeElement && document.activeElement.classList.contains('notes');
+    if (focusNotes) return;   // don't wipe the coach mid-sentence
+    app.innerHTML = `
+      <div class="top"><h1 class="brand"><small>Yappers Cup · private</small>Team HQ</h1><button type="button" class="icon-btn" data-a="refresh">Refresh</button></div>
+      <div class="tabs">${Object.keys(TEAMS).map(t => `<button type="button" class="tab ${t} ${t === team ? 'on' : ''}" data-team="${t}">${TEAMS[t]}<small>${count(t)} of 22 filled</small></button>`).join('')}</div>
+      <div class="${team}">
+        <h2>Positions</h2>
+        <p class="hint">${moving ? 'Tap where they should go. You can switch teams first.' : 'Tap a player to move them. Moving onto someone swaps the two.'}</p>
+        ${LINES.map(([line, list]) => `<div class="line"><p>${line}</p>${list.map(([code, label]) => {
+          const id = `${team}-${code}`, p = by.get(id);
+          const face = p && p.photo && /^https:\/\//.test(p.photo) ? `<img class="face" src="${esc(p.photo)}" alt="">` : `<span class="face">${p ? esc((p.name || '?')[0]) : ''}</span>`;
+          return `<button type="button" class="row ${p ? 'filled' : 'empty'} ${moving && moving.id === id ? 'src' : ''}" data-pos="${id}">
+            <span class="code">${short(code)}</span>${face}
+            <span class="who"><b>${p ? esc(p.full || p.name) : 'Open'}</b><span>${esc(label)}${p && p.mobile ? ' · ' + esc(p.mobile) : ''}</span></span>
+            ${p && p.status !== 'confirmed' ? '<span class="pill">Unpaid</span>' : ''}</button>`;
+        }).join('')}</div>`).join('')}
+        <h2 id="notes">Coach's notes · ${TEAMS[team]}</h2>
+        <p class="hint">Jot down the pre-game speech, match-ups and reminders. Saves as you type. Only people with this link can see it.</p>
+        <textarea class="notes" placeholder="Pre-game speech, who's on who, quarter-time reminders…">${esc(notes.text)}</textarea>
+        <div class="notes-meta"><span class="saved">${notes.at ? 'Saved ' + new Date(notes.at).toLocaleString('en-AU', { weekday: 'short', hour: 'numeric', minute: '2-digit' }) : 'Not started'}</span><button type="button" class="icon-btn" data-a="speech">Speech mode</button></div>
+        ${board.moves && board.moves.length ? `<h2>Recent moves</h2><div class="log">${board.moves.slice(0, 8).map(m => `<div>${esc(m.player)}: ${esc(place(m.from_pos))} → ${esc(place(m.to_pos))}${m.swapped_with ? ` (swapped with ${esc(m.swapped_with)})` : ''} · ${new Date(m.at).toLocaleString('en-AU', { weekday: 'short', hour: 'numeric', minute: '2-digit' })}</div>`).join('')}</div>` : ''}
+      </div>`;
+    document.body.classList.toggle('moving', !!moving);
+    renderBar();
+    const ta = app.querySelector('.notes'), saved = app.querySelector('.saved');
+    ta.oninput = () => { notesDirty = true; saved.textContent = 'Saving…'; clearTimeout(saveTimer); saveTimer = setTimeout(() => saveNotes(team, ta.value, saved), 800); };
+    ta.onblur = () => { if (notesDirty) { clearTimeout(saveTimer); saveNotes(team, ta.value, saved); } };
+  }
+
+  async function saveNotes(t, text, el) {
+    try {
+      const r = await rpc('yc_admin_notes_save', { p_key: KEY, p_team: t, p_notes: text });
+      if (!r.ok) throw new Error(r.error);
+      notesDirty = false; board.notes[t] = { text, at: r.at };
+      if (el) el.textContent = 'Saved ' + new Date(r.at).toLocaleString('en-AU', { hour: 'numeric', minute: '2-digit' });
+    } catch (e) { if (el) el.textContent = 'Not saved. Check your signal.'; }
+  }
+
+  let bar = null;
+  function renderBar() {
+    if (bar) { bar.remove(); bar = null; }
+    if (!moving) return;
+    bar = document.createElement('div'); bar.className = 'bar';
+    bar.innerHTML = `<p>Moving <b>${esc(moving.name)}</b><br>from ${esc(place(moving.id))}</p><button type="button" class="btn ghost" data-a="cancel">Cancel</button>`;
+    document.body.append(bar);
+  }
+
+  function confirmMove(to) {
+    const other = board.positions.find(p => p.id === to);
+    const m = document.createElement('div'); m.className = 'modal';
+    m.innerHTML = `<div class="sheet" role="dialog" aria-modal="true">
+      <h3>${other ? 'Swap players?' : 'Move player?'}</h3>
+      <p>${other
+        ? `<b>${esc(moving.full || moving.name)}</b> goes to ${esc(place(to))} and <b>${esc(other.full || other.name)}</b> goes to ${esc(place(moving.id))}.`
+        : `<b>${esc(moving.full || moving.name)}</b> moves from ${esc(place(moving.id))} to ${esc(place(to))}.`} The public team sheet updates straight away.</p>
+      <p class="err" hidden></p>
+      <div class="btns"><button type="button" class="btn" data-x="go">${other ? 'Swap them' : 'Move'}</button><button type="button" class="btn ghost" data-x="no">Back</button></div></div>`;
+    document.body.append(m);
+    m.onclick = async e => {
+      const x = e.target.closest('[data-x]'); if (e.target === m || (x && x.dataset.x === 'no')) { m.remove(); return; }
+      if (!x) return;
+      x.disabled = true; x.textContent = 'Saving…';
+      const r = await rpc('yc_admin_move', { p_key: KEY, p_from: moving.id, p_to: to }).catch(() => ({ ok: false, error: 'Check your signal and try again.' }));
+      if (!r.ok) { const er = m.querySelector('.err'); er.hidden = false; er.textContent = r.error || 'That didn\'t work.'; x.disabled = false; x.textContent = 'Try again'; return; }
+      m.remove(); toast(r.swapped ? `${r.moved} and ${r.swapped} swapped` : `${r.moved} moved`);
+      moving = null; await load();
+    };
+  }
+
+  function openSpeech() {
+    const n = (board.notes && board.notes[team]) || { text: '' };
+    const text = app.querySelector('.notes') ? app.querySelector('.notes').value : n.text;
+    speech.innerHTML = `<div class="top"><h1 class="brand"><small>Coach's notes</small>${TEAMS[team]}</h1><button type="button" class="icon-btn" data-a="close-speech">Close</button></div><pre></pre>`;
+    speech.querySelector('pre').textContent = text || 'No notes yet.';
+    document.body.classList.add('speaking');
+    try { navigator.wakeLock && navigator.wakeLock.request('screen').then(l => { speech._lock = l; }).catch(() => {}); } catch (_) {}
+  }
+  speech.addEventListener('click', e => { if (e.target.closest('[data-a="close-speech"]')) { document.body.classList.remove('speaking'); try { speech._lock && speech._lock.release(); } catch (_) {} } });
+
+  document.addEventListener('click', e => {
+    const b = e.target.closest('[data-a],[data-team],[data-pos]'); if (!b || b.closest('.modal') || b.closest('#speech')) return;
+    if (b.dataset.team) { team = b.dataset.team; try { sessionStorage.setItem('yc-hq-team', team); } catch (_) {} render(); window.scrollTo({ top: 0 }); return; }
+    if (b.dataset.pos) {
+      const id = b.dataset.pos, p = board.positions.find(q => q.id === id);
+      if (!moving) { if (!p) { toast('Tap a player first, then where they should go'); return; } moving = p; render(); return; }
+      if (id === moving.id) { moving = null; render(); return; }
+      confirmMove(id); return;
+    }
+    const a = b.dataset.a;
+    if (a === 'refresh') load();
+    else if (a === 'cancel') { moving = null; render(); }
+    else if (a === 'speech') openSpeech();
+  });
+  setInterval(() => { if (!moving && !document.querySelector('.modal') && !document.body.classList.contains('speaking')) load(true); }, 20000);
+  load();
+})();
+</script>
+</body>
+</html>
