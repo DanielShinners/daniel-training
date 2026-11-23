@@ -4,8 +4,8 @@
 
 const ASSET = p => ((window.YC_CONFIG && window.YC_CONFIG.assetBase) || '') + p;
 const TEAMS = {
-  mudguts: { name: 'Mudguts', shield: 'assets/shield-mudguts.png', col: '#8A2412' },
-  pissants: { name: 'Pissants', shield: 'assets/shield-pissants.png', col: '#1C3B83' },
+  mudguts: { name: 'Mudguts', shield: 'assets/shield-mudguts.webp', col: '#8A2412' },
+  pissants: { name: 'Pissants', shield: 'assets/shield-pissants.webp', col: '#1C3B83' },
 };
 const CFG = window.YC_CONFIG || {};
 const rpc = (fn, body) => fetch(`${CFG.supabaseUrl}/rest/v1/rpc/${fn}`, { method: 'POST', headers: { apikey: CFG.supabaseKey, Authorization: `Bearer ${CFG.supabaseKey}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) })
@@ -369,7 +369,7 @@ export function startKick(root) {
       <ellipse cx="120" cy="26" rx="70" ry="10" fill="#ffe9a8"/><ellipse cx="120" cy="27" rx="60" ry="6" fill="#b8861f"/>
       <path d="M78 36 C80 90 92 128 112 146" stroke="rgba(255,255,255,.55)" stroke-width="6" fill="none" stroke-linecap="round"/>
       <circle cx="120" cy="86" r="31" fill="#101611" stroke="#ffe08a" stroke-width="4"/>
-      <image href="${ASSET('assets/badge-cream.png')}" x="94" y="60" width="52" height="52"/>
+      <image href="${ASSET('assets/badge-cream.webp')}" x="94" y="60" width="52" height="52"/>
       <rect x="108" y="158" width="24" height="34" fill="url(#kkg)"/>
       <path d="M84 192 H156 L164 212 H76 Z" fill="url(#kkg)"/>
       <rect x="52" y="212" width="136" height="70" rx="6" fill="url(#kkb)" stroke="#ffe08a" stroke-width="3"/>

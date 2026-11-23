@@ -1,9 +1,13 @@
 /* Boots the Yappers Cup page from this folder on a CDN.
    The host (Vercel) serves a tiny shell; this pulls in index.html from the same commit,
    points its relative paths at the CDN, and runs its scripts. index.html still works on its own. */
-export async function boot(BASE) {
+export async function boot(BASE, prefetched) {
   const page = /\/terms(\.html)?$/.test(location.pathname) ? 'terms.html' : 'index.html';
-  let html = await (await fetch(BASE + page)).text();
+  // warm up the hero artwork while the page itself downloads
+  if (page === 'index.html') for (const f of ['hero-run.webp', 'wordmark-cream.webp', 'shield-mudguts.webp', 'shield-pissants.webp']) {
+    const l = document.createElement('link'); l.rel = 'preload'; l.as = 'image'; l.href = BASE + 'assets/' + f; document.head.appendChild(l);
+  }
+  let html = await (prefetched && page === 'index.html' ? prefetched : fetch(BASE + page).then(r => r.text()));
   html = html
     .replace(/(["'(])assets\//g, `$1${BASE}assets/`)
     .replace(/href="css\//g, `href="${BASE}css/`)

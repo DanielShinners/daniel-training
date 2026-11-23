@@ -54,7 +54,7 @@
 
   /* hero */
   .hero{min-height:min(92vh,820px);display:grid;place-items:center;text-align:center;overflow:hidden;
-    background:linear-gradient(180deg,rgba(16,22,17,.25),rgba(16,22,17,.55) 70%,var(--ink)),url(assets/hero-run.jpg) center/cover no-repeat}
+    background:linear-gradient(180deg,rgba(16,22,17,.25),rgba(16,22,17,.55) 70%,var(--ink)),url(assets/hero-run.webp) center/cover no-repeat}
   .hero .inner{padding:90px 20px 70px}
   .hero h1{width:min(980px,92vw);margin:0 auto}
   .hero h1 img{width:100%}
@@ -108,7 +108,7 @@
 
   /* matchup */
   .matchup{padding:110px 0 100px;text-align:center;
-    background:linear-gradient(180deg,var(--ink),rgba(16,22,17,.6) 30%,rgba(16,22,17,.6) 70%,var(--ink)),url(assets/pack-blur.jpg) center/cover}
+    background:linear-gradient(180deg,var(--ink),rgba(16,22,17,.6) 30%,rgba(16,22,17,.6) 70%,var(--ink)),url(assets/pack-blur.webp) center/cover}
   .matchup h2{font-size:clamp(44px,7vw,96px)}
   .matchup h2 .m{color:#4FA164}.matchup h2 .p{color:var(--orange)}.matchup h2 .vs{font-size:.45em;vertical-align:.4em;color:var(--cream);opacity:.85;margin:0 .2em}
   .matchup .eyebrow{white-space:nowrap;font-size:clamp(9px,3.2vw,15px);margin:0 auto 28px}
@@ -339,7 +339,7 @@
 
 <nav>
   <div class="wrap">
-    <a class="lockup" href="#top" aria-label="Yappers Cup home"><img src="assets/lockup-small.png" alt="Yappers Cup"></a>
+    <a class="lockup" href="#top" aria-label="Yappers Cup home"><img src="assets/lockup-small.webp" alt="Yappers Cup"></a>
     <div class="links">
       <a href="#about">About</a>
       <a href="#take-the-field">How it works</a>
@@ -353,9 +353,9 @@
 
 <header class="hero grain" id="top">
   <div class="inner">
-    <h1><img src="assets/wordmark-cream.png" alt="Yappers Cup"></h1>
+    <h1><img src="assets/wordmark-cream.webp" alt="Yappers Cup"></h1>
     <div class="tagline">Kicking goals for men's health</div>
-    <div class="sub"><a class="crest-link" href="#ground" data-ground data-team="mudguts" aria-label="Sign up for the Mudguts"><img src="assets/shield-mudguts.png" alt="Mudguts"></a><span class="vs">vs</span><a class="crest-link" href="#ground" data-ground data-team="pissants" aria-label="Sign up for the Pissants"><img src="assets/shield-pissants.png" alt="Pissants"></a></div>
+    <div class="sub"><a class="crest-link" href="#ground" data-ground data-team="mudguts" aria-label="Sign up for the Mudguts"><img src="assets/shield-mudguts.webp" alt="Mudguts"></a><span class="vs">vs</span><a class="crest-link" href="#ground" data-ground data-team="pissants" aria-label="Sign up for the Pissants"><img src="assets/shield-pissants.webp" alt="Pissants"></a></div>
     <div class="date">Sunday 29 November 2026 · 1pm bounce</div>
 <div class="venue"><a href="https://www.google.com/maps/search/?api=1&amp;query=Gosch%27s+Paddock+Richmond+VIC" target="_blank" rel="noopener">Gosch's Paddock, Richmond</a><span>Arrive by 12:30pm</span></div>
     <div class="countdown" id="countdown" aria-label="Countdown to match day">
@@ -392,7 +392,7 @@
       <p style="margin-top:28px;display:flex;flex-wrap:wrap;gap:12px"><a class="btn" href="#ground" data-ground>Sign up to play</a><a class="btn ghost" href="#faq">FAQs</a></p>
     </div>
     <a class="fc-preview" href="#ground" data-ground aria-label="Enter the ground and pick your position">
-      <img src="assets/ground-preview.jpg" alt="The Yappers Cup ground: a stadium under lights with each position marked on the field">
+      <img loading="lazy" decoding="async" src="assets/ground-preview.webp" alt="The Yappers Cup ground: a stadium under lights with each position marked on the field">
       <span class="fc-play">Sign up to play</span>
     </a>
   </div>
@@ -405,7 +405,7 @@
     <p>The Yappers Cup is a community footy match built around a simple idea: bring mates together, have a kick, and create space for conversations that matter.</p>
     <p>Founded in 2025, the inaugural Yappers Cup brought together more than 30 players, along with friends, family and supporters, for an afternoon of footy, connection and plenty of friendly rivalry — all in support of men's mental health and Movember.</p>
   </div>
-  <div class="pic bw" style="background-image:url(assets/team.jpg)" role="img" aria-label="The 2025 Yappers Cup players lined up on the oval"></div>
+  <div class="pic bw" style="background-image:url(assets/team.webp)" role="img" aria-label="The 2025 Yappers Cup players lined up on the oval"></div>
 </section>
 
 <section class="kick-sec" id="kick">
@@ -415,7 +415,7 @@
     <p class="kick-intro">Pick your team, drag back to aim and let go. 60 seconds to get your name on the leaderboard.</p>
   </div>
   <div class="wrap kick-launch">
-    <button type="button" class="kick-play" data-kick><img src="assets/kick-preview.jpg" alt="Goal-kicking practice: lining up a shot at goal under lights"><span class="kick-badge">Mini game</span><span class="btn">Play the game</span></button>
+    <button type="button" class="kick-play" data-kick><img loading="lazy" decoding="async" src="assets/kick-preview.webp" alt="Goal-kicking practice: lining up a shot at goal under lights"><span class="kick-badge">Mini game</span><span class="btn">Play the game</span></button>
     <div class="kick-lb">
       <h3>Leaderboard</h3>
       <div id="kick-board"><p class="kk-empty">Loading…</p></div>
@@ -475,7 +475,7 @@
       <div class="msg" id="form-msg" role="alert"></div>
       <p class="note">We'll only use your details to contact you about the Yappers Cup.</p>
       <div class="done" aria-live="polite">
-        <img id="done-img" src="assets/monogram-red.png" alt="">
+        <img loading="lazy" decoding="async" id="done-img" src="assets/monogram-red.webp" alt="">
         <h3>You're in!</h3>
         <p id="done-text">Thanks — we'll be in touch before Sunday 29 November.</p>
         <p style="margin-top:22px"><a class="btn" href="https://au.movember.com/events/view/id/kNxN" target="_blank" rel="noopener">Chip in for Movember</a></p>
@@ -485,7 +485,7 @@
 </section>
 
 <section class="split flip donate" id="donate">
-  <div class="pic bw" style="background-image:url(assets/ball.jpg)" role="img" aria-label="A footy with a Movember moustache on the grass"></div>
+  <div class="pic bw" style="background-image:url(assets/ball.webp)" role="img" aria-label="A footy with a Movember moustache on the grass"></div>
   <div class="copy">
     <div class="eyebrow">Footy worth talking about</div>
     <h2>Help us raise funds for Movember</h2>
@@ -497,10 +497,10 @@
 
 <footer>
   <div class="wrap">
-    <img class="wm" src="assets/wordmark-red.png" alt="Yappers Cup">
+    <img loading="lazy" decoding="async" class="wm" src="assets/wordmark-red.webp" alt="Yappers Cup">
     <p class="ig"><a class="ig-btn" href="https://www.instagram.com/yappers_cup" target="_blank" rel="noopener" aria-label="Follow @yappers_cup on Instagram"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r="1.1" fill="currentColor" stroke="none"/></svg></a></p>
     <p>Kicking goals for men's health</p>
-    <p class="foot-mo">Proudly supporting<img class="mo" src="assets/movember-white.png" alt="Movember"></p>
+    <p class="foot-mo">Proudly supporting<img loading="lazy" decoding="async" class="mo" src="assets/movember-white.png" alt="Movember"></p>
     <p style="margin-top:14px"><a href="terms.html" style="color:inherit">Terms &amp; conditions</a></p>
   </div>
 </footer>
@@ -545,7 +545,7 @@
 
   // ---- Marquee ----
   (function(){
-    const unit = '<span>Yappers Cup</span><img src="assets/badge-cream.png" alt=""><span>Mudguts vs Pissants</span><img src="assets/badge-cream.png" alt="">';
+    const unit = '<span>Yappers Cup</span><img src="assets/badge-cream.webp" alt=""><span>Mudguts vs Pissants</span><img src="assets/badge-cream.webp" alt="">';
     document.getElementById("marquee").innerHTML = unit.repeat(8);
   })();
 
