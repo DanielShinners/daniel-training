@@ -68,6 +68,16 @@ body.speaking .speech { display: block; position: fixed; inset: 0; z-index: 20; 
 .log div { padding: 6px 0; border-top: 1px solid var(--line); }
 .state { padding: 60px 0; text-align: center; color: var(--muted); }
 .state b { display: block; font-family: var(--display); font-weight: 400; font-size: 26px; text-transform: uppercase; color: var(--cream); margin-bottom: 8px; }
+.views { display: inline-flex; background: var(--ink2); border-radius: 999px; padding: 3px; box-shadow: inset 0 0 0 1.5px var(--line); margin-top: 14px; }
+.views button { border: 0; background: transparent; border-radius: 999px; padding: 7px 16px; font-weight: 700; font-size: 13px; cursor: pointer; color: var(--muted); }
+.views button.on { background: var(--cream); color: var(--ink); }
+.oval { position: relative; margin-top: 8px; }
+.oval svg { display: block; width: 100%; height: auto; user-select: none; -webkit-user-select: none; }
+.oval .spot { cursor: pointer; }
+.oval .spot.filled { touch-action: none; }
+.oval .spot.dragging { pointer-events: none; }
+.oval .spot.target circle.ring { stroke: var(--cream); stroke-width: 3; stroke-dasharray: none; }
+.oval text { font-family: Archivo, sans-serif; }
 .toast { position: fixed; left: 50%; top: 16px; transform: translateX(-50%); background: var(--cream); color: var(--ink); padding: 10px 16px; border-radius: 999px; font-weight: 600; font-size: 14px; z-index: 30; box-shadow: 0 6px 20px rgba(0,0,0,.4); }
 </style>
 </head>
@@ -89,13 +99,17 @@ body.speaking .speech { display: block; position: fixed; inset: 0; z-index: 20; 
     ['Interchange', [['I1','Interchange 1'],['I2','Interchange 2'],['I3','Interchange 3'],['I4','Interchange 4']]],
   ];
   const LABEL = Object.fromEntries(LINES.flatMap(([, l]) => l));
+  // ground spots for a team attacking down the screen (x along the ground, z across, metres)
+  const XY = { FPL: [60, -24], FF: [66, 0], FPR: [60, 24], HFFL: [36, -36], CHF: [38, 0], HFFR: [36, 36], WL: [0, -48], C: [0, -13], WR: [0, 48],
+    RK: [0, 0], RR: [-7, 12], R: [7, 12], HBFL: [-36, -36], CHB: [-38, 0], HBFR: [-36, 36], BPL: [-60, -24], FB: [-66, 0], BPR: [-60, 24] };
+  const COL = { mudguts: ['#0E5A2C', '#8A2412'], pissants: ['#E2600F', '#1C3B83'] };
   const short = c => c[0] === 'I' ? 'INT' : c;
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const place = id => { const [t, c] = id.split('-'); return `${TEAMS[t]} · ${LABEL[c] || c}`; };
   const rpc = (fn, body) => fetch(`${SUPA}/rest/v1/rpc/${fn}`, { method: 'POST', headers: { apikey: ANON, Authorization: `Bearer ${ANON}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(r => r.json());
   const app = document.getElementById('app'), speech = document.getElementById('speech');
-  let team = 'mudguts', board = null, moving = null, notesDirty = false, saveTimer = null;
-  try { const t = sessionStorage.getItem('yc-hq-team'); if (TEAMS[t]) team = t; } catch (_) {}
+  let view = 'oval', team = 'mudguts', board = null, moving = null, notesDirty = false, saveTimer = null;
+  try { const t = sessionStorage.getItem('yc-hq-team'); if (TEAMS[t]) team = t; const v = sessionStorage.getItem('yc-hq-view'); if (v === 'list' || v === 'oval') view = v; } catch (_) {}
 
   const toast = msg => { const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg; document.body.append(t); setTimeout(() => t.remove(), 2200); };
 
@@ -118,9 +132,9 @@ body.speaking .speech { display: block; position: fixed; inset: 0; z-index: 20; 
       <div class="top"><h1 class="brand"><small>Yappers Cup · private</small>Team HQ</h1><button type="button" class="icon-btn" data-a="refresh">Refresh</button></div>
       <div class="tabs">${Object.keys(TEAMS).map(t => `<button type="button" class="tab ${t} ${t === team ? 'on' : ''}" data-team="${t}">${TEAMS[t]}<small>${count(t)} of 22 filled</small></button>`).join('')}</div>
       <div class="${team}">
-        <h2>Positions</h2>
-        <p class="hint">${moving ? 'Tap where they should go. You can switch teams first.' : 'Tap a player to move them. Moving onto someone swaps the two.'}</p>
-        ${LINES.map(([line, list]) => `<div class="line"><p>${line}</p>${list.map(([code, label]) => {
+        <div class="views" role="group" aria-label="View"><button type="button" data-view="oval" class="${view === 'oval' ? 'on' : ''}">Oval</button><button type="button" data-view="list" class="${view === 'list' ? 'on' : ''}">List</button></div>
+        <p class="hint" style="margin-top:10px">${moving ? 'Tap where they should go. Switch teams first to move them across.' : view === 'oval' ? 'Drag a player onto another spot, or tap a player then tap where they go. Landing on someone swaps the two.' : 'Tap a player to move them. Moving onto someone swaps the two.'}</p>
+        ${view === 'oval' ? '<div class="oval" id="oval"></div>' : LINES.map(([line, list]) => `<div class="line"><p>${line}</p>${list.map(([code, label]) => {
           const id = `${team}-${code}`, p = by.get(id);
           const face = p && p.photo && /^https:\/\//.test(p.photo) ? `<img class="face" src="${esc(p.photo)}" alt="">` : `<span class="face">${p ? esc((p.name || '?')[0]) : ''}</span>`;
           return `<button type="button" class="row ${p ? 'filled' : 'empty'} ${moving && moving.id === id ? 'src' : ''}" data-pos="${id}">
@@ -136,6 +150,7 @@ body.speaking .speech { display: block; position: fixed; inset: 0; z-index: 20; 
       </div>`;
     document.body.classList.toggle('moving', !!moving);
     renderBar();
+    if (view === 'oval') drawOval(by);
     const ta = app.querySelector('.notes'), saved = app.querySelector('.saved');
     ta.oninput = () => { notesDirty = true; saved.textContent = 'Saving…'; clearTimeout(saveTimer); saveTimer = setTimeout(() => saveNotes(team, ta.value, saved), 800); };
     ta.onblur = () => { if (notesDirty) { clearTimeout(saveTimer); saveNotes(team, ta.value, saved); } };
@@ -159,7 +174,95 @@ body.speaking .speech { display: block; position: fixed; inset: 0; z-index: 20; 
     document.body.append(bar);
   }
 
-  function confirmMove(to) {
+
+  // ---------- oval view ----------
+  const SVGNS = 'http://www.w3.org/2000/svg';
+  const el = (tag, attrs, parent) => { const n = document.createElementNS(SVGNS, tag); for (const k in attrs) n.setAttribute(k, attrs[k]); if (parent) parent.append(n); return n; };
+  function drawOval(by) {
+    const box = document.getElementById('oval'); if (!box) return;
+    const W = Math.max(320, Math.min(box.clientWidth || 360, 700)), s = (W - 16) / 132;
+    const rx = 62 * s, ry = 80 * s, cx = W / 2, cy = ry + 12, benchY = cy + ry + 56, H = benchY + 50;
+    const P = (x, z) => [cx - z * s, cy + x * s];
+    const r = Math.max(15, Math.min(22, s * 4.6)), [c1, c2] = COL[team], cream = '#FFF0D7', line = 'rgba(255,240,215,.65)';
+    const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': `${TEAMS[team]} on the ground` });
+    const defs = el('defs', {}, svg);
+    const clip = el('clipPath', { id: 'ovalclip' }, defs); el('ellipse', { cx, cy, rx, ry }, clip);
+    el('ellipse', { cx, cy, rx, ry, fill: '#1E5B2B' }, svg);
+    const g = el('g', { 'clip-path': 'url(#ovalclip)' }, svg);
+    for (let x = -80; x < 80; x += 20) { const a = P(x, 62), b = P(x + 10, -62); el('rect', { x: Math.min(a[0], b[0]), y: Math.min(a[1], b[1]), width: Math.abs(b[0] - a[0]), height: Math.abs(b[1] - a[1]), fill: 'rgba(255,255,255,.045)' }, g); }
+    const q1 = P(-25, 25), q2 = P(25, -25); el('rect', { x: q1[0], y: q1[1], width: q2[0] - q1[0], height: q2[1] - q1[1], fill: 'none', stroke: line, 'stroke-width': 1.5 }, g);
+    const c0 = P(0, 0); el('circle', { cx: c0[0], cy: c0[1], r: 5 * s, fill: 'none', stroke: line, 'stroke-width': 1.5 }, g);
+    for (const [gx, col] of [[80, '#CD2A2D'], [-80, '#1C3B83']]) {
+      const gp = P(gx, 0); el('circle', { cx: gp[0], cy: gp[1], r: 50 * s, fill: 'none', stroke: col, 'stroke-width': 2.5 }, g);
+      for (const pz of [-3.2, 3.2, -9.6, 9.6]) { const pp = P(gx, pz); el('circle', { cx: pp[0], cy: pp[1], r: Math.abs(pz) < 5 ? 3 : 2, fill: cream }, svg); }
+    }
+    el('ellipse', { cx, cy, rx, ry, fill: 'none', stroke: cream, 'stroke-width': 2 }, svg);
+    const at = P(76, -44); const t1 = el('text', { x: at[0], y: at[1], 'text-anchor': 'middle', fill: cream, opacity: .75, 'font-size': 11, 'font-weight': 800, 'letter-spacing': '1' }, svg); t1.textContent = 'ATTACKING ↓';
+    const bt = el('text', { x: cx, y: benchY - r - 16, 'text-anchor': 'middle', fill: '#b9b09f', 'font-size': 11, 'font-weight': 800, 'letter-spacing': '1.5' }, svg); bt.textContent = 'INTERCHANGE';
+    const gap = Math.min(r * 4.2, W / 4.4), spots = [];
+    for (const [, list] of LINES) for (const [code] of list) {
+      const bench = code[0] === 'I', id = `${team}-${code}`, p = by.get(id);
+      const pos = bench ? [cx + (Number(code[1]) - 2.5) * gap, benchY] : P(...XY[code]);
+      const sg = el('g', { class: `spot ${p ? 'filled' : 'empty'}`, transform: `translate(${pos[0]},${pos[1]})`, 'data-pos': id }, svg);
+      const sel = moving && moving.id === id;
+      el('circle', { class: 'ring', r: r + 2.5, fill: p ? cream : 'none', stroke: sel ? '#CD2A2D' : (p ? 'none' : (bench ? '#b9b09f' : cream)), 'stroke-width': sel ? 4 : 1.5, 'stroke-dasharray': p || sel ? '' : '4 3', opacity: p || sel ? 1 : .7 }, sg);
+      el('circle', { r, fill: p ? c1 : 'rgba(0,0,0,.18)', stroke: p ? c2 : 'none', 'stroke-width': 3 }, sg);
+      if (p && p.photo && /^https:\/\//.test(p.photo)) {
+        const cid = `face-${id}`; const cp = el('clipPath', { id: cid }, defs); el('circle', { r: r - 1.5 }, cp);
+        el('image', { href: p.photo, x: -(r - 1.5), y: -(r - 1.5), width: (r - 1.5) * 2, height: (r - 1.5) * 2, preserveAspectRatio: 'xMidYMid slice', 'clip-path': `url(#${cid})` }, sg);
+      } else {
+        const ct = el('text', { 'text-anchor': 'middle', dy: '.35em', 'font-size': Math.round(r * 0.6), 'font-weight': 800, fill: p ? '#fff' : (bench ? '#b9b09f' : cream), opacity: p ? 1 : .8 }, sg);
+        ct.textContent = short(code).replace(/^(HBF|HFF|BP|FP)[LR]$/, '$1').replace(/^W[LR]$/, 'W');
+      }
+      if (p) { const nm = el('text', { 'text-anchor': 'middle', y: r + 15, 'font-size': 11.5, 'font-weight': 700, fill: bench ? (p ? cream : '#b9b09f') : (p ? cream : 'rgba(255,240,215,.6)'), 'paint-order': 'stroke', stroke: bench ? 'none' : 'rgba(0,0,0,.6)', 'stroke-width': 3, 'stroke-linejoin': 'round' }, sg);
+      nm.textContent = p.name; }
+      if (p && p.status !== 'confirmed') { const u = el('text', { 'text-anchor': 'middle', y: r + 28, 'font-size': 9.5, 'font-weight': 800, fill: '#f0b54a', 'letter-spacing': '.5' }, sg); u.textContent = 'UNPAID'; }
+      spots.push({ id, x: pos[0], y: pos[1], g: sg, p });
+    }
+    box.replaceChildren(svg);
+
+    // drag a player onto another spot (tap still works through the page's click handler)
+    const toSvg = (e) => { const m = svg.getScreenCTM(); if (!m) return [0, 0]; const pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY; const q = pt.matrixTransform(m.inverse()); return [q.x, q.y]; };
+    const near = (x, y, skip) => { let best = null, bd = (r * 1.8) ** 2; for (const sp of spots) { if (sp.id === skip) continue; const d = (sp.x - x) ** 2 + (sp.y - y) ** 2; if (d < bd) { bd = d; best = sp; } } return best; };
+    let drag = null;
+    svg.addEventListener('pointerdown', e => {
+      const sg = e.target.closest('.spot.filled'); if (!sg || moving) return;
+      const sp = spots.find(q => q.g === sg); const [x, y] = toSvg(e);
+      drag = { sp, x0: x, y0: y, on: false, over: null, id: e.pointerId };
+    });
+    svg.addEventListener('pointermove', e => {
+      if (!drag || e.pointerId !== drag.id) return;
+      const [x, y] = toSvg(e);
+      if (!drag.on && Math.hypot(x - drag.x0, y - drag.y0) < 8) return;
+      if (!drag.on) { drag.on = true; try { svg.setPointerCapture(e.pointerId); } catch (_) {} drag.sp.g.classList.add('dragging'); svg.append(drag.sp.g); }
+      e.preventDefault();
+      drag.sp.g.setAttribute('transform', `translate(${x},${y}) scale(1.15)`);
+      const t = near(x, y, drag.sp.id);
+      if (drag.over && drag.over !== t) drag.over.g.classList.remove('target');
+      if (t) t.g.classList.add('target'); drag.over = t;
+    });
+    const end = e => {
+      if (!drag || (e && e.pointerId !== drag.id)) return;
+      const d = drag; drag = null;
+      if (!d.on) { suppressClick = true; setTimeout(() => { suppressClick = false; }, 400); tapPos(d.sp.id); return; }   // a tap (iOS sends no click after a blocked touch)
+      d.sp.g.classList.remove('dragging'); if (d.over) d.over.g.classList.remove('target');
+      suppressClick = true; setTimeout(() => { suppressClick = false; }, 300);
+      if (d.over) { moving = d.sp.p; confirmMove(d.over.id, () => { moving = null; render(); }); }
+      else render();
+    };
+    // iOS ignores touch-action on SVG shapes, so stop the page scrolling when a drag starts on a player
+    svg.addEventListener('touchstart', e => { if (!moving && e.target.closest && e.target.closest('.spot.filled')) e.preventDefault(); }, { passive: false });
+    svg.addEventListener('pointerup', end); svg.addEventListener('pointercancel', end);
+  }
+  let suppressClick = false;
+  function tapPos(id) {
+    const p = board.positions.find(q => q.id === id);
+    if (!moving) { if (!p) { toast('Tap a player first, then where they should go'); return; } moving = p; render(); return; }
+    if (id === moving.id) { moving = null; render(); return; }
+    confirmMove(id);
+  }
+
+  function confirmMove(to, onCancel) {
     const other = board.positions.find(p => p.id === to);
     const m = document.createElement('div'); m.className = 'modal';
     m.innerHTML = `<div class="sheet" role="dialog" aria-modal="true">
@@ -170,8 +273,10 @@ body.speaking .speech { display: block; position: fixed; inset: 0; z-index: 20; 
       <p class="err" hidden></p>
       <div class="btns"><button type="button" class="btn" data-x="go">${other ? 'Swap them' : 'Move'}</button><button type="button" class="btn ghost" data-x="no">Back</button></div></div>`;
     document.body.append(m);
+    const born = Date.now();
     m.onclick = async e => {
-      const x = e.target.closest('[data-x]'); if (e.target === m || (x && x.dataset.x === 'no')) { m.remove(); return; }
+      if (Date.now() - born < 400) return;   // ignore the click that finishes a drag
+      const x = e.target.closest('[data-x]'); if (e.target === m || (x && x.dataset.x === 'no')) { m.remove(); if (onCancel) onCancel(); return; }
       if (!x) return;
       x.disabled = true; x.textContent = 'Saving…';
       const r = await rpc('yc_admin_move', { p_key: KEY, p_from: moving.id, p_to: to }).catch(() => ({ ok: false, error: 'Check your signal and try again.' }));
@@ -192,20 +297,18 @@ body.speaking .speech { display: block; position: fixed; inset: 0; z-index: 20; 
   speech.addEventListener('click', e => { if (e.target.closest('[data-a="close-speech"]')) { document.body.classList.remove('speaking'); try { speech._lock && speech._lock.release(); } catch (_) {} } });
 
   document.addEventListener('click', e => {
-    const b = e.target.closest('[data-a],[data-team],[data-pos]'); if (!b || b.closest('.modal') || b.closest('#speech')) return;
+    if (suppressClick && e.target.closest && e.target.closest('#oval')) return;   // the pointer handler already took this tap
+    const b = e.target.closest('[data-a],[data-team],[data-pos],[data-view]'); if (!b || b.closest('.modal') || b.closest('#speech')) return;
+    if (b.dataset.view) { view = b.dataset.view; try { sessionStorage.setItem('yc-hq-view', view); } catch (_) {} render(); return; }
     if (b.dataset.team) { team = b.dataset.team; try { sessionStorage.setItem('yc-hq-team', team); } catch (_) {} render(); window.scrollTo({ top: 0 }); return; }
-    if (b.dataset.pos) {
-      const id = b.dataset.pos, p = board.positions.find(q => q.id === id);
-      if (!moving) { if (!p) { toast('Tap a player first, then where they should go'); return; } moving = p; render(); return; }
-      if (id === moving.id) { moving = null; render(); return; }
-      confirmMove(id); return;
-    }
+    if (b.getAttribute('data-pos')) { tapPos(b.getAttribute('data-pos')); return; }
     const a = b.dataset.a;
     if (a === 'refresh') load();
     else if (a === 'cancel') { moving = null; render(); }
     else if (a === 'speech') openSpeech();
   });
-  setInterval(() => { if (!moving && !document.querySelector('.modal') && !document.body.classList.contains('speaking')) load(true); }, 20000);
+  let rw = 0; window.addEventListener('resize', () => { clearTimeout(rw); rw = setTimeout(() => { if (board && view === 'oval' && !moving) render(); }, 200); });
+  setInterval(() => { if (!moving && !document.querySelector('.modal') && !document.querySelector('.spot.dragging') && !document.body.classList.contains('speaking')) load(true); }, 20000);
   load();
 })();
 </script>

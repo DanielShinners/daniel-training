@@ -476,7 +476,8 @@ export async function openGround({ team, onClose } = {}) {
     const from = { ...cam }; if ('yaw' in to) { let dy = to.yaw - from.yaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy)); to = { ...to, yaw: from.yaw + dy }; }
     anim = { from, to, t0: performance.now(), dur, done };
   }
-  const homeYaw = () => portrait() ? Math.PI / 2 : 0;
+  // each team attacks towards the bottom of a phone screen (and to the right on a wide one)
+  const homeYaw = () => (portrait() ? Math.PI / 2 : 0) + (curTeam === 'pissants' ? Math.PI : 0);
   const fitD = () => { const t = Math.tan(FOV / 2), a = W / H, need = portrait() ? Math.max(118 / t, 96 / (t * a)) : Math.max(92 / t, 128 / (t * a)); return need * 1.05; };
 
   // ---------- input ----------
