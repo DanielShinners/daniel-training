@@ -24,26 +24,26 @@ export function welcomeEmail(p: { first: string; team: string; pos: string; disp
 
   const eyebrow = (t: string) => `<p style="margin:0 0 6px;font:400 14px/1.2 ${DISPLAY};letter-spacing:.1em;text-transform:uppercase;color:${RED}">${t}</p>`;
   const h2 = (t: string) => `<h2 style="margin:0 0 14px;font:400 38px/1 ${DISPLAY};text-transform:uppercase;color:${CREAM}">${t}</h2>`;
-  const section = (inner: string, bg = INK) => `<tr><td style="background:${bg};padding:36px 30px;border-top:1px solid ${LINE}">${inner}</td></tr>`;
-  const btn = (href: string, t: string, ghost = false) => `<a href="${href}" style="display:inline-block;margin:6px 8px 0 0;padding:13px 22px;border-radius:4px;font:400 17px/1 ${DISPLAY};letter-spacing:.05em;text-transform:uppercase;text-decoration:none;${ghost ? `border:2px solid ${CREAM};padding:11px 20px;color:${CREAM}` : `background:${RED};color:${CREAM}`}">${t}</a>`;
+  const section = (inner: string, bg = INK) => `<tr><td bgcolor="${bg}" style="background-color:${bg};padding:36px 30px;border-top:1px solid ${LINE}">${inner}</td></tr>`;
+  const btn = (href: string, t: string, ghost = false) => `<a href="${href}" style="display:inline-block;margin:6px 8px 0 0;padding:13px 22px;border-radius:4px;font:400 17px/1 ${DISPLAY};letter-spacing:.05em;text-transform:uppercase;text-decoration:none;${ghost ? `border:2px solid ${CREAM};padding:11px 20px;color:${CREAM}` : `background-color:${RED};color:${CREAM}`}">${t}</a>`;
   // ruled rows like the site's numbered steps
   const rows = (items: [string, string][]) => `<table role="presentation" width="100%" cellpadding="0" cellspacing="0">${items.map(([k, v]) =>
     `<tr><td valign="top" style="width:58px;padding:12px 0;border-top:1px solid ${LINE};font:400 20px/1.2 ${DISPLAY};color:${RED}">${k}</td><td style="padding:12px 0;border-top:1px solid ${LINE};font:15px/1.55 ${BODY};color:${MUTED}">${v}</td></tr>`).join('')}</table>`;
   const b = (t: string) => `<strong style="color:${CREAM}">${t}</strong>`;
   const n = (i: number) => String(i + 1).padStart(2, '0');
 
-  const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark">
+  const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="only dark"><meta name="supported-color-schemes" content="dark"><style>:root{color-scheme:only dark;supported-color-schemes:dark}</style>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;600;800&display=swap" rel="stylesheet"></head>
-<body style="margin:0;background:#0b0f0c">
+<body bgcolor="#0b0f0c" style="margin:0;padding:0;background-color:#0b0f0c">
 <div style="display:none;max-height:0;overflow:hidden">Your spot is locked in: ${esc(team)}, ${esc(posName)}. Sunday 29 November, arrive 12:30pm.</div>
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#0b0f0c"><tr><td align="center" style="padding:20px 10px">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:620px;background:${INK}">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="#0b0f0c" style="background-color:#0b0f0c"><tr><td align="center" bgcolor="#0b0f0c" style="padding:20px 10px;background-color:#0b0f0c">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="${INK}" style="max-width:620px;background-color:${INK}">
 
-<tr><td style="padding:16px 30px;border-bottom:1px solid ${LINE}">
+<tr><td bgcolor="${INK}" style="padding:16px 30px;border-bottom:1px solid ${LINE};background-color:${INK}">
   <img src="${img}lockup-small.png" height="30" alt="Yappers Cup" style="display:block;height:30px;width:auto">
 </td></tr>
 
-<tr><td style="padding:44px 30px 40px;text-align:center;background:${INK2}">
+<tr><td bgcolor="${INK2}" style="padding:44px 30px 40px;text-align:center;background-color:${INK2}">
   <img src="${img}wordmark-cream.png" width="420" alt="Yappers Cup" style="display:block;margin:0 auto;width:100%;max-width:420px;height:auto">
   <p style="margin:14px 0 0;font:400 18px/1.2 ${DISPLAY};letter-spacing:.06em;text-transform:uppercase;color:${CREAM}">Kicking goals for men's health</p>
   <table role="presentation" cellpadding="0" cellspacing="0" align="center" style="margin:26px auto 0"><tr>
@@ -121,7 +121,7 @@ ${section(`
   <p style="margin:14px 0 0">${btn(SITE, 'Share the sign-up')}${btn(DONATE, 'Donate to Movember', true)}</p>
 `, INK2)}
 
-<tr><td style="padding:40px 30px 36px;text-align:center;border-top:1px solid ${LINE}">
+<tr><td bgcolor="${INK}" style="padding:40px 30px 36px;text-align:center;border-top:1px solid ${LINE};background-color:${INK}">
   <img src="${img}wordmark-red.png" width="260" alt="Yappers Cup" style="display:block;margin:0 auto;width:60%;max-width:260px;height:auto">
   <p style="margin:18px 0 0;font:800 12px/1.6 ${BODY};letter-spacing:.24em;text-transform:uppercase;color:${MUTED}">Kicking goals for men's health</p>
   <p style="margin:10px 0 0;font:800 11px/1.6 ${BODY};letter-spacing:.24em;text-transform:uppercase;color:${MUTED}">Proudly supporting</p>
