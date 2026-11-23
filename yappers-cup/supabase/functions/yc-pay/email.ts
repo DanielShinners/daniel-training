@@ -40,16 +40,16 @@ export function welcomeEmail(p: { first: string; team: string; pos: string; disp
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="${INK}" style="max-width:620px;background-color:${INK}">
 
 <tr><td bgcolor="${INK}" style="padding:16px 30px;border-bottom:1px solid ${LINE};background-color:${INK}">
-  <img src="${img}lockup-small.png" height="30" alt="Yappers Cup" style="display:block;height:30px;width:auto">
+  <a href="${SITE}" style="text-decoration:none;border:0"><img src="${img}lockup-small.png" height="30" alt="Yappers Cup" style="display:block;height:30px;width:auto"></a>
 </td></tr>
 
 <tr><td bgcolor="${INK2}" style="padding:44px 30px 40px;text-align:center;background-color:${INK2}">
-  <img src="${img}wordmark-cream.png" width="420" alt="Yappers Cup" style="display:block;margin:0 auto;width:100%;max-width:420px;height:auto">
+  <a href="${SITE}" style="text-decoration:none;border:0"><img src="${img}wordmark-cream.png" width="420" alt="Yappers Cup" style="display:block;margin:0 auto;width:100%;max-width:420px;height:auto"></a>
   <p style="margin:14px 0 0;font:400 18px/1.2 ${DISPLAY};letter-spacing:.06em;text-transform:uppercase;color:${CREAM}">Kicking goals for men's health</p>
   <table role="presentation" cellpadding="0" cellspacing="0" align="center" style="margin:26px auto 0"><tr>
-    <td><img src="${img}shield-mudguts.png" width="96" alt="Mudguts" style="display:block;height:auto;${p.team === 'mudguts' ? '' : 'opacity:.45'}"></td>
+    <td><a href="${SITE}" style="text-decoration:none;border:0"><img src="${img}shield-mudguts.png" width="96" alt="Mudguts" style="display:block;height:auto;${p.team === 'mudguts' ? '' : 'opacity:.45'}"></a></td>
     <td style="padding:0 16px;font:400 26px/1 ${DISPLAY};text-transform:uppercase;color:${RED}">vs</td>
-    <td><img src="${img}shield-pissants.png" width="96" alt="Pissants" style="display:block;height:auto;${p.team === 'pissants' ? '' : 'opacity:.45'}"></td>
+    <td><a href="${SITE}" style="text-decoration:none;border:0"><img src="${img}shield-pissants.png" width="96" alt="Pissants" style="display:block;height:auto;${p.team === 'pissants' ? '' : 'opacity:.45'}"></a></td>
   </tr></table>
   <p style="margin:18px 0 0;font:800 12px/1.4 ${BODY};letter-spacing:.24em;text-transform:uppercase;color:${MUTED}">Sunday 29 November 2026 · 1pm bounce</p>
 </td></tr>
@@ -59,7 +59,7 @@ ${section(`
   <h1 style="margin:0 0 12px;font:400 52px/.95 ${DISPLAY};text-transform:uppercase;color:${CREAM}">You're in, ${esc(p.first)}!</h1>
   <p style="margin:0;font:16px/1.55 ${BODY};color:${MUTED}">Your spot is locked in and your name is up on the ground. Thanks for backing men's health.</p>
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:22px;border:1px solid #3a413a;border-radius:8px"><tr>
-    <td width="86" style="padding:16px 0 16px 18px"><img src="${img}${mine}" width="68" alt="${team}" style="display:block;height:auto"></td>
+    <td width="86" style="padding:16px 0 16px 18px"><a href="${SITE}" style="text-decoration:none;border:0"><img src="${img}${mine}" width="68" alt="${team}" style="display:block;height:auto"></a></td>
     <td style="padding:16px 18px 16px 10px">
       <p style="margin:0;font:400 30px/1 ${DISPLAY};text-transform:uppercase;color:${CREAM}">${esc(posName)}</p>
       <p style="margin:6px 0 0;font:14px/1.5 ${BODY};color:${MUTED}">${team} · on the team sheet as ${b(esc(p.display))}</p>
@@ -122,10 +122,10 @@ ${section(`
 `, INK2)}
 
 <tr><td bgcolor="${INK}" style="padding:40px 30px 36px;text-align:center;border-top:1px solid ${LINE};background-color:${INK}">
-  <img src="${img}wordmark-red.png" width="260" alt="Yappers Cup" style="display:block;margin:0 auto;width:60%;max-width:260px;height:auto">
+  <a href="${SITE}" style="text-decoration:none;border:0"><img src="${img}wordmark-red.png" width="260" alt="Yappers Cup" style="display:block;margin:0 auto;width:60%;max-width:260px;height:auto"></a>
   <p style="margin:18px 0 0;font:800 12px/1.6 ${BODY};letter-spacing:.24em;text-transform:uppercase;color:${MUTED}">Kicking goals for men's health</p>
   <p style="margin:10px 0 0;font:800 11px/1.6 ${BODY};letter-spacing:.24em;text-transform:uppercase;color:${MUTED}">Proudly supporting</p>
-  <img src="${img}movember-white.png" width="120" alt="Movember" style="display:block;margin:8px auto 0;height:auto">
+  <a href="${DONATE}" style="text-decoration:none;border:0"><img src="${img}movember-white.png" width="120" alt="Movember" style="display:block;margin:8px auto 0;height:auto"></a>
   <p style="margin:22px 0 0;font:13px/1.7 ${BODY};color:${MUTED}">Questions? Just reply, or email <a href="mailto:hello@yapperscup.com" style="color:${CREAM}">hello@yapperscup.com</a><br>
   <a href="${IG}" style="color:${CREAM}">@yappers_cup</a> · <a href="${SITE}" style="color:${CREAM}">yapperscup.com</a></p>
 </td></tr>
