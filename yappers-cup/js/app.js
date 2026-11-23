@@ -36,7 +36,7 @@ export async function boot(BASE, prefetched) {
     document.body.appendChild(n);
   }
   await Promise.race([document.fonts ? document.fonts.ready : Promise.resolve(), wait(1500)]);
-  await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+  await Promise.race([new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))), wait(120)]);   // rAF pauses in background tabs
   document.documentElement.classList.add('ready');
   if (loader) { loader.classList.add('out'); setTimeout(() => loader.remove(), 400); }
   if (location.hash && location.hash !== '#ground') document.querySelector(location.hash)?.scrollIntoView();
