@@ -67,17 +67,39 @@ const ease = t => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const wait = ms => new Promise(r => setTimeout(r, ms));
 // shrink a picked photo to a 360px square JPEG: centre crop, nudged up so heads don't get cut off
+// Phone photos can be 24-48 megapixels, so decode them already shrunk where the browser allows it:
+// a full-size decode on an iPhone uses hundreds of MB and can freeze or reload the page.
+let photoBusy = false;
 async function squarePhoto(file) {
-  const url = URL.createObjectURL(file);
+  photoBusy = true;
+  let src = null, url = null, w = 0, h = 0;
   try {
-    const im = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url; });
-    const S = 360, side = Math.min(im.naturalWidth, im.naturalHeight);
-    const sx = (im.naturalWidth - side) / 2, sy = Math.max(0, (im.naturalHeight - side) * 0.3);
+    try {
+      src = await createImageBitmap(file, { resizeWidth: 720, resizeQuality: 'high' });   // keeps the aspect ratio
+      w = src.width; h = src.height;
+      if (!w || !h) throw new Error('empty');
+    } catch (_) {
+      if (src && src.close) src.close();
+      url = URL.createObjectURL(file);
+      src = new Image(); src.decoding = 'async'; src.src = url;
+      await (src.decode ? src.decode() : new Promise((res, rej) => { src.onload = res; src.onerror = rej; }));
+      w = src.naturalWidth; h = src.naturalHeight;
+    }
+    const S = 320, side = Math.min(w, h);
+    const sx = (w - side) / 2, sy = Math.max(0, (h - side) * 0.3);
     const cv = document.createElement('canvas'); cv.width = cv.height = S;
-    const g = cv.getContext('2d'); g.imageSmoothingQuality = 'high'; g.drawImage(im, sx, sy, side, side, 0, 0, S, S);
-    return cv.toDataURL('image/jpeg', 0.84);
-  } finally { URL.revokeObjectURL(url); }
+    const g = cv.getContext('2d'); g.imageSmoothingQuality = 'high'; g.drawImage(src, sx, sy, side, side, 0, 0, S, S);
+    const out = cv.toDataURL('image/jpeg', 0.82);
+    cv.width = cv.height = 0;
+    return out;
+  } finally {
+    if (src && src.close) src.close();
+    if (url) { src.src = ''; URL.revokeObjectURL(url); }
+    photoBusy = false;
+  }
 }
+// give up on a photo that takes too long, so the form never hangs
+const withTimeout = (pr, ms) => Promise.race([pr, wait(ms).then(() => { photoBusy = false; throw new Error('timeout'); })]);
 const lerp = (a, b, t) => a + (b - a) * t;
 function rng(seed) { let s = seed >>> 0; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296); }
 
@@ -462,6 +484,7 @@ export async function openGround({ team, onClose } = {}) {
   window.addEventListener('resize', () => { resize(); placeTools(); }); resize();
   function frame(now) {
     if (!alive) return;
+    if (document.hidden || photoBusy) { requestAnimationFrame(frame); return; }   // free the phone up while the photo picker or shrinking runs
     if (anim) {
       const t = clamp((now - anim.t0) / anim.dur, 0, 1), e = ease(t);
       for (const k in anim.to) cam[k] = lerp(anim.from[k], anim.to[k], e);
@@ -603,8 +626,11 @@ export async function openGround({ team, onClose } = {}) {
     const ph = f.querySelector('.yg-ph'), phBtn = f.querySelector('.yg-ph-btn span');
     f.elements.photo.onchange = async () => {
       const file = f.elements.photo.files[0]; if (!file) return;
-      try { photoData = await squarePhoto(file); ph.style.backgroundImage = `url(${photoData})`; ph.textContent = ''; ph.classList.add('has'); phBtn.textContent = 'Change photo'; }
-      catch (_) { photoData = null; f.querySelector('.yg-err').textContent = 'That photo didn\'t work. Try another, or skip it.'; }
+      const pb = f.querySelector('[type=submit]'), err = f.querySelector('.yg-err');
+      phBtn.textContent = 'Preparing photo…'; pb.disabled = true; err.textContent = '';
+      try { photoData = await withTimeout(squarePhoto(file), 20000); ph.style.backgroundImage = `url(${photoData})`; ph.textContent = ''; ph.classList.add('has'); phBtn.textContent = 'Change photo'; }
+      catch (_) { photoData = null; phBtn.textContent = 'Take or choose photo'; err.textContent = 'That photo didn\'t work. Try another, or skip it.'; }
+      finally { pb.disabled = false; f.elements.photo.value = ''; }
     };
     f.onsubmit = async e => {
       e.preventDefault(); const err = f.querySelector('.yg-err'), btn = f.querySelector('[type=submit]'); err.textContent = '';
@@ -617,7 +643,7 @@ export async function openGround({ team, onClose } = {}) {
       try {
         const c = await pay({ action: 'checkout', claim: body }).catch(() => ({ ok: false, error: 'not_configured' }));
         if (c.ok && c.url) {
-          if (photoData && c.token) { btn.textContent = 'Saving your photo…'; await Promise.race([pay({ action: 'photo', position: p.id, token: c.token, image: photoData }), wait(12000)]).catch(() => {}); }
+          if (photoData && c.token) { btn.textContent = 'Saving your photo…'; await Promise.race([pay({ action: 'photo', position: p.id, token: c.token, image: photoData }), wait(8000)]).catch(() => {}); }
           try { sessionStorage.setItem('yc-pay', JSON.stringify({ pos: p.id, token: c.token || '' })); } catch (_) {}
           location.href = c.url; return;
         }
@@ -653,7 +679,7 @@ export async function openGround({ team, onClose } = {}) {
         const file = inp.files[0]; if (!file) return;
         err.textContent = 'Uploading…';
         try {
-          const r = await pay({ action: 'photo', position: pos, token, image: await squarePhoto(file) });
+          const r = await pay({ action: 'photo', position: pos, token, image: await withTimeout(squarePhoto(file), 20000) });
           if (!r.ok) { err.textContent = r.error || 'Couldn\'t save that photo. Try again.'; return; }
           if (P) P.photo = r.photo; dirty = true; render(r.photo);
         } catch (_) { err.textContent = 'That photo didn\'t work. Try another.'; }

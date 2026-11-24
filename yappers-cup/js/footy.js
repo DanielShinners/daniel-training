@@ -27,7 +27,7 @@ export function startFooty() {
 
   // ---------- texture: u runs around the ball (4 panels), v runs tip to tip ----------
   const TW = 1024, TH = 512, tex = document.createElement('canvas'); tex.width = TW; tex.height = TH;
-  const MO = new Image(); MO.src = ((window.YC_CONFIG && window.YC_CONFIG.assetBase) || '') + 'assets/movember-white.png';
+  const MO = new Image(); MO.crossOrigin = 'anonymous'; MO.src = ((window.YC_CONFIG && window.YC_CONFIG.assetBase) || '') + 'assets/movember-white.png';
   function paint() {
     const c = tex.getContext('2d');
     const g = c.createLinearGradient(0, 0, 0, TH); g.addColorStop(0, '#c92a1c'); g.addColorStop(0.5, '#e23a24'); g.addColorStop(1, '#c92a1c');

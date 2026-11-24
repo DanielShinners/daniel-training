@@ -127,7 +127,7 @@ body.speaking .speech { display: block; position: fixed; inset: 0; z-index: 20; 
     const count = t => board.positions.filter(p => p.team === t).length;
     const notes = (board.notes && board.notes[team]) || { text: '', at: null };
     const focusNotes = document.activeElement && document.activeElement.classList.contains('notes');
-    if (focusNotes) return;   // don't wipe the coach mid-sentence
+    if (focusNotes || dragging) return;   // don't wipe the coach mid-sentence, or a player mid-drag
     app.innerHTML = `
       <div class="top"><h1 class="brand"><small>Yappers Cup · private</small>Team HQ</h1><button type="button" class="icon-btn" data-a="refresh">Refresh</button></div>
       <div class="tabs">${Object.keys(TEAMS).map(t => `<button type="button" class="tab ${t} ${t === team ? 'on' : ''}" data-team="${t}">${TEAMS[t]}<small>${count(t)} of 22 filled</small></button>`).join('')}</div>
@@ -234,7 +234,7 @@ body.speaking .speech { display: block; position: fixed; inset: 0; z-index: 20; 
       if (!drag || e.pointerId !== drag.id) return;
       const [x, y] = toSvg(e);
       if (!drag.on && Math.hypot(x - drag.x0, y - drag.y0) < 8) return;
-      if (!drag.on) { drag.on = true; try { svg.setPointerCapture(e.pointerId); } catch (_) {} drag.sp.g.classList.add('dragging'); svg.append(drag.sp.g); }
+      if (!drag.on) { drag.on = true; dragging = true; try { svg.setPointerCapture(e.pointerId); } catch (_) {} drag.sp.g.classList.add('dragging'); svg.append(drag.sp.g); }
       e.preventDefault();
       drag.sp.g.setAttribute('transform', `translate(${x},${y}) scale(1.15)`);
       const t = near(x, y, drag.sp.id);
@@ -243,7 +243,7 @@ body.speaking .speech { display: block; position: fixed; inset: 0; z-index: 20; 
     });
     const end = e => {
       if (!drag || (e && e.pointerId !== drag.id)) return;
-      const d = drag; drag = null;
+      const d = drag; drag = null; dragging = false;
       if (!d.on) { suppressClick = true; setTimeout(() => { suppressClick = false; }, 400); tapPos(d.sp.id); return; }   // a tap (iOS sends no click after a blocked touch)
       d.sp.g.classList.remove('dragging'); if (d.over) d.over.g.classList.remove('target');
       suppressClick = true; setTimeout(() => { suppressClick = false; }, 300);
@@ -254,7 +254,7 @@ body.speaking .speech { display: block; position: fixed; inset: 0; z-index: 20; 
     svg.addEventListener('touchstart', e => { if (!moving && e.target.closest && e.target.closest('.spot.filled')) e.preventDefault(); }, { passive: false });
     svg.addEventListener('pointerup', end); svg.addEventListener('pointercancel', end);
   }
-  let suppressClick = false;
+  let suppressClick = false, dragging = false;
   function tapPos(id) {
     const p = board.positions.find(q => q.id === id);
     if (!moving) { if (!p) { toast('Tap a player first, then where they should go'); return; } moving = p; render(); return; }
