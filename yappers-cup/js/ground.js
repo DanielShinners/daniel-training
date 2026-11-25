@@ -16,6 +16,7 @@ const TEAMS = {
   pissants: { name: 'Pissants', s: -1, body: '#1C3B83', yoke: '#E2600F', trim: '#E2600F', ui: '#1C3B83', shield: ASSET('assets/shield-pissants.webp'), line: 'Small, fast, relentless.' },
 };
 // positions for a team kicking towards +x (Mudguts). Pissants are the same shape turned 180°. x along the ground, z across it, metres.
+// interchange spots line the wing just inside the boundary, centred on the middle of the ground, each team on its own side
 const LINES = [
   ['Forwards', [['FPL', 'Forward pocket', 60, -24], ['FF', 'Full forward', 66, 0], ['FPR', 'Forward pocket', 60, 24]]],
   ['Half-forwards', [['HFFL', 'Half-forward flank', 36, -36], ['CHF', 'Centre half-forward', 38, 0], ['HFFR', 'Half-forward flank', 36, 36]]],
@@ -23,7 +24,7 @@ const LINES = [
   ['Followers', [['RK', 'Ruck', 0, 0], ['RR', 'Ruck rover', -7, 12], ['R', 'Rover', 7, 12]]],
   ['Half-backs', [['HBFL', 'Half-back flank', -36, -36], ['CHB', 'Centre half-back', -38, 0], ['HBFR', 'Half-back flank', -36, 36]]],
   ['Backs', [['BPL', 'Back pocket', -60, -24], ['FB', 'Full back', -66, 0], ['BPR', 'Back pocket', -60, 24]]],
-  ['Interchange', [['I1', 'Interchange 1', -5, 71.5], ['I2', 'Interchange 2', -13, 71.5], ['I3', 'Interchange 3', -21, 71.5], ['I4', 'Interchange 4', -29, 71.5], ['I5', 'Interchange 5', -37, 71.5], ['I6', 'Interchange 6', -45, 71.5]]],
+  ['Interchange', [['I1', 'Interchange 1', -25, 57.4], ['I2', 'Interchange 2', -15, 59.7], ['I3', 'Interchange 3', -5, 60.9], ['I4', 'Interchange 4', 5, 60.9], ['I5', 'Interchange 5', 15, 59.7], ['I6', 'Interchange 6', 25, 57.4]]],
 ];
 const KEY_POS = ['FF', 'CHF', 'RK', 'C', 'CHB', 'FB'];
 const BLURB = {
@@ -48,7 +49,7 @@ const POSITIONS = [];
 for (const [line, list] of LINES) for (const [code, label, x, z] of list) {
   for (const id of Object.keys(TEAMS)) {
     const T = TEAMS[id], bench = code[0] === 'I';
-    const wx = bench ? (T.s > 0 ? x : -x) : x * T.s, wz = bench ? z : z * T.s;
+    const wx = x * T.s, wz = z * T.s;
     POSITIONS.push({ id: `${id}-${code}`, team: id, code, label, line, x: wx, z: wz, tier: bench ? 'bench' : KEY_POS.includes(code) ? 'key' : 'field', state: 'free', who: '', photo: '' });
   }
 }
