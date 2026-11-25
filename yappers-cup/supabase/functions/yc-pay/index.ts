@@ -6,7 +6,7 @@ import { welcomeEmail } from './email.ts';
 
 const ORIGINS = ['https://yapperscup.com', 'https://www.yapperscup.com', 'https://yappers-cup.vercel.app'];
 const SITE = 'https://yapperscup.com';
-const POS_RE = /^(mudguts|pissants)-(FB|BPL|BPR|CHB|HBFL|HBFR|C|WL|WR|CHF|HFFL|HFFR|FF|FPL|FPR|RK|RR|R|I1|I2|I3|I4)$/;
+const POS_RE = /^(mudguts|pissants)-(FB|BPL|BPR|CHB|HBFL|HBFR|C|WL|WR|CHF|HFFL|HFFR|FF|FPL|FPR|RK|RR|R|I1|I2|I3|I4|I5|I6)$/;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const BUCKET = 'yc-photos';
 const okOrigin = (o: string | null) => !!o && (ORIGINS.includes(o) || /^http:\/\/localhost(:\d+)?$/.test(o));
@@ -19,7 +19,7 @@ const cors = (origin: string | null) => ({
 const NAMES: Record<string, string> = {
   FPL: 'Forward pocket', FF: 'Full forward', FPR: 'Forward pocket', HFFL: 'Half-forward flank', CHF: 'Centre half-forward', HFFR: 'Half-forward flank',
   WL: 'Wing', C: 'Centre', WR: 'Wing', RK: 'Ruck', RR: 'Ruck rover', R: 'Rover', HBFL: 'Half-back flank', CHB: 'Centre half-back', HBFR: 'Half-back flank',
-  BPL: 'Back pocket', FB: 'Full back', BPR: 'Back pocket', I1: 'Interchange', I2: 'Interchange', I3: 'Interchange', I4: 'Interchange',
+  BPL: 'Back pocket', FB: 'Full back', BPR: 'Back pocket', I1: 'Interchange', I2: 'Interchange', I3: 'Interchange', I4: 'Interchange', I5: 'Interchange', I6: 'Interchange',
 };
 
 async function stripe(path: string, method = 'GET', form?: Record<string, string>) {

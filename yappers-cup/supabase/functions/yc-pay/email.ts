@@ -2,7 +2,7 @@
 const NAMES: Record<string, string> = {
   FPL: 'Forward pocket', FF: 'Full forward', FPR: 'Forward pocket', HFFL: 'Half-forward flank', CHF: 'Centre half-forward', HFFR: 'Half-forward flank',
   WL: 'Wing', C: 'Centre', WR: 'Wing', RK: 'Ruck', RR: 'Ruck rover', R: 'Rover', HBFL: 'Half-back flank', CHB: 'Centre half-back', HBFR: 'Half-back flank',
-  BPL: 'Back pocket', FB: 'Full back', BPR: 'Back pocket', I1: 'Interchange', I2: 'Interchange', I3: 'Interchange', I4: 'Interchange',
+  BPL: 'Back pocket', FB: 'Full back', BPR: 'Back pocket', I1: 'Interchange', I2: 'Interchange', I3: 'Interchange', I4: 'Interchange', I5: 'Interchange', I6: 'Interchange',
 };
 const esc = (s: string) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
 const SITE = 'https://yapperscup.com';
@@ -94,7 +94,7 @@ ${section(`
   ${eyebrow('Read before you play')}
   ${h2('The rules')}
   ${rows([
-    'Mudguts v Pissants, 22 players per side with rolling interchange.',
+    'Mudguts v Pissants, 24 players per side with rolling interchange.',
     'Two 20-minute halves.',
     "Play it like a training practice match. It's not touch footy, but we're all mates and nobody wants an injury.",
     'No hard sling tackles.', 'No boundary umpires.', 'Lasso rule applies for the whole ground.', 'No arguing with the umpires.', 'No dickheads.',
@@ -158,7 +158,7 @@ WHAT TO BRING
 We'll likely head to the pub for a beer after.
 
 THE RULES
-- 22 players per side, rolling interchange. Two 20-minute halves.
+- 24 players per side, rolling interchange. Two 20-minute halves.
 - Play it like a training practice match. Not touch footy, but nobody wants an injury.
 - No hard sling tackles. No boundary umpires. Lasso rule applies for the whole ground.
 - No arguing with the umpires. No dickheads.

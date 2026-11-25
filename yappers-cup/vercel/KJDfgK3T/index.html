@@ -96,7 +96,7 @@ body.speaking .speech { display: block; position: fixed; inset: 0; z-index: 20; 
     ['Followers', [['RK','Ruck'],['RR','Ruck rover'],['R','Rover']]],
     ['Half-backs', [['HBFL','Half-back flank'],['CHB','Centre half-back'],['HBFR','Half-back flank']]],
     ['Backs', [['BPL','Back pocket'],['FB','Full back'],['BPR','Back pocket']]],
-    ['Interchange', [['I1','Interchange 1'],['I2','Interchange 2'],['I3','Interchange 3'],['I4','Interchange 4']]],
+    ['Interchange', [['I1','Interchange 1'],['I2','Interchange 2'],['I3','Interchange 3'],['I4','Interchange 4'],['I5','Interchange 5'],['I6','Interchange 6']]],
   ];
   const LABEL = Object.fromEntries(LINES.flatMap(([, l]) => l));
   // ground spots for a team attacking down the screen (x along the ground, z across, metres)
@@ -130,7 +130,7 @@ body.speaking .speech { display: block; position: fixed; inset: 0; z-index: 20; 
     if (focusNotes || dragging) return;   // don't wipe the coach mid-sentence, or a player mid-drag
     app.innerHTML = `
       <div class="top"><h1 class="brand"><small>Yappers Cup · private</small>Team HQ</h1><button type="button" class="icon-btn" data-a="refresh">Refresh</button></div>
-      <div class="tabs">${Object.keys(TEAMS).map(t => `<button type="button" class="tab ${t} ${t === team ? 'on' : ''}" data-team="${t}">${TEAMS[t]}<small>${count(t)} of 22 filled</small></button>`).join('')}</div>
+      <div class="tabs">${Object.keys(TEAMS).map(t => `<button type="button" class="tab ${t} ${t === team ? 'on' : ''}" data-team="${t}">${TEAMS[t]}<small>${count(t)} of 24 filled</small></button>`).join('')}</div>
       <div class="${team}">
         <div class="views" role="group" aria-label="View"><button type="button" data-view="oval" class="${view === 'oval' ? 'on' : ''}">Oval</button><button type="button" data-view="list" class="${view === 'list' ? 'on' : ''}">List</button></div>
         <p class="hint" style="margin-top:10px">${moving ? 'Tap where they should go. Switch teams first to move them across.' : view === 'oval' ? 'Drag a player onto another spot, or tap a player then tap where they go. Landing on someone swaps the two.' : 'Tap a player to move them. Moving onto someone swaps the two.'}</p>
@@ -199,10 +199,10 @@ body.speaking .speech { display: block; position: fixed; inset: 0; z-index: 20; 
     el('ellipse', { cx, cy, rx, ry, fill: 'none', stroke: cream, 'stroke-width': 2 }, svg);
     const at = P(76, -44); const t1 = el('text', { x: at[0], y: at[1], 'text-anchor': 'middle', fill: cream, opacity: .75, 'font-size': 11, 'font-weight': 800, 'letter-spacing': '1' }, svg); t1.textContent = 'ATTACKING ↓';
     const bt = el('text', { x: cx, y: benchY - r - 16, 'text-anchor': 'middle', fill: '#b9b09f', 'font-size': 11, 'font-weight': 800, 'letter-spacing': '1.5' }, svg); bt.textContent = 'INTERCHANGE';
-    const gap = Math.min(r * 4.2, W / 4.4), spots = [];
+    const gap = Math.min(r * 3.4, W / 6.4), spots = [];
     for (const [, list] of LINES) for (const [code] of list) {
       const bench = code[0] === 'I', id = `${team}-${code}`, p = by.get(id);
-      const pos = bench ? [cx + (Number(code[1]) - 2.5) * gap, benchY] : P(...XY[code]);
+      const pos = bench ? [cx + (Number(code[1]) - 3.5) * gap, benchY] : P(...XY[code]);
       const sg = el('g', { class: `spot ${p ? 'filled' : 'empty'}`, transform: `translate(${pos[0]},${pos[1]})`, 'data-pos': id }, svg);
       const sel = moving && moving.id === id;
       el('circle', { class: 'ring', r: r + 2.5, fill: p ? cream : 'none', stroke: sel ? '#CD2A2D' : (p ? 'none' : (bench ? '#b9b09f' : cream)), 'stroke-width': sel ? 4 : 1.5, 'stroke-dasharray': p || sel ? '' : '4 3', opacity: p || sel ? 1 : .7 }, sg);

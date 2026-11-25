@@ -23,7 +23,7 @@ const LINES = [
   ['Followers', [['RK', 'Ruck', 0, 0], ['RR', 'Ruck rover', -7, 12], ['R', 'Rover', 7, 12]]],
   ['Half-backs', [['HBFL', 'Half-back flank', -36, -36], ['CHB', 'Centre half-back', -38, 0], ['HBFR', 'Half-back flank', -36, 36]]],
   ['Backs', [['BPL', 'Back pocket', -60, -24], ['FB', 'Full back', -66, 0], ['BPR', 'Back pocket', -60, 24]]],
-  ['Interchange', [['I1', 'Interchange 1', -5, 71.5], ['I2', 'Interchange 2', -13, 71.5], ['I3', 'Interchange 3', -21, 71.5], ['I4', 'Interchange 4', -29, 71.5]]],
+  ['Interchange', [['I1', 'Interchange 1', -5, 71.5], ['I2', 'Interchange 2', -13, 71.5], ['I3', 'Interchange 3', -21, 71.5], ['I4', 'Interchange 4', -29, 71.5], ['I5', 'Interchange 5', -37, 71.5], ['I6', 'Interchange 6', -45, 71.5]]],
 ];
 const KEY_POS = ['FF', 'CHF', 'RK', 'C', 'CHB', 'FB'];
 const BLURB = {
@@ -225,7 +225,7 @@ export async function openGround({ team, onClose } = {}) {
     c.font = '40px Anton'; c.fillStyle = '#6fbf83'; c.fillText('MUDGUTS', 165, 120); c.fillStyle = '#ff8a3d'; c.fillText('PISSANTS', 475, 120);
     c.font = '110px Anton'; c.fillStyle = '#FFF0D7'; c.fillText(String(mud), 165, 210); c.fillText(String(pis), 475, 210);
     c.font = '30px Anton'; c.fillStyle = 'rgba(255,240,215,.55)'; c.fillText('VS', 320, 200);
-    c.font = '26px Archivo'; c.fillStyle = 'rgba(255,240,215,.75)'; c.fillText('PLAYERS SIGNED · OF 22 EACH', 320, 282);
+    c.font = '26px Archivo'; c.fillStyle = 'rgba(255,240,215,.75)'; c.fillText('PLAYERS SIGNED · OF 24 EACH', 320, 282);
     c.font = '34px Anton'; c.fillStyle = '#FFF0D7'; const pt = `${money(stats ? stats.pledged : 0)} PLEDGED FOR`, tw = c.measureText(pt).width;
     const lh = 44, lw2 = MO_LOGO.naturalWidth ? lh * MO_LOGO.naturalWidth / MO_LOGO.naturalHeight : 0, x0 = 320 - (tw + 14 + lw2) / 2;
     c.textAlign = 'left'; c.fillText(pt, x0, 330); c.textAlign = 'center';
