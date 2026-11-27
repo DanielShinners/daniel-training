@@ -163,6 +163,9 @@
   .msg{display:none;margin-top:14px;padding:12px 14px;border-radius:6px;font-weight:600}
   .msg.err{display:block;background:#fbe0dd;color:#8f1a20}
   .done{display:none;text-align:center;padding:24px 6px}
+  .waitlist{margin-top:26px;max-width:520px}
+  .waitlist.sent > :not(.done){display:none}
+  .waitlist.sent .done{display:block}
   .done img{width:150px;margin:0 auto 18px}
   .done h3{font-size:52px}
   .done p{margin:10px auto 0;max-width:40ch}
@@ -346,7 +349,7 @@
       <a href="#faq">FAQs</a>
       <a href="https://au.movember.com/events/view/id/kNxN" target="_blank" rel="noopener">Donate</a>
       <a class="ig-icon" href="https://www.instagram.com/yappers_cup" target="_blank" rel="noopener" aria-label="Yappers Cup on Instagram"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r="1.1" fill="currentColor" stroke="none"/></svg></a>
-      <a class="btn" href="#ground" data-ground>Sign up to play</a>
+      <a class="btn" href="#take-the-field">Join the waitlist</a>
     </div>
   </div>
 </nav>
@@ -355,7 +358,7 @@
   <div class="inner">
     <h1><img src="assets/wordmark-cream.webp" alt="Yappers Cup"></h1>
     <div class="tagline">Kicking goals for men's health</div>
-    <div class="sub"><a class="crest-link" href="#ground" data-ground data-team="mudguts" aria-label="Sign up for the Mudguts"><img src="assets/shield-mudguts.webp" alt="Mudguts"></a><span class="vs">vs</span><a class="crest-link" href="#ground" data-ground data-team="pissants" aria-label="Sign up for the Pissants"><img src="assets/shield-pissants.webp" alt="Pissants"></a></div>
+    <div class="sub"><a class="crest-link" href="#ground" data-ground data-team="mudguts" aria-label="See the Mudguts team sheet"><img src="assets/shield-mudguts.webp" alt="Mudguts"></a><span class="vs">vs</span><a class="crest-link" href="#ground" data-ground data-team="pissants" aria-label="See the Pissants team sheet"><img src="assets/shield-pissants.webp" alt="Pissants"></a></div>
     <div class="date">Sunday 29 November 2026 · 1pm bounce</div>
 <div class="venue"><a href="https://www.google.com/maps/search/?api=1&amp;query=Gosch%27s+Paddock+Richmond+VIC" target="_blank" rel="noopener">Gosch's Paddock, Richmond</a><span>Arrive by 12:30pm</span></div>
     <div class="countdown" id="countdown" aria-label="Countdown to match day">
@@ -364,7 +367,7 @@
       <div><b id="cd-m">–</b><span>Mins</span></div>
     </div>
     <div class="ctas">
-      <a class="btn" href="#ground" data-ground>Sign up to play</a>
+      <a class="btn" href="#take-the-field">Sign up to join the waitlist</a>
       <a class="btn ghost" href="https://au.movember.com/events/view/id/kNxN" target="_blank" rel="noopener">Donate to Movember</a>
     </div>
     <div class="movember"><span>Proudly supporting</span><img class="mo" src="assets/movember-white.png" alt="Movember"></div>
@@ -378,22 +381,27 @@
 <section class="field-cta grain" id="take-the-field">
   <div class="wrap fc-grid">
     <div>
-      <div class="eyebrow">Sunday 29 November 2026 · Players</div>
-      <h2>Sign up and pick your position</h2>
-      <p class="intro">Pick your side and claim your position. Every spot is $25, with all proceeds going to Movember. Match day is Sunday 29 November at Gosch's Paddock, Richmond: bounce at 1pm, arrive by 12:30pm.</p>
-      <ol class="how">
-        <li><b>01</b><span><strong>Choose your team.</strong> Mudguts or Pissants.</span></li>
-        <li><b>02</b><span><strong>Pick your position.</strong> Full forward, ruck, wing, back pocket — or the bench.</span></li>
-        <li><b>03</b><span><strong>Pay to lock it in.</strong> Pay securely by card, Apple Pay or Google Pay and your name goes straight on the team sheet.</span></li>
-      </ol>
-      <div class="flat">
-        <b>$25</b><span>Every position, from full forward to the bench. Chip in more if you like — it all goes to Movember.</span>
-      </div>
-      <p style="margin-top:28px;display:flex;flex-wrap:wrap;gap:12px"><a class="btn" href="#ground" data-ground>Sign up to play</a><a class="btn ghost" href="#faq">FAQs</a></p>
+      <div class="eyebrow">Sunday 29 November 2026 · Teams are full</div>
+      <h2>Join the waitlist</h2>
+      <p class="intro">All 48 spots are taken. Leave your details and we'll call or text you if a spot opens up before Sunday 29 November.</p>
+      <form id="waitlist" class="waitlist" novalidate>
+        <div class="field"><label for="wl-name">Name</label><input type="text" id="wl-name" name="name" autocomplete="name" required maxlength="120"></div>
+        <div class="field"><label for="wl-mobile">Mobile</label><input type="tel" id="wl-mobile" name="mobile" autocomplete="tel" inputmode="tel" required maxlength="40" placeholder="04xx xxx xxx"></div>
+        <div class="field"><label for="wl-email">Email</label><input type="email" id="wl-email" name="email" autocomplete="email" required maxlength="200" placeholder="you@example.com"></div>
+        <button class="btn" type="submit">Sign up to join the waitlist</button>
+        <div class="msg" role="alert"></div>
+        <p class="note">We'll only use your details to contact you about a spot at the Yappers Cup.</p>
+        <div class="done" aria-live="polite">
+          <img loading="lazy" decoding="async" src="assets/monogram-red.webp" alt="">
+          <h3>You're on the waitlist</h3>
+          <p class="wl-done-text">We'll be in touch if a spot opens up.</p>
+          <p style="margin-top:22px"><a class="btn" href="https://au.movember.com/events/view/id/kNxN" target="_blank" rel="noopener">Chip in for Movember</a></p>
+        </div>
+      </form>
     </div>
-    <a class="fc-preview" href="#ground" data-ground aria-label="Enter the ground and pick your position">
+    <a class="fc-preview" href="#ground" data-ground aria-label="See the team sheet on the ground">
       <img loading="lazy" decoding="async" src="assets/ground-preview.webp" alt="The Yappers Cup ground: a stadium under lights with each position marked on the field">
-      <span class="fc-play">Sign up to play</span>
+      <span class="fc-play">See the team sheet</span>
     </a>
   </div>
 </section>
@@ -608,6 +616,33 @@
     }
   });
   function fail(t){ msg.textContent = t; msg.className = "msg err"; }
+
+  // ---- Waitlist (teams are full) ----
+  const wl = document.getElementById("waitlist");
+  wl.addEventListener("submit", async e => {
+    e.preventDefault();
+    const m = wl.querySelector(".msg"), b = wl.querySelector("[type=submit]");
+    const bad = t => { m.textContent = t; m.className = "msg err"; };
+    m.className = "msg"; m.textContent = "";
+    const name = wl.elements.name.value.trim(), mobile = wl.elements.mobile.value.trim(), email = wl.elements.email.value.trim();
+    if (!name) return bad("Pop your name in.");
+    if (mobile.replace(/\D/g, "").length < 8) return bad("Add a mobile number so we can reach you.");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return bad("That email doesn't look quite right.");
+    b.disabled = true; b.textContent = "Adding you…";
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/yc_waitlist_join`, {
+        method: "POST",
+        headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ p_name: name, p_mobile: mobile, p_email: email })
+      });
+      const r = await res.json();
+      if (!r || !r.ok) return bad((r && r.error) || "That didn't go through. Try again.");
+      wl.querySelector(".wl-done-text").textContent = `Cheers ${name.split(" ")[0]}, you're number ${r.spot} on the waitlist. We'll call or text you if a spot opens up.`;
+      wl.classList.add("sent");
+      wl.scrollIntoView({ behavior: "smooth", block: "center" });
+    } catch (err) { bad("Something went wrong. Give it another go in a sec."); }
+    finally { b.disabled = false; b.textContent = "Sign up to join the waitlist"; }
+  });
 </script>
 </body>
 </html>
