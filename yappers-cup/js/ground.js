@@ -453,7 +453,7 @@ export async function openGround({ team, onClose } = {}) {
     // (rover and ruck rover spread a little wider so their pairs don't crowd the ruck)
     const at = p => { const q = both && p.team === 'pissants' && p.opp ? p.opp : p; return both && (q.code === 'RR' || q.code === 'R') ? { x: q.x * 1.9, z: q.z } : q; };
     const c = ctx, list = POSITIONS.filter(p => both || p.team === curTeam).map(p => ({ p, s: proj([at(p).x, 0, at(p).z]) })).filter(o => o.s).sort((a, b) => b.s[2] - a.s[2]);
-    const pulse = (Math.sin((now - T0) / 420) + 1) / 2;
+    const pulse = (Math.sin((now - T0) / 420) + 1) / 2, labels = [], boxes = [];
     for (const { p, s: s0 } of list) {
       const T = TEAMS[p.team];
       const k = F / s0[2], h = clamp(6.4 * k, (both ? 24 : 28), (both ? 84 : 96)), sel = picked === p, hov = hover === p;
@@ -480,11 +480,35 @@ export async function openGround({ team, onClose } = {}) {
         c.restore(); top = hy - hr - 3;
       }
       const below = both && p.opp && p.team === 'pissants', py = below ? s[1] + clamp(hh * 0.22, 10, 16) : top - 9;
-      if (both) { if (p.state !== 'free') pill(c, cx, py, p.who, p.team === 'mudguts' ? '#FFF0D7' : '#FFE3CC', '#101611', clamp(hh * 0.19, 9, 14)); else pill(c, cx, py, 'OPEN', 'rgba(16,22,17,.85)', 'rgba(255,240,215,.7)', clamp(hh * 0.17, 9, 12)); }
+      if (both) {
+        const free = p.state === 'free', size = free ? clamp(hh * 0.17, 9, 12) : clamp(hh * 0.19, 9, 14);
+        c.font = `${size}px Anton`; const text = free ? 'OPEN' : p.who, w = c.measureText(text).width + size * 0.9, ph = size * 1.45;
+        // bench players have no opponent: put their name out to the side, away from the stack of jumpers
+        const side = !p.opp ? (cx < W / 2 ? -1 : 1) : 0;
+        const lx = side ? cx + side * (hh * 0.42 + w / 2 + 4) : cx, ly = side ? s[1] - hh * 0.5 - lift : py;
+        labels.push({ x: lx, y: ly, w, h: ph, text, size, bg: free ? 'rgba(16,22,17,.85)' : p.team === 'mudguts' ? '#FFF0D7' : '#FFE3CC', fg: free ? 'rgba(255,240,215,.7)' : '#101611', side, ow: hh * 0.84 + 8, dir: below ? 1 : -1 });
+        boxes.push({ x0: cx - hh * 0.4, x1: cx + hh * 0.4, y0: s[1] - hh - lift, y1: s[1] - lift });
+      }
       else if (p.state === 'taken') pill(c, cx, top - 9, p.who, '#FFF0D7', '#101611', clamp(hh * 0.2, 10, 15));
       else if (p.state === 'held') pill(c, cx, top - 9, 'RESERVED', 'rgba(16,22,17,.85)', 'rgba(255,240,215,.8)', clamp(hh * 0.18, 9, 13));
       else if (sel || hov || h > 44) pill(c, cx, top - 9, money(PRICE[p.tier]), 'rgba(16,22,17,.85)', '#FFF0D7', clamp(hh * 0.18, 9, 13));
       hits.push({ p, x0: cx - hh * 0.4, x1: cx + hh * 0.4, y0: top - 16, y1: s[1] + (both ? 24 : 4) });
+    }
+    if (both) placeLabels(c, labels, boxes);
+  }
+  // match-ups: names are drawn last and nudged so none sits on a jumper or another name
+  function placeLabels(c, labels, boxes) {
+    const placed = [], hitsAny = r => r.x0 < 2 || r.x1 > W - 2 || boxes.concat(placed).some(b => r.x0 < b.x1 - 1 && r.x1 > b.x0 + 1 && r.y0 < b.y1 - 1 && r.y1 > b.y0 + 1);
+    const rect = (l, dx, dy) => ({ x0: l.x + dx - l.w / 2 - 2, x1: l.x + dx + l.w / 2 + 2, y0: l.y + dy - l.h / 2 - 1, y1: l.y + dy + l.h / 2 + 1 });
+    for (const l of labels) {
+      const st = l.h * 0.5, tries = [[0, 0]];
+      for (let i = 1; i <= 8; i++) {
+        if (l.side) tries.push([0, -i * st], [0, i * st], [l.side * i * st, 0], [-l.side * (l.w + l.ow), (i - 1) * st]);
+        else tries.push([-i * st, 0], [i * st, 0], [0, l.dir * i * st * 0.6], [-i * st, l.dir * i * st * 0.6], [i * st, l.dir * i * st * 0.6]);
+      }
+      let best = tries.find(([dx, dy]) => !hitsAny(rect(l, dx, dy))) || [0, 0];
+      const r = rect(l, best[0], best[1]); placed.push(r);
+      pill(c, l.x + best[0], l.y + best[1], l.text, l.bg, l.fg, l.size);
     }
   }
 
