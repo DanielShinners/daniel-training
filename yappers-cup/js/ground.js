@@ -480,21 +480,21 @@ export async function openGround({ team, onClose } = {}) {
         c.restore(); top = hy - hr - 3;
       }
       const below = both && p.opp && p.team === 'pissants', py = below ? s[1] + clamp(hh * 0.22, 10, 16) : top - 9;
-      if (both) {
-        const free = p.state === 'free', size = free ? clamp(hh * 0.17, 9, 12) : clamp(hh * 0.19, 9, 14);
+      boxes.push({ x0: cx - hh * 0.4, x1: cx + hh * 0.4, y0: top, y1: s[1] - lift });
+      if (both || p.state === 'taken') {
+        const free = p.state === 'free', size = free ? clamp(hh * 0.17, 9, 12) : both ? clamp(hh * 0.19, 9, 14) : clamp(hh * 0.2, 10, 15);
         c.font = `${size}px Anton`; const text = free ? 'OPEN' : p.who, w = c.measureText(text).width + size * 0.9, ph = size * 1.45;
         // bench players have no opponent: put their name out to the side, away from the stack of jumpers
-        const side = !p.opp ? (cx < W / 2 ? -1 : 1) : 0;
-        const lx = side ? cx + side * (hh * 0.42 + w / 2 + 4) : cx, ly = side ? s[1] - hh * 0.5 - lift : py;
-        labels.push({ x: lx, y: ly, w, h: ph, text, size, bg: free ? 'rgba(16,22,17,.85)' : p.team === 'mudguts' ? '#FFF0D7' : '#FFE3CC', fg: free ? 'rgba(255,240,215,.7)' : '#101611', side, ow: hh * 0.84 + 8, dir: below ? 1 : -1 });
-        boxes.push({ x0: cx - hh * 0.4, x1: cx + hh * 0.4, y0: s[1] - hh - lift, y1: s[1] - lift });
+        const side = (both ? !p.opp : p.code[0] === 'I') ? (cx < W / 2 ? -1 : 1) : 0;
+        const lx = side ? cx + side * (hh * 0.42 + w / 2 + 4) : cx, ly = side ? s[1] - hh * 0.5 - lift : both ? py : top - 9;
+        labels.push({ x: lx, y: ly, w, h: ph, text, size, bg: free ? 'rgba(16,22,17,.85)' : !both || p.team === 'mudguts' ? '#FFF0D7' : '#FFE3CC', fg: free ? 'rgba(255,240,215,.7)' : '#101611', side, ow: hh * 0.84 + 8, dir: below ? 1 : -1 });
       }
       else if (p.state === 'taken') pill(c, cx, top - 9, p.who, '#FFF0D7', '#101611', clamp(hh * 0.2, 10, 15));
       else if (p.state === 'held') pill(c, cx, top - 9, 'RESERVED', 'rgba(16,22,17,.85)', 'rgba(255,240,215,.8)', clamp(hh * 0.18, 9, 13));
       else if (sel || hov || h > 44) pill(c, cx, top - 9, money(PRICE[p.tier]), 'rgba(16,22,17,.85)', '#FFF0D7', clamp(hh * 0.18, 9, 13));
       hits.push({ p, x0: cx - hh * 0.4, x1: cx + hh * 0.4, y0: top - 16, y1: s[1] + (both ? 24 : 4) });
     }
-    if (both) placeLabels(c, labels, boxes);
+    placeLabels(c, labels, boxes);
   }
   // match-ups: names are drawn last and nudged so none sits on a jumper or another name
   function placeLabels(c, labels, boxes) {
