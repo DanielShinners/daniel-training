@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Yappers Cup 2026 — Mudguts vs Pissants</title>
+<meta name="description" content="Community footy for men's health. Mudguts vs Pissants, Sunday 29 November 2026. Proudly supporting Movember — sign up to play, support or partner.">
+<meta property="og:title" content="Yappers Cup 2026 — Mudguts vs Pissants">
+<meta property="og:description" content="Good mates. Good footy. Bigger conversations. Sunday 29 November 2026 — proudly supporting Movember.">
+<meta property="og:image" content="https://yapperscup.com/share-preview.jpg">
+<meta name="theme-color" content="#101611">
+<link rel="icon" href="assets/favicon.png">
+<link rel="stylesheet" href="css/ground.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#101611; --ink-2:#181F19; --cream:#FFF0D7; --red:#CD2A2D;
+    --maroon:#8A2412; --green:#0E5A2C; --blue:#1C3B83; --orange:#E2600F;
+    --muted:rgba(255,240,215,.72);
+    --display:'Anton',Impact,'Arial Narrow',sans-serif;
+    --body:'Archivo',system-ui,-apple-system,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--ink);color:var(--cream);font-family:var(--body);font-size:17px;line-height:1.55;-webkit-font-smoothing:antialiased}
+  img{max-width:100%;display:block}
+  a{color:inherit}
+  .wrap{width:min(1180px,100% - 40px);margin-inline:auto}
+  h1,h2,h3,.display{font-family:var(--display);font-weight:400;text-transform:uppercase;letter-spacing:.015em;line-height:.95}
+  .eyebrow{font-family:var(--display);text-transform:uppercase;letter-spacing:.1em;font-size:15px;color:var(--red)}
+
+  /* film grain over photo sections */
+  .grain{position:relative;isolation:isolate}
+  .grain::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:1;opacity:.22;mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>")}
+  .grain>*{position:relative;z-index:2}
+
+  .btn{display:inline-block;font-family:var(--display);text-transform:uppercase;letter-spacing:.05em;text-decoration:none;background:var(--red);color:var(--cream);padding:13px 24px;border-radius:4px;border:0;font-size:19px;cursor:pointer;transition:transform .15s,background .15s}
+  .btn:hover{transform:translateY(-2px);background:#b52326}
+  .btn.ghost{background:transparent;box-shadow:inset 0 0 0 2px var(--cream)}
+  .btn.ghost:hover{background:var(--cream);color:var(--ink)}
+
+  /* nav */
+  nav{position:sticky;top:0;z-index:30;background:rgba(16,22,17,.92);backdrop-filter:blur(8px);border-bottom:1px solid rgba(255,240,215,.08)}
+  nav .wrap{display:flex;align-items:center;justify-content:space-between;height:64px}
+  nav .lockup img{height:30px;width:auto}
+  @media (min-width:861px){nav .wrap{height:84px} nav .lockup img{height:52px}}
+  nav .links{display:flex;gap:26px;align-items:center}
+  nav .links a:not(.btn){font-family:var(--display);text-transform:uppercase;letter-spacing:.06em;text-decoration:none;font-size:16px;opacity:.8}
+  nav .links a:not(.btn):hover{opacity:1}
+  nav .btn{padding:8px 16px;font-size:16px}
+
+  /* hero */
+  .hero{min-height:min(92vh,820px);display:grid;place-items:center;text-align:center;overflow:hidden;
+    background:linear-gradient(180deg,rgba(16,22,17,.25),rgba(16,22,17,.55) 70%,var(--ink)),url(assets/hero-run.webp) center/cover no-repeat}
+  .hero .inner{padding:90px 20px 70px}
+  .hero h1{width:min(980px,92vw);margin:0 auto}
+  .hero h1 img{width:100%}
+  .hero .tagline{font-family:var(--display);text-transform:uppercase;letter-spacing:.06em;font-size:clamp(18px,3.8vw,40px);line-height:1;margin-top:clamp(12px,2vw,22px)}
+  .hero .sub{font-family:var(--display);text-transform:uppercase;font-size:clamp(20px,3.4vw,34px);letter-spacing:.04em;margin-top:22px}
+  .hero .sub{display:flex;align-items:center;justify-content:center;gap:.6em}
+  .hero .sub .tm{display:inline-flex;align-items:center;gap:.35em}
+  .hero .sub img{height:5.1em;width:auto;filter:drop-shadow(0 6px 14px rgba(0,0,0,.5))}
+  .hero .sub .vs{color:var(--red)}
+  .hero .date{margin-top:14px;font-size:13px;letter-spacing:.24em;text-transform:uppercase;font-weight:800;color:var(--muted)}
+  .hero .venue{margin-top:12px;display:flex;gap:10px 18px;justify-content:center;flex-wrap:wrap;font-family:var(--display);text-transform:uppercase;letter-spacing:.06em;font-size:clamp(17px,2.2vw,22px)}
+.hero .venue a{text-decoration:none;border-bottom:2px solid var(--red)}
+.hero .venue span{color:var(--muted)}
+.countdown{display:flex;gap:10px;justify-content:center;margin-top:30px}
+  .countdown div{background:rgba(16,22,17,.55);border:1px solid rgba(255,240,215,.22);border-radius:6px;padding:10px 14px;min-width:78px}
+  .countdown b{display:block;font-family:var(--display);font-weight:400;font-size:36px;line-height:1}
+  .countdown span{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+  .hero .ctas{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:32px}
+  .hero .ctas .btn{width:300px;max-width:100%;text-align:center}
+  .hero .movember{margin-top:34px;font-size:12px;letter-spacing:.26em;text-transform:uppercase;font-weight:800}
+  .mo{display:inline-block;height:2.3em;width:auto;vertical-align:-.78em;margin:0 .06em}
+  .btn .mo{height:1.9em;vertical-align:-.66em}
+  .btn.ghost:hover .mo{filter:brightness(0)}
+  h2 .mo{height:2.1em;vertical-align:-.66em}
+  .hero .movember{display:flex;flex-direction:column;align-items:center;gap:12px}
+  .crest-link{display:inline-flex;transition:transform .18s ease}.crest-link:hover{transform:translateY(-4px) scale(1.04)}.crest-link img{display:block}
+  .ig-icon{display:inline-flex;align-items:center;opacity:.85}.ig-icon:hover{opacity:1}
+  .ig-btn{display:inline-grid;place-items:center;width:54px;height:54px;border-radius:50%;box-shadow:inset 0 0 0 2px var(--cream);color:var(--cream);transition:background .15s,color .15s,transform .15s}
+  .ig-btn:hover{background:var(--cream);color:var(--ink);transform:translateY(-2px)}
+  .foot-mo{margin:14px 0 22px;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center}
+  .foot-mo .mo{height:48px;vertical-align:0;margin:0}
+  .hero .movember .mo{height:38px;vertical-align:0;margin:0}
+
+  /* marquee */
+  .marquee{background:var(--red);overflow:hidden;white-space:nowrap;padding:14px 0;border-block:1px solid rgba(0,0,0,.2)}
+  .marquee .track{display:inline-flex;align-items:center;gap:28px;animation:scroll 32s linear infinite;padding-right:28px}
+  .marquee span{font-family:var(--display);font-size:clamp(30px,4.5vw,50px);text-transform:uppercase;line-height:1;color:var(--cream)}
+  .marquee img{height:clamp(26px,3.6vw,40px);width:auto}
+  @keyframes scroll{to{transform:translateX(-50%)}}
+
+  /* about */
+  .split{display:grid;grid-template-columns:1fr 1fr;min-height:560px}
+  .split .copy{padding:clamp(40px,6vw,96px);display:flex;flex-direction:column;justify-content:center}
+  .split h2{font-size:clamp(42px,5.4vw,72px);margin:14px 0 24px}
+  .split p{margin-bottom:16px;max-width:52ch;color:var(--muted)}
+  .split .pic{background-size:cover;background-position:center;min-height:380px}
+  .bw{filter:grayscale(1) contrast(1.05)}
+  .stats{display:flex;gap:36px;margin-top:26px;flex-wrap:wrap}
+  .stats b{font-family:var(--display);font-weight:400;font-size:58px;color:var(--red);line-height:1;display:block}
+  .stats span{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+
+  /* matchup */
+  .matchup{padding:110px 0 100px;text-align:center;
+    background:linear-gradient(180deg,var(--ink),rgba(16,22,17,.6) 30%,rgba(16,22,17,.6) 70%,var(--ink)),url(assets/pack-blur.webp) center/cover}
+  .matchup h2{font-size:clamp(44px,7vw,96px)}
+  .matchup h2 .m{color:#4FA164}.matchup h2 .p{color:var(--orange)}.matchup h2 .vs{font-size:.45em;vertical-align:.4em;color:var(--cream);opacity:.85;margin:0 .2em}
+  .matchup .eyebrow{white-space:nowrap;font-size:clamp(9px,3.2vw,15px);margin:0 auto 28px}
+  .matchup h2{margin-top:6px}
+  .matchup .lead{max-width:58ch;margin:18px auto 0;color:var(--muted)}
+  .shields{display:grid;grid-template-columns:1fr auto 1fr;gap:clamp(16px,4vw,56px);align-items:center;margin:56px auto 0;max-width:980px}
+  .shield{transition:transform .25s}
+  .shield:hover{transform:rotate(-2deg) scale(1.03)}
+  .shield img{width:min(340px,100%);margin:0 auto;filter:drop-shadow(0 18px 30px rgba(0,0,0,.45))}
+  .shield h3{font-size:30px;margin-top:20px}
+  .shield p{color:var(--muted);font-size:15px;margin-top:6px}
+  .vs-badge{width:clamp(64px,9vw,110px)}
+
+  /* photo strip */
+
+  /* signup */
+  .signup{padding:110px 0;background:var(--ink-2)}
+  .signup-grid{display:grid;grid-template-columns:.9fr 1.1fr;gap:64px;align-items:start}
+  .signup h2{font-size:clamp(46px,6vw,84px);margin:14px 0 22px}
+  .signup .intro{color:var(--muted)}
+  .signup ul{list-style:none;margin-top:28px}
+  .signup li{padding:14px 0;border-top:1px solid rgba(255,240,215,.14);display:flex;gap:16px;color:var(--muted)}
+  .signup li b{font-family:var(--display);font-weight:400;font-size:21px;text-transform:uppercase;min-width:112px;color:var(--cream)}
+  .signup .mono{width:90px;margin-top:36px;opacity:.95}
+
+  form{background:var(--cream);color:var(--ink);border-radius:10px;padding:clamp(22px,4vw,38px);box-shadow:0 24px 60px rgba(0,0,0,.4)}
+  fieldset{border:0;margin-bottom:20px}
+  legend,label{display:block;font-weight:800;font-size:12px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .field{margin-bottom:16px}
+  input[type=text],input[type=email],input[type=tel],select,textarea{width:100%;font:inherit;font-size:16px;padding:12px 14px;border:2px solid #E2CCA8;border-radius:6px;background:#fff;color:var(--ink);transition:border-color .15s}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--ink)}
+  textarea{min-height:96px;resize:vertical}
+  .pick{display:grid;gap:10px}
+  .pick input{position:absolute;opacity:0;pointer-events:none}
+  .pick label{margin:0;text-align:center;border:2px solid #E2CCA8;border-radius:6px;padding:12px 6px;cursor:pointer;background:#fff;font-family:var(--display);font-weight:400;font-size:19px;letter-spacing:.04em;transition:all .15s;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+  .pick label small{font-family:var(--body);font-size:11px;letter-spacing:.03em;text-transform:none;font-weight:600;color:#7a6a52}
+  .pick input:checked+label{border-color:var(--ink);background:var(--ink);color:var(--cream)}
+  .pick input:checked+label small{color:var(--muted)}
+  .pick input:focus-visible+label{outline:3px solid var(--red);outline-offset:2px}
+  .roles{grid-template-columns:repeat(3,1fr)}
+  .teams-pick{grid-template-columns:repeat(3,1fr)}
+  .teams-pick label img{height:58px;width:auto}
+  .teams-pick input#t-mudguts:checked+label{background:var(--maroon);border-color:var(--maroon)}
+  .teams-pick input#t-pissants:checked+label{background:var(--blue);border-color:var(--blue)}
+  .teams-pick .either{font-size:30px;line-height:58px;height:58px}
+  .only{display:none}
+  form[data-role=player] .only.player,form[data-role=partner] .only.partner{display:block}
+  .hp{position:absolute;left:-9999px}
+  form .btn{width:100%;font-size:23px;padding:16px}
+  .note{font-size:13px;color:#7a6a52;margin-top:12px;text-align:center}
+  .msg{display:none;margin-top:14px;padding:12px 14px;border-radius:6px;font-weight:600}
+  .msg.err{display:block;background:#fbe0dd;color:#8f1a20}
+  .done{display:none;text-align:center;padding:24px 6px}
+  .waitlist{margin-top:26px;max-width:520px}
+  .waitlist.sent > :not(.done){display:none}
+  .waitlist.sent .done{display:block}
+  .done img{width:150px;margin:0 auto 18px}
+  .done h3{font-size:52px}
+  .done p{margin:10px auto 0;max-width:40ch}
+  form.sent>*:not(.done){display:none}
+  form.sent .done{display:block}
+
+
+  /* take the field */
+  .field-cta{padding:110px 0;background:radial-gradient(120% 80% at 80% 50%,#1a2a1c,var(--ink) 70%)}
+  .fc-grid{display:grid;grid-template-columns:.95fr 1.05fr;gap:56px;align-items:center}
+  .field-cta h2{font-size:clamp(46px,6vw,84px);margin:14px 0 20px}
+  .field-cta .intro{color:var(--muted);max-width:50ch}
+  .how{list-style:none;margin-top:26px}
+  .how li{display:flex;gap:16px;padding:14px 0;border-top:1px solid rgba(255,240,215,.14);color:var(--muted)}
+  .how li b{font-family:var(--display);font-weight:400;font-size:22px;color:var(--red);min-width:34px}
+  .how strong{color:var(--cream)}
+  .tiers{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:22px}
+  .tiers div{border:1px solid rgba(255,240,215,.16);border-radius:8px;padding:14px}
+  .tiers b{display:block;font-family:var(--display);font-weight:400;font-size:34px;line-height:1;color:var(--cream)}
+  .tiers span{display:block;margin-top:6px;font-size:12px;color:var(--muted);line-height:1.45}
+  .fc-preview{position:relative;display:block;border-radius:12px;overflow:hidden;box-shadow:0 30px 70px rgba(0,0,0,.55);border:1px solid rgba(255,240,215,.12)}
+  .fc-preview img{width:100%;transition:transform .6s}
+  .fc-preview:hover img{transform:scale(1.03)}
+  .fc-play{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);font-family:var(--display);text-transform:uppercase;letter-spacing:.05em;font-size:19px;background:var(--red);padding:13px 24px;border-radius:4px;text-decoration:none;white-space:nowrap}
+  .roles.two{grid-template-columns:repeat(2,1fr)}
+  .flat{display:flex;align-items:center;gap:18px;margin-top:22px;border:1px solid rgba(255,240,215,.16);border-radius:8px;padding:16px 18px}
+  .flat b{font-family:var(--display);font-weight:400;font-size:52px;line-height:1;color:var(--red)}
+  .flat span{font-size:14px;color:var(--muted)}
+  .terms-tick{display:flex !important;gap:10px;align-items:flex-start;text-transform:none !important;letter-spacing:0 !important;font-weight:400 !important;font-size:14px !important;margin:4px 0 18px !important;cursor:pointer}
+  .terms-tick input{width:20px;height:20px;flex:0 0 20px;margin-top:1px;accent-color:var(--red)}
+  .terms-tick a{color:var(--red);font-weight:700}
+  @media (max-width:860px){.fc-grid{grid-template-columns:1fr}.tiers{grid-template-columns:1fr}.fc-preview{order:-1}}
+
+  /* goal-kicking game */
+  .kick-sec{padding:100px 0 90px;background:var(--ink)}
+  .kick-sec h2{font-size:clamp(42px,6vw,80px);margin:12px 0 16px}
+  .kick-intro{color:var(--muted);max-width:60ch;margin-bottom:34px}
+  .kick-launch{display:grid;grid-template-columns:1.3fr 1fr;gap:28px;align-items:start}
+  .kick-play{position:relative;display:block;padding:0;border:1px solid rgba(255,240,215,.12);border-radius:12px;overflow:hidden;background:#0b0f0c;cursor:pointer;box-shadow:0 30px 70px rgba(0,0,0,.5)}
+  .kick-play img{width:100%;display:block;transition:transform .6s}
+  .kick-play:hover img{transform:scale(1.03)}
+  .kick-badge{position:absolute;left:16px;top:16px;font-family:var(--display);text-transform:uppercase;letter-spacing:.1em;font-size:14px;background:var(--cream);color:var(--ink);padding:6px 12px;border-radius:999px}
+  .kick-play .btn{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);white-space:nowrap}
+  .kick-lb{background:var(--ink-2);border:1px solid rgba(255,240,215,.1);border-radius:12px;padding:22px}
+  .kick-lb h3{font-size:30px;margin-bottom:12px}
+  .kick-lb .btn{margin-top:16px;width:100%;text-align:center}
+  @media (max-width:860px){.kick-launch{grid-template-columns:1fr}}
+  html.kk-open,html.kk-open body{overflow:hidden;overscroll-behavior:none}
+  html.kk-open .footy{display:none}
+  .kk-full{position:fixed;inset:0;z-index:120;background:#0b0f0c;touch-action:none}
+  .kk-full .kick-game{position:absolute;inset:0;user-select:none;-webkit-user-select:none}
+  .kk-x{position:absolute;top:max(12px,env(safe-area-inset-top));right:12px;z-index:5;width:44px;height:44px;border-radius:50%;border:1px solid rgba(255,240,215,.2);background:rgba(16,22,17,.85);color:var(--cream);display:grid;place-items:center;cursor:pointer}
+  .kk-x:hover{background:var(--red)}
+  .kk-stage{position:absolute;inset:0;display:block;touch-action:none;cursor:crosshair}
+  .kk-hud{position:absolute;left:12px;right:64px;top:max(12px,env(safe-area-inset-top));display:flex;justify-content:space-between;align-items:flex-start;gap:10px;pointer-events:none}
+  .kk-hud[hidden],.kk-hint[hidden],.kk-meta[hidden],.kk-pick[hidden],.kk-wind[hidden]{display:none}
+  .kk-score{display:flex;align-items:center;gap:10px;background:rgba(16,22,17,.78);border:1px solid rgba(255,240,215,.14);border-radius:10px;padding:8px 14px 8px 8px}
+  .kk-score img{width:42px;height:auto}
+  .kk-score b{display:block;font-family:var(--display);font-weight:400;text-transform:uppercase;font-size:15px;letter-spacing:.06em;color:var(--muted)}
+  .kk-tally{font-family:var(--display);font-size:30px;line-height:1;white-space:nowrap}
+  .kk-side{text-align:right;display:grid;gap:6px;justify-items:end}
+  .kk-clock{font-family:var(--display);font-size:30px;line-height:1;background:rgba(16,22,17,.78);border:1px solid rgba(255,240,215,.14);border-radius:10px;padding:8px 12px;min-width:84px;text-align:center}
+  .kk-clock.low{color:#ff8f86;border-color:rgba(205,42,45,.6)}
+  .kk-level,.kk-wind{white-space:nowrap;background:rgba(16,22,17,.78);border:1px solid rgba(255,240,215,.14);border-radius:999px;padding:6px 12px;font-family:var(--display);text-transform:uppercase;letter-spacing:.05em;font-size:13px}
+  .kk-wind{display:flex;align-items:center;gap:8px;color:#ffd27a}
+  .kk-wind i{font-style:normal;display:inline-block;transition:transform .3s}
+  .kk-msg{position:absolute;left:50%;top:38%;transform:translate(-50%,-50%) scale(.8);opacity:0;pointer-events:none;font-family:var(--display);text-transform:uppercase;font-size:clamp(34px,7vw,72px);text-shadow:0 6px 30px rgba(0,0,0,.7);transition:opacity .2s,transform .25s;white-space:nowrap}
+  .kk-msg.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+  .kk-msg.goal{color:#FFF0D7}.kk-msg.behind{color:#ffd27a}.kk-msg.miss{color:#ff8f86}
+  .kk-hint{position:absolute;left:50%;bottom:calc(56px + env(safe-area-inset-bottom));transform:translateX(-50%);font-size:13px;color:var(--muted);background:rgba(16,22,17,.7);padding:6px 12px;border-radius:999px;white-space:nowrap;pointer-events:none}
+  .kk-meta{position:absolute;left:12px;right:12px;bottom:max(12px,env(safe-area-inset-bottom));display:flex;gap:14px;align-items:center;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+  .kk-reset{margin-left:auto;font:inherit;color:var(--cream);background:rgba(16,22,17,.78);border:1px solid rgba(255,240,215,.2);border-radius:999px;padding:6px 12px;cursor:pointer}
+  .kk-pick{position:absolute;inset:0;display:grid;place-content:center;justify-items:center;text-align:center;background:radial-gradient(70% 60% at 50% 50%,rgba(16,22,17,.55),rgba(16,22,17,.92));padding:20px}
+  .kk-pk{font-family:var(--display);text-transform:uppercase;letter-spacing:.1em;font-size:14px;color:var(--red)}
+  .kk-pick h3{font-size:clamp(36px,6vw,60px);margin:6px 0 22px}
+  .kk-teams{display:flex;gap:clamp(14px,4vw,40px)}
+  .kk-teams button{background:none;border:0;color:var(--cream);cursor:pointer;display:grid;justify-items:center;gap:10px;font-family:var(--display);text-transform:uppercase;font-size:22px;letter-spacing:.04em;transition:transform .2s}
+  .kk-teams button:hover,.kk-teams button:focus-visible{transform:translateY(-6px) rotate(-2deg);outline:none}
+  .kk-teams img{width:clamp(110px,22vw,190px);filter:drop-shadow(0 14px 24px rgba(0,0,0,.5))}
+  .kk-lbbtn{margin-top:26px;font-family:var(--display);text-transform:uppercase;letter-spacing:.06em;font-size:16px;color:var(--cream);background:transparent;border:1px solid rgba(255,240,215,.3);border-radius:999px;padding:9px 18px;cursor:pointer}
+  /* top-score celebration */
+  .kk-party{position:absolute;inset:0;z-index:9;display:grid;place-items:center;background:radial-gradient(circle at 50% 40%,rgba(120,26,28,.97),rgba(8,11,9,.98) 70%);animation:kkfade .3s ease both;overflow:hidden}
+  .kk-party.out{opacity:0;transition:opacity .3s}
+  .kk-confetti{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2}
+  .kk-party-in{position:relative;z-index:1;text-align:center;padding:24px;display:flex;flex-direction:column;align-items:center}
+  .kk-rays{position:absolute;left:50%;top:150px;width:900px;height:900px;margin:-450px 0 0 -450px;background:repeating-conic-gradient(rgba(255,224,138,.16) 0 10deg,transparent 10deg 20deg);border-radius:50%;-webkit-mask:radial-gradient(circle,#000 20%,transparent 65%);mask:radial-gradient(circle,#000 20%,transparent 65%);animation:kkspin 14s linear infinite;z-index:-1}
+  .kk-hold{position:relative;width:min(86vw,360px);animation:kkdrop 1.1s cubic-bezier(.2,1.5,.4,1) .15s both, kkfloat 2.6s ease-in-out 1.3s infinite}
+  .kk-hold-mudguts{aspect-ratio:315/230}.kk-hold-pissants{aspect-ratio:297/238}
+  .kk-hold img.kk-mascot,.kk-hold .kk-trophy{position:absolute;height:auto;filter:drop-shadow(0 14px 22px rgba(0,0,0,.55))}
+  .kk-hold .kk-trophy{filter:drop-shadow(0 14px 24px rgba(0,0,0,.55)) drop-shadow(0 0 22px rgba(255,214,102,.45))}
+  .kk-hold-mudguts .kk-mascot{left:0;top:0;width:65.1%}.kk-hold-mudguts .kk-trophy{left:52.4%;top:17.4%;width:47.6%}
+  .kk-hold-pissants .kk-mascot{left:34%;top:0;width:66%}.kk-hold-pissants .kk-trophy{left:0;top:21%;width:50.5%}
+  .kk-party-k{font-family:var(--display);text-transform:uppercase;letter-spacing:.14em;color:var(--red);font-size:18px;margin-top:18px;animation:kkpop .5s ease .9s both}
+  .kk-party-t{font-family:var(--display);font-weight:400;font-size:clamp(64px,16vw,120px);line-height:.95;color:#ffe08a;text-shadow:0 4px 0 #9a6a12,0 0 30px rgba(255,214,102,.5);animation:kkpop .6s cubic-bezier(.2,1.6,.4,1) 1.05s both}
+  .kk-party-s{color:var(--cream);max-width:30ch;margin:10px auto 18px;animation:kkpop .5s ease 1.3s both}
+  .kk-party-go{animation:kkpop .5s ease 1.5s both}
+  @keyframes kkfade{from{opacity:0}}
+  @keyframes kkspin{to{transform:rotate(360deg)}}
+  @keyframes kkdrop{0%{transform:translateY(-120vh) rotate(-25deg) scale(.6)}70%{transform:translateY(0) rotate(4deg) scale(1.08)}100%{transform:none}}
+  @keyframes kkfloat{50%{transform:translateY(-8px) rotate(-1.5deg)}}
+  @keyframes kkpop{from{opacity:0;transform:scale(.6)}}
+  @media (prefers-reduced-motion:reduce){.kk-rays,.kk-hold{animation:none}}
+  .kk-over{position:absolute;inset:0;z-index:4;display:grid;place-items:center;background:rgba(10,14,11,.9);padding:16px;overflow:auto}
+  .kk-over[hidden]{display:none}
+  .kk-card{width:min(440px,100%);text-align:center;padding:56px 0 12px}
+  .kk-final{display:flex;align-items:center;justify-content:center;gap:14px;margin:8px 0 6px}
+  .kk-final img{width:64px}
+  .kk-final b{font-family:var(--display);font-weight:400;font-size:clamp(48px,11vw,80px);line-height:1}
+  .kk-lbh{font-size:44px;margin:4px 0}
+  .kk-sum{color:var(--muted);margin:6px auto 18px;max-width:40ch;font-size:15px}
+  .kk-form{display:grid;gap:12px;text-align:left;background:var(--cream);color:var(--ink);border-radius:12px;padding:18px;margin-bottom:14px}
+  .kk-form label{display:grid;gap:6px;font-weight:800;font-size:11px;letter-spacing:.1em;text-transform:uppercase}
+  .kk-form input[type=email],.kk-form input:not([type]){font:inherit;font-size:16px;letter-spacing:0;text-transform:none;font-weight:400;padding:11px 12px;border:2px solid #E2CCA8;border-radius:6px;background:#fff;color:var(--ink)}
+  .kk-form label.kk-check{display:flex;gap:10px;align-items:flex-start;text-transform:none;letter-spacing:0;font-weight:400;font-size:13px;line-height:1.45}
+  .kk-check input{width:20px;height:20px;flex:0 0 20px;accent-color:var(--red)}
+  .kk-check a{color:var(--red);font-weight:700}
+  .kk-err{color:#a41b20;font-weight:600;font-size:14px}.kk-err:empty{display:none}
+  .kk-btn{font-family:var(--display);text-transform:uppercase;letter-spacing:.05em;font-size:19px;background:var(--red);color:var(--cream);border:0;border-radius:4px;padding:13px 24px;cursor:pointer;transition:transform .15s,background .15s}
+  .kk-btn:hover{transform:translateY(-2px);background:#b52326}
+  .kk-btn:disabled{opacity:.6}
+  .kk-btn.ghost{background:transparent;color:var(--cream);box-shadow:inset 0 0 0 2px var(--cream)}
+  .kk-btn.ghost:hover{background:var(--cream);color:var(--ink)}
+  .kk-row{display:flex;gap:10px;justify-content:center;margin-top:12px}.kk-row .kk-btn{flex:1}
+  .kk-place{font-size:17px;margin:4px 0 12px}
+  .kk-lbwrap{text-align:left;max-height:46vh;overflow:auto;border-radius:10px}
+  .kk-board{list-style:none;margin:0;padding:0}
+  .kk-board li{display:flex;align-items:center;gap:10px;padding:8px 10px;border-bottom:1px solid rgba(255,240,215,.08)}
+  .kk-board li.me{background:rgba(205,42,45,.25);border-radius:8px}
+  .kk-rank{font-family:var(--display);width:24px;color:var(--muted);text-align:right}
+  .kk-board img{width:26px;height:auto}
+  .kk-nm{flex:1;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .kk-sc{font-family:var(--display);color:var(--muted);letter-spacing:.03em}.kk-sc b{color:var(--cream);font-weight:400;margin-left:6px;font-size:18px}
+  .kk-tt{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px;margin-bottom:6px;border-radius:10px;background:rgba(255,240,215,.05);font-family:var(--display);text-transform:uppercase;letter-spacing:.04em;font-size:14px}
+  .kk-tt span{display:flex;align-items:center;gap:8px}.kk-tt img{width:28px}.kk-tt b{font-weight:400;font-size:22px}.kk-tt em{font-style:normal;color:var(--red)}
+  .kk-empty{color:var(--muted);font-size:14px;padding:10px 0}
+  /* faq */
+  .faq{padding:110px 0;background:var(--ink)}
+  .faq-grid{display:grid;grid-template-columns:.8fr 1.2fr;gap:56px;align-items:start}
+  .faq h2{font-size:clamp(46px,6vw,84px);margin:14px 0 18px}
+  .faq .intro{color:var(--muted)}
+  .faq-list details{border-top:1px solid rgba(255,240,215,.14)}
+  .faq-list details:last-child{border-bottom:1px solid rgba(255,240,215,.14)}
+  .faq-list summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:16px;padding:20px 0;font-family:var(--display);text-transform:uppercase;letter-spacing:.03em;font-size:clamp(20px,2.4vw,26px)}
+  .faq-list summary::-webkit-details-marker{display:none}
+  .faq-list summary::after{content:"+";font-size:30px;line-height:1;color:var(--red);transition:transform .2s}
+  .faq-list details[open] summary::after{transform:rotate(45deg)}
+  .faq-a{padding:0 0 22px;color:var(--muted);max-width:62ch}
+  .faq-a p+p,.faq-a ul+p,.faq-a p+ul{margin-top:10px}
+  .faq-a ul{margin:8px 0 0 20px;display:grid;gap:4px}
+  .faq-a a{color:var(--cream);text-decoration-color:var(--red);text-underline-offset:3px}
+  .faq-a strong{color:var(--cream)}
+  @media (max-width:860px){.faq-grid{grid-template-columns:1fr;gap:20px}}
+  /* donate */
+  .donate .copy{background:var(--ink)}
+  footer{border-top:1px solid rgba(255,240,215,.1);padding:56px 0 40px;text-align:center}
+  footer .ig{margin:26px 0 8px;letter-spacing:0;text-transform:none}
+  footer .wm{width:min(520px,80%);margin:0 auto}
+  footer p{margin-top:18px;font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted)}
+
+  @media (max-width:860px){
+    nav .links a:not(.btn){display:none}
+    .split,.signup-grid{grid-template-columns:1fr}
+    .split .pic{min-height:320px}
+    .split.flip .pic{order:-1}
+    .shields{grid-template-columns:1fr 1fr;gap:20px}
+    .vs-badge{display:none}
+    .row{grid-template-columns:1fr}
+    .countdown div{min-width:66px;padding:8px 10px}
+  }
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.marquee .track{animation:none}.btn,.shield{transition:none}}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <a class="lockup" href="#top" aria-label="Yappers Cup home"><img src="assets/lockup-small.webp" alt="Yappers Cup"></a>
+    <div class="links">
+      <a href="#about">About</a>
+      <a href="#take-the-field">How it works</a>
+      <a href="#faq">FAQs</a>
+      <a href="https://au.movember.com/events/view/id/kNxN" target="_blank" rel="noopener">Donate</a>
+      <a class="ig-icon" href="https://www.instagram.com/yappers_cup" target="_blank" rel="noopener" aria-label="Yappers Cup on Instagram"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r="1.1" fill="currentColor" stroke="none"/></svg></a>
+      <a class="btn" href="#take-the-field">Join the waitlist</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero grain" id="top">
+  <div class="inner">
+    <h1><img src="assets/wordmark-cream.webp" alt="Yappers Cup"></h1>
+    <div class="tagline">Kicking goals for men's health</div>
+    <div class="sub"><a class="crest-link" href="#ground" data-ground data-team="mudguts" aria-label="See the Mudguts team sheet"><img src="assets/shield-mudguts.webp" alt="Mudguts"></a><span class="vs">vs</span><a class="crest-link" href="#ground" data-ground data-team="pissants" aria-label="See the Pissants team sheet"><img src="assets/shield-pissants.webp" alt="Pissants"></a></div>
+    <div class="date">Sunday 29 November 2026 · 1pm bounce</div>
+<div class="venue"><a href="https://www.google.com/maps/search/?api=1&amp;query=Gosch%27s+Paddock+Richmond+VIC" target="_blank" rel="noopener">Gosch's Paddock, Richmond</a><span>Arrive by 12:30pm</span></div>
+    <div class="countdown" id="countdown" aria-label="Countdown to match day">
+      <div><b id="cd-d">–</b><span>Days</span></div>
+      <div><b id="cd-h">–</b><span>Hrs</span></div>
+      <div><b id="cd-m">–</b><span>Mins</span></div>
+    </div>
+    <div class="ctas">
+      <a class="btn" href="#take-the-field">Sign up to join the waitlist</a>
+      <a class="btn ghost" href="https://au.movember.com/events/view/id/kNxN" target="_blank" rel="noopener">Donate to Movember</a>
+    </div>
+    <div class="movember"><span>Proudly supporting</span><img class="mo" src="assets/movember-white.png" alt="Movember"></div>
+  </div>
+</header>
+
+<div class="marquee" aria-hidden="true">
+  <div class="track" id="marquee"></div>
+</div>
+
+<section class="field-cta grain" id="take-the-field">
+  <div class="wrap fc-grid">
+    <div>
+      <div class="eyebrow">Sunday 29 November 2026 · Teams are full</div>
+      <h2>Join the waitlist</h2>
+      <p class="intro">All 48 spots are taken. Leave your details and we'll call or text you if a spot opens up before Sunday 29 November.</p>
+      <form id="waitlist" class="waitlist" novalidate>
+        <div class="field"><label for="wl-name">Name</label><input type="text" id="wl-name" name="name" autocomplete="name" required maxlength="120"></div>
+        <div class="field"><label for="wl-mobile">Mobile</label><input type="tel" id="wl-mobile" name="mobile" autocomplete="tel" inputmode="tel" required maxlength="40" placeholder="04xx xxx xxx"></div>
+        <div class="field"><label for="wl-email">Email</label><input type="email" id="wl-email" name="email" autocomplete="email" required maxlength="200" placeholder="you@example.com"></div>
+        <button class="btn" type="submit">Sign up to join the waitlist</button>
+        <div class="msg" role="alert"></div>
+        <p class="note">We'll only use your details to contact you about a spot at the Yappers Cup.</p>
+        <div class="done" aria-live="polite">
+          <img loading="lazy" decoding="async" src="assets/monogram-red.webp" alt="">
+          <h3>You're on the waitlist</h3>
+          <p class="wl-done-text">We'll be in touch if a spot opens up.</p>
+          <p style="margin-top:22px"><a class="btn" href="https://au.movember.com/events/view/id/kNxN" target="_blank" rel="noopener">Chip in for Movember</a></p>
+        </div>
+      </form>
+    </div>
+    <a class="fc-preview" href="#ground" data-ground aria-label="See the team sheet on the ground">
+      <img loading="lazy" decoding="async" src="assets/ground-preview.webp" alt="The Yappers Cup ground: a stadium under lights with each position marked on the field">
+      <span class="fc-play">See the team sheet</span>
+    </a>
+  </div>
+</section>
+
+<section class="split" id="about">
+  <div class="copy">
+    <div class="eyebrow">Good mates. Good footy. Bigger conversations.</div>
+    <h2>Kicking goals for men's health</h2>
+    <p>The Yappers Cup is a community footy match built around a simple idea: bring mates together, have a kick, and create space for conversations that matter.</p>
+    <p>Founded in 2025, the inaugural Yappers Cup brought together more than 30 players, along with friends, family and supporters, for an afternoon of footy, connection and plenty of friendly rivalry — all in support of men's mental health and Movember.</p>
+  </div>
+  <div class="pic bw" style="background-image:url(assets/team.webp)" role="img" aria-label="The 2025 Yappers Cup players lined up on the oval"></div>
+</section>
+
+<section class="kick-sec" id="kick">
+  <div class="wrap">
+    <div class="eyebrow">Mini game · Warm up before the bounce</div>
+    <h2>Play: goal-kicking practice</h2>
+    <p class="kick-intro">Pick your team, drag back to aim and let go. 60 seconds to get your name on the leaderboard.</p>
+  </div>
+  <div class="wrap kick-launch">
+    <button type="button" class="kick-play" data-kick><img loading="lazy" decoding="async" src="assets/kick-preview.webp" alt="Goal-kicking practice: lining up a shot at goal under lights"><span class="kick-badge">Mini game</span><span class="btn">Play the game</span></button>
+    <div class="kick-lb">
+      <h3>Leaderboard</h3>
+      <div id="kick-board"><p class="kk-empty">Loading…</p></div>
+      <button type="button" class="btn ghost" data-kick>Play the game</button>
+    </div>
+  </div>
+</section>
+
+<section class="faq" id="faq">
+  <div class="wrap faq-grid">
+    <div>
+      <div class="eyebrow">Before the bounce</div>
+      <h2>FAQs</h2>
+      <p class="intro">Where to park, what to bring and how we play.</p>
+    </div>
+    <div class="faq-list">
+      <details><summary>Where is it?</summary><div class="faq-a"><p>Gosch's Paddock, off Olympic Boulevard next to AAMI Park in the Melbourne &amp; Olympic Parks precinct, on the Richmond side of the river. <a href="https://www.google.com/maps/search/?api=1&amp;query=Gosch%27s+Paddock+Olympic+Blvd+Melbourne" target="_blank" rel="noopener">Open in Google Maps</a>.</p><p>Bounce is 1pm on Sunday 29 November. Please arrive by 12:30pm.</p></div></details>
+      <details><summary>Where do I park?</summary><div class="faq-a"><p>Park around the Tan and walk across the river to the paddock, or find a spot on the streets around Richmond.</p><p>Public transport works too: <strong>Tram 70</strong> from Flinders Street or Richmond stations stops at AAMI Park on Olympic Boulevard, or catch the <strong>train</strong> to Richmond Station and walk.</p></div></details>
+      <details><summary>What should I bring?</summary><div class="faq-a"><ul><li>Footy boots or runners</li><li>A black top</li><li>A mouthguard (optional)</li><li>BYO drink bottle</li></ul><p>We'll likely head to the pub for a beer after the game.</p></div></details>
+      <details><summary>What are the rules?</summary><div class="faq-a"><ul><li>Mudguts v Pissants, 24 players per side with rolling interchange.</li><li>Two 20-minute halves.</li><li>Play it like a training practice match. It's not touch footy, but we're all mates and nobody wants an injury.</li><li>No hard sling tackles.</li><li>No boundary umpires.</li><li>Lasso rule applies for the whole ground.</li><li>No arguing with the umpires.</li><li>No dickheads.</li></ul></div></details>
+      <details><summary>Who can play?</summary><div class="faq-a"><ul><li>18+ only.</li><li>All abilities welcome.</li><li>All players must sign up and pick a position on this site.</li><li>Every player plays at their own risk. See the <a href="terms.html">terms and conditions</a>.</li></ul></div></details>
+      <details><summary>How much does it cost?</summary><div class="faq-a"><p>Every position is $25. Pick your team and position on this site and pay securely by card, Apple Pay or Google Pay. Your name goes straight on the team sheet, and all proceeds go to Movember.</p></div></details>
+      <details><summary>Can people come and watch?</summary><div class="faq-a"><p>Yes, and please do. Supporters are free. Bring a chair or a rug and cheer from the boundary, and leave your details in the supporters form so we can keep you posted.</p></div></details>
+      <details><summary>What if it rains?</summary><div class="faq-a"><p>We play through the rain.</p></div></details>
+    </div>
+  </div>
+</section>
+
+<section class="signup" id="signup">
+  <div class="wrap signup-grid">
+    <div>
+      <div class="eyebrow">Not pulling on the boots?</div>
+      <h2>Supporters &amp; partners</h2>
+      <p class="intro">Sunday 29 November at Gosch's Paddock, Richmond. Bounce at 1pm, so get there by 12:30pm. Coming down to cheer, or want your brand to be part of the day — prizes, refreshments, content and activations? Leave your details and we'll be in touch.</p>
+    </div>
+
+    <form id="signup-form" data-role="supporter" novalidate>
+      <fieldset>
+        <legend>I'm signing up as a</legend>
+        <div class="pick roles two">
+          <input type="radio" name="role" id="r-supporter" value="supporter" checked><label for="r-supporter">Supporter<small>On the boundary</small></label>
+          <input type="radio" name="role" id="r-partner" value="partner"><label for="r-partner">Partner<small>Brand / business</small></label>
+        </div>
+      </fieldset>
+      <div class="field"><label for="full_name">Name</label><input type="text" id="full_name" name="full_name" autocomplete="name" required maxlength="120"></div>
+      <div class="row">
+        <div class="field"><label for="email">Email</label><input type="email" id="email" name="email" autocomplete="email" required maxlength="200"></div>
+        <div class="field"><label for="mobile">Mobile</label><input type="tel" id="mobile" name="mobile" autocomplete="tel" maxlength="40"></div>
+      </div>
+      <div class="only partner">
+        <div class="field"><label for="company">Brand / company</label><input type="text" id="company" name="company" autocomplete="organization" maxlength="160"></div>
+      </div>
+      <div class="field"><label for="message">Anything else? <span style="font-weight:600;text-transform:none;letter-spacing:0">(optional)</span></label><textarea id="message" name="message" maxlength="1000" placeholder="Who you're bringing, how your brand could get involved…"></textarea></div>
+      <label class="terms-tick"><input type="checkbox" name="terms" id="terms"><span>I've read and accept the <a href="terms.html" target="_blank" rel="noopener">terms &amp; conditions</a>, including that I attend at my own risk.</span></label>
+      <div class="hp" aria-hidden="true"><label for="website">Leave this empty</label><input type="text" id="website" name="website" tabindex="-1" autocomplete="off"></div>
+      <button class="btn" type="submit" id="submit-btn">Count me in</button>
+      <div class="msg" id="form-msg" role="alert"></div>
+      <p class="note">We'll only use your details to contact you about the Yappers Cup.</p>
+      <div class="done" aria-live="polite">
+        <img loading="lazy" decoding="async" id="done-img" src="assets/monogram-red.webp" alt="">
+        <h3>You're in!</h3>
+        <p id="done-text">Thanks — we'll be in touch before Sunday 29 November.</p>
+        <p style="margin-top:22px"><a class="btn" href="https://au.movember.com/events/view/id/kNxN" target="_blank" rel="noopener">Chip in for Movember</a></p>
+      </div>
+    </form>
+  </div>
+</section>
+
+<section class="split flip donate" id="donate">
+  <div class="pic bw" style="background-image:url(assets/ball.webp)" role="img" aria-label="A footy with a Movember moustache on the grass"></div>
+  <div class="copy">
+    <div class="eyebrow">Footy worth talking about</div>
+    <h2>Help us raise funds for Movember</h2>
+    <p>All profits raised go to Movember, funding men's mental health, suicide prevention and men's cancer programs. Can't make it on the day? You can still get behind the team.</p>
+    <p style="margin-top:10px"><a class="btn" id="donate-link" href="https://au.movember.com/events/view/id/kNxN" target="_blank" rel="noopener">Donate to Movember</a></p>
+  </div>
+</section>
+
+
+<footer>
+  <div class="wrap">
+    <img loading="lazy" decoding="async" class="wm" src="assets/wordmark-red.webp" alt="Yappers Cup">
+    <p class="ig"><a class="ig-btn" href="https://www.instagram.com/yappers_cup" target="_blank" rel="noopener" aria-label="Follow @yappers_cup on Instagram"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r="1.1" fill="currentColor" stroke="none"/></svg></a></p>
+    <p>Kicking goals for men's health</p>
+    <p class="foot-mo">Proudly supporting<img loading="lazy" decoding="async" class="mo" src="assets/movember-white.png" alt="Movember"></p>
+    <p style="margin-top:14px;display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap"><a href="terms.html" style="color:inherit">Terms &amp; conditions</a><a href="/scoreboard/" style="color:inherit;text-decoration:none;border:1px solid currentColor;border-radius:999px;padding:3px 10px;font-size:12px;opacity:.75">Scoreboard</a></p>
+  </div>
+</footer>
+
+<script>
+  window.YC_CONFIG = {
+    supabaseUrl: "https://dsbfhvmcxafqeawwgcrf.supabase.co",
+    supabaseKey: "sb_publishable_dy0wvwCT1tU3OlyepK5I0w_jknlpVB2", // public; RLS + RPCs only allow claiming and reading the team sheet
+    donateUrl: "https://au.movember.com/events/view/id/kNxN"
+  };
+</script>
+<script type="module">
+  let opening = false;
+  async function enter(team){
+    if (opening || document.querySelector('.yg')) return; opening = true;
+    try { const m = await import('./js/ground.js'); await m.openGround({ team, onClose(){ if (location.hash === '#ground') history.replaceState(null,'',location.pathname); } }); }
+    finally { opening = false; }
+  }
+  document.addEventListener('click', e => { const a = e.target.closest('[data-ground]'); if (!a) return; e.preventDefault(); history.replaceState(null,'','#ground'); enter(a.dataset.team); });
+  if (location.hash === '#ground') enter();
+  if (location.hash === '#matchups') enter('both');
+  import('./js/footy.js').then(m => m.startFooty()).catch(() => {});
+  {
+    const sec = document.getElementById('kick');
+    let mod = null;
+    const kick = () => mod || (mod = import('./js/kick.js'));
+    const fillBoard = () => kick().then(m => m.loadBoard().then(b => {
+      document.getElementById('kick-board').innerHTML = m.teamsHTML(b) + m.boardHTML({ ...b, top: (b.top || []).slice(0, 5) });
+    })).catch(() => { document.getElementById('kick-board').innerHTML = '<p class="kk-empty">Leaderboard unavailable right now.</p>'; });
+    new IntersectionObserver((es, o) => { if (es.some(x => x.isIntersecting)) { o.disconnect(); fillBoard(); } }, { rootMargin: '300px 0px' }).observe(sec);
+    document.addEventListener('click', e => { if (e.target.closest('[data-kick]')) { e.preventDefault(); kick().then(m => m.openKick()); } });
+    document.addEventListener('yc-kick-closed', fillBoard);
+  }
+</script>
+<script>
+  // ---- Config ----
+  const SUPABASE_URL = window.YC_CONFIG.supabaseUrl;
+  const SUPABASE_KEY = window.YC_CONFIG.supabaseKey; // insert-only on the signups table
+  const TABLE = "yappers_cup_signups";
+  const MATCH_DAY = new Date("2026-11-29T13:00:00+11:00");
+
+  document.getElementById("donate-link").href = window.YC_CONFIG.donateUrl;
+
+  // ---- Marquee ----
+  (function(){
+    const unit = '<span>Yappers Cup</span><img src="assets/badge-cream.webp" alt=""><span>Mudguts vs Pissants</span><img src="assets/badge-cream.webp" alt="">';
+    document.getElementById("marquee").innerHTML = unit.repeat(8);
+  })();
+
+  // ---- Countdown ----
+  function tick(){
+    const ms = MATCH_DAY - new Date();
+    const el = document.getElementById("countdown");
+    if (ms <= 0){ el.innerHTML = '<div><b>Match day</b><span>See you there</span></div>'; return; }
+    document.getElementById("cd-d").textContent = Math.floor(ms/864e5);
+    document.getElementById("cd-h").textContent = Math.floor(ms%864e5/36e5);
+    document.getElementById("cd-m").textContent = Math.floor(ms%36e5/6e4);
+  }
+  tick(); setInterval(tick, 30000);
+
+  // ---- Form ----
+  const form = document.getElementById("signup-form");
+  const msg = document.getElementById("form-msg");
+  const btn = document.getElementById("submit-btn");
+  form.addEventListener("change", e => { if (e.target.name === "role") form.dataset.role = e.target.value; });
+
+  form.addEventListener("submit", async e => {
+    e.preventDefault();
+    msg.className = "msg"; msg.textContent = "";
+    const f = new FormData(form);
+    if (f.get("website")) return; // bot
+    const role = f.get("role");
+    const name = (f.get("full_name")||"").trim();
+    const email = (f.get("email")||"").trim();
+    if (!name) return fail("Pop your name in so we know who's coming.");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return fail("That email doesn't look quite right.");
+    if (!f.get("terms")) return fail("Tick the box to accept the terms and conditions.");
+
+    const row = {
+      full_name: name, email, role,
+      mobile: (f.get("mobile")||"").trim() || null,
+      company: role === "partner" ? ((f.get("company")||"").trim() || null) : null,
+      message: (f.get("message")||"").trim() || null,
+      terms_accepted_at: new Date().toISOString(), terms_version: "2026-11-22"
+    };
+
+    btn.disabled = true; btn.textContent = "Sending…";
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/${TABLE}`, {
+        method: "POST",
+        headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json", "Prefer": "return=minimal" },
+        body: JSON.stringify(row)
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const first = name.split(" ")[0];
+      document.getElementById("done-text").textContent =
+        role === "partner" ? `Cheers ${first} — we'll reach out shortly to chat about how ${row.company || "your brand"} can get involved.`
+      : `Cheers ${first} — we'll send you the match-day details before Sunday 29 November.`;
+      form.classList.add("sent");
+      form.scrollIntoView({behavior:"smooth", block:"center"});
+    } catch (err) {
+      console.error(err);
+      fail("Something went wrong sending that. Give it another go in a sec.");
+    } finally {
+      btn.disabled = false; btn.textContent = "Count me in";
+    }
+  });
+  function fail(t){ msg.textContent = t; msg.className = "msg err"; }
+
+  // ---- Waitlist (teams are full) ----
+  const wl = document.getElementById("waitlist");
+  wl.addEventListener("submit", async e => {
+    e.preventDefault();
+    const m = wl.querySelector(".msg"), b = wl.querySelector("[type=submit]");
+    const bad = t => { m.textContent = t; m.className = "msg err"; };
+    m.className = "msg"; m.textContent = "";
+    const name = wl.elements.name.value.trim(), mobile = wl.elements.mobile.value.trim(), email = wl.elements.email.value.trim();
+    if (!name) return bad("Pop your name in.");
+    if (mobile.replace(/\D/g, "").length < 8) return bad("Add a mobile number so we can reach you.");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return bad("That email doesn't look quite right.");
+    b.disabled = true; b.textContent = "Adding you…";
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/yc_waitlist_join`, {
+        method: "POST",
+        headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ p_name: name, p_mobile: mobile, p_email: email })
+      });
+      const r = await res.json();
+      if (!r || !r.ok) return bad((r && r.error) || "That didn't go through. Try again.");
+      wl.querySelector(".wl-done-text").textContent = `Cheers ${name.split(" ")[0]}, you're number ${r.spot} on the waitlist. We'll call or text you if a spot opens up.`;
+      wl.classList.add("sent");
+      wl.scrollIntoView({ behavior: "smooth", block: "center" });
+    } catch (err) { bad("Something went wrong. Give it another go in a sec."); }
+    finally { b.disabled = false; b.textContent = "Sign up to join the waitlist"; }
+  });
+</script>
+</body>
+</html>

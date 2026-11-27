@@ -1,0 +1,819 @@
+/* Yappers Cup — The Ground.
+   A hand-drawn 2.5D MCG: pick your team, then pick your position on the ground and claim it with a donation to Movember.
+   No libraries: a small perspective camera projects the stadium onto a 2D canvas.
+   Data: Supabase RPCs yc_board() (read) and yc_claim() (write). A claim holds the position for 1 day ('pending')
+   until the Movember donation is matched and the row is marked 'confirmed' in Supabase. */
+
+const CFG = window.YC_CONFIG || {};
+const SUPA = CFG.supabaseUrl, KEY = CFG.supabaseKey;
+const DONATE_URL = CFG.donateUrl || 'https://au.movember.com/events/view/id/kNxN';
+const ASSET = p => (CFG.assetBase || '') + p;           // lets the page load artwork from a CDN
+const PRICE = { key: 25, field: 25, bench: 25 };          // every position is $25 minimum (matches yc_claim in Supabase)
+const TERMS_VERSION = '2026-11-23', TERMS_URL = 'terms.html';
+
+const TEAMS = {
+  mudguts: { name: 'Mudguts', s: 1, body: '#8A2412', yoke: '#0E5A2C', trim: '#0E5A2C', ui: '#8A2412', shield: ASSET('assets/shield-mudguts.webp'), line: 'Big moustache energy.' },
+  pissants: { name: 'Pissants', s: -1, body: '#1C3B83', yoke: '#E2600F', trim: '#E2600F', ui: '#1C3B83', shield: ASSET('assets/shield-pissants.webp'), line: 'Small, fast, relentless.' },
+};
+// positions for a team kicking towards +x (Mudguts). Pissants are the same shape turned 180°. x along the ground, z across it, metres.
+// interchange spots sit on the sideline: the strip of grass between the boundary line and the fence, centred, each team on its own side
+const LINES = [
+  ['Forwards', [['FPL', 'Forward pocket', 60, -24], ['FF', 'Full forward', 66, 0], ['FPR', 'Forward pocket', 60, 24]]],
+  ['Half-forwards', [['HFFL', 'Half-forward flank', 36, -36], ['CHF', 'Centre half-forward', 38, 0], ['HFFR', 'Half-forward flank', 36, 36]]],
+  ['Centre line', [['WL', 'Wing', 0, -48], ['C', 'Centre', 0, -13], ['WR', 'Wing', 0, 48]]],
+  ['Followers', [['RK', 'Ruck', 0, 0], ['RR', 'Ruck rover', -7, 12], ['R', 'Rover', 7, 12]]],
+  ['Half-backs', [['HBFL', 'Half-back flank', -36, -36], ['CHB', 'Centre half-back', -38, 0], ['HBFR', 'Half-back flank', -36, 36]]],
+  ['Backs', [['BPL', 'Back pocket', -60, -24], ['FB', 'Full back', -66, 0], ['BPR', 'Back pocket', -60, 24]]],
+  ['Interchange', [['I1', 'Interchange 1', -25, 67.7], ['I2', 'Interchange 2', -15, 69.8], ['I3', 'Interchange 3', -5, 70.9], ['I4', 'Interchange 4', 5, 70.9], ['I5', 'Interchange 5', 15, 69.8], ['I6', 'Interchange 6', 25, 67.7]]],
+];
+const KEY_POS = ['FF', 'CHF', 'RK', 'C', 'CHB', 'FB'];
+const BLURB = {
+  FF: 'The glory spot. Kick the sausage, soak up the applause.',
+  CHF: 'The key target up forward. Big hands, bigger leads.',
+  HFF: 'Crumb it, snap it, celebrate like it\'s a grand final.',
+  FP: 'Small-forward energy. Lurk at the feet and pounce.',
+  C: 'Run all day and touch it every second minute.',
+  W: 'Hug the boundary, give the run, look good doing it.',
+  RK: 'Tall timber. Tap it down and start the yap.',
+  RR: 'First to the footy at every stoppage.',
+  R: 'Get it out of the pack and get going.',
+  CHB: 'The general of the defence. Calm, loud, in charge.',
+  HBF: 'Rebound and run, with a licence to bomb it long.',
+  BP: 'Lock down the small forward. No mercy (but be nice).',
+  FB: 'Last line. Nobody kicks a goal on your watch.',
+  I: 'Fresh legs off the bench. Every team needs an engine room.',
+};
+const blurbFor = c => BLURB[c] || BLURB[c.replace(/[LR]$/, '')] || BLURB[c.replace(/\d$/, '')];
+
+const POSITIONS = [];
+for (const [line, list] of LINES) for (const [code, label, x, z] of list) {
+  for (const id of Object.keys(TEAMS)) {
+    const T = TEAMS[id], bench = code[0] === 'I';
+    const wx = x * T.s, wz = z * T.s;
+    POSITIONS.push({ id: `${id}-${code}`, team: id, code, label, line, x: wx, z: wz, tier: bench ? 'bench' : KEY_POS.includes(code) ? 'key' : 'field', state: 'free', who: '', photo: '' });
+  }
+}
+// opponents who line up on the same spot (full forward on full back, wing on wing...)
+// the centre square pairs by role (ruck on ruck, centre on centre, rover on rover); everyone else by where they stand
+const ROLE_PAIR = ['C', 'RK', 'RR', 'R'];
+for (const p of POSITIONS) p.opp = POSITIONS.find(q => q.team !== p.team && (ROLE_PAIR.includes(p.code) ? q.code === p.code : Math.hypot(q.x - p.x, q.z - p.z) < 6)) || null;
+const short = p => p.code[0] === 'I' ? 'INT' : p.code.replace(/^(HBF|HFF|BP|FP)[LR]$/, '$1').replace(/^W[LR]$/, 'W');
+const money = n => '$' + Math.round(n).toLocaleString('en-AU');
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const rpc = (fn, body) => fetch(`${SUPA}/rest/v1/rpc/${fn}`, { method: 'POST', headers: { apikey: KEY, Authorization: `Bearer ${KEY}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) })
+  .then(r => r.ok ? r.json() : r.text().then(t => Promise.reject(new Error(t))));
+const pay = body => fetch(`${SUPA}/functions/v1/yc-pay`, { method: 'POST', headers: { apikey: KEY, Authorization: `Bearer ${KEY}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(r => r.json());
+function centreText(c, text, x, y) {
+  c.textAlign = 'left'; c.textBaseline = 'alphabetic';
+  const m = c.measureText(text);
+  c.fillText(text, x - (m.actualBoundingBoxRight - m.actualBoundingBoxLeft) / 2, y + (m.actualBoundingBoxAscent - m.actualBoundingBoxDescent) / 2);
+}
+const ease = t => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const wait = ms => new Promise(r => setTimeout(r, ms));
+// shrink a picked photo to a 360px square JPEG: centre crop, nudged up so heads don't get cut off
+// Phone photos can be 24-48 megapixels, so decode them already shrunk where the browser allows it:
+// a full-size decode on an iPhone uses hundreds of MB and can freeze or reload the page.
+let photoBusy = false;
+async function squarePhoto(file) {
+  photoBusy = true;
+  let src = null, url = null, w = 0, h = 0;
+  try {
+    try {
+      src = await createImageBitmap(file, { resizeWidth: 720, resizeQuality: 'high' });   // keeps the aspect ratio
+      w = src.width; h = src.height;
+      if (!w || !h) throw new Error('empty');
+    } catch (_) {
+      if (src && src.close) src.close();
+      url = URL.createObjectURL(file);
+      src = new Image(); src.decoding = 'async'; src.src = url;
+      await (src.decode ? src.decode() : new Promise((res, rej) => { src.onload = res; src.onerror = rej; }));
+      w = src.naturalWidth; h = src.naturalHeight;
+    }
+    const S = 320, side = Math.min(w, h);
+    const sx = (w - side) / 2, sy = Math.max(0, (h - side) * 0.3);
+    const cv = document.createElement('canvas'); cv.width = cv.height = S;
+    const g = cv.getContext('2d'); g.imageSmoothingQuality = 'high'; g.drawImage(src, sx, sy, side, side, 0, 0, S, S);
+    const out = cv.toDataURL('image/jpeg', 0.82);
+    cv.width = cv.height = 0;
+    return out;
+  } finally {
+    if (src && src.close) src.close();
+    if (url) { src.src = ''; URL.revokeObjectURL(url); }
+    photoBusy = false;
+  }
+}
+// give up on a photo that takes too long, so the form never hangs
+const withTimeout = (pr, ms) => Promise.race([pr, wait(ms).then(() => { photoBusy = false; throw new Error('timeout'); })]);
+const lerp = (a, b, t) => a + (b - a) * t;
+function rng(seed) { let s = seed >>> 0; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296); }
+
+// ---------- the ground ----------
+const A = 80, B = 68;                                   // boundary half-length / half-width (MCG is about 160 × 140)
+const FENCE = 6;
+const ell = (th, o, y) => [(A + o) * Math.cos(th), y, (B + o) * Math.sin(th)];
+// the bowl's cross-section, inside to outside: [offset from boundary, height]
+function profile() {
+  const P = [[FENCE + 2, 0], [FENCE + 2, 1.6]], kinds = ['riser'];
+  const steps = (o0, y0, o1, y1, n, tier) => { const dO = (o1 - o0) / n, dY = (y1 - y0) / n; for (let i = 0; i < n; i++) { P.push([o0 + dO * (i + 1), y0 + dY * i]); kinds.push('tread' + tier); P.push([o0 + dO * (i + 1), y0 + dY * (i + 1)]); kinds.push('riser'); } };
+  steps(FENCE + 2, 1.6, 27, 11.5, 7, 1);
+  P.push([29, 11.5]); kinds.push('walk'); P.push([29, 15.5]); kinds.push('facade');
+  steps(29, 15.5, 42, 24.5, 6, 2);
+  P.push([44, 24.5]); kinds.push('walk'); P.push([44, 29]); kinds.push('facade');
+  steps(44, 29, 60, 43, 7, 3);
+  P.push([60, 48]); kinds.push('back');
+  return { P, kinds };
+}
+const TOWER_TH = [0.55, Math.PI / 2, Math.PI - 0.55, Math.PI + 0.55, Math.PI * 1.5, Math.PI * 2 - 0.55];
+
+export async function openGround({ team, onClose } = {}) {
+  try { await Promise.all([document.fonts.load('40px Anton'), document.fonts.load('600 14px Archivo')]); } catch (e) {}
+  const img = src => new Promise(res => { const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = src; });
+  const [badge] = await Promise.all([img(ASSET('assets/badge-cream.webp'))]);
+
+  // ---------- page layer ----------
+  const root = document.createElement('div'); root.className = 'yg'; root.setAttribute('role', 'dialog'); root.setAttribute('aria-label', 'The ground: pick your position');
+  root.innerHTML = `
+    <canvas class="yg-stage" aria-hidden="true"></canvas>
+    <div class="yg-grain"></div>
+    <button type="button" class="yg-x" data-a="close" aria-label="Close"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    <div class="yg-head"><p class="yg-k"></p><h2 class="yg-t"></h2><p class="yg-s"></p></div>
+    <img class="yg-crest" alt="" hidden>
+    <div class="yg-tools" hidden>
+      <button type="button" class="yg-chip yg-team" data-a="switch"></button>
+      <button type="button" class="yg-chip" data-a="list">List view</button>
+    </div>
+    <div class="yg-legend" hidden><span><i class="free"></i>Available</span><span><i class="held"></i>Reserved</span><span><i class="taken"></i>Taken</span></div>
+    <div class="yg-stats"></div>
+    <div class="yg-pick" hidden></div>
+    <div class="yg-tip" hidden></div>
+    <div class="yg-sheet" hidden></div>`;
+  document.body.appendChild(root); document.documentElement.classList.add('yg-open');
+  const $ = s => root.querySelector(s), canvas = $('.yg-stage'), ctx = canvas.getContext('2d');
+  const bg = document.createElement('canvas'), bgx = bg.getContext('2d');
+
+  // ---------- camera ----------
+  let W = 0, H = 0, DPR = 1, F = 1;
+  const cam = { tx: 0, tz: 0, d: 260, yaw: 0, pitch: 0.92 }, FOV = 48 * Math.PI / 180, NEAR = 2;
+  let E, Fw, Rt, Up;
+  function setupCam() {
+    const cp = Math.cos(cam.pitch), sp = Math.sin(cam.pitch);
+    E = [cam.tx + cam.d * cp * Math.sin(cam.yaw), cam.d * sp, cam.tz + cam.d * cp * Math.cos(cam.yaw)];
+    Fw = norm([cam.tx - E[0], -E[1], cam.tz - E[2]]);
+    Rt = norm(cross(Fw, [0, 1, 0])); Up = cross(Rt, Fw);
+    F = (H / 2) / Math.tan(FOV / 2);
+  }
+  const portrait = () => W < H * 0.9;
+  function norm(v) { const l = Math.hypot(v[0], v[1], v[2]) || 1; return [v[0] / l, v[1] / l, v[2] / l]; }
+  function cross(a, b) { return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]; }
+  function view(p) { const v = [p[0] - E[0], p[1] - E[1], p[2] - E[2]]; return [v[0] * Rt[0] + v[1] * Rt[1] + v[2] * Rt[2], v[0] * Up[0] + v[1] * Up[1] + v[2] * Up[2], v[0] * Fw[0] + v[1] * Fw[1] + v[2] * Fw[2]]; }
+  const scr = v => [W / 2 + v[0] * F / v[2], H / 2 - v[1] * F / v[2], v[2]];
+  const proj = p => { const v = view(p); return v[2] < NEAR ? null : scr(v); };
+  function clipPoly(pts) {                                   // world polygon -> screen polygon, clipped at the near plane
+    const vs = pts.map(view), out = [];
+    for (let i = 0; i < vs.length; i++) {
+      const a = vs[i], b = vs[(i + 1) % vs.length], ain = a[2] >= NEAR, bin = b[2] >= NEAR;
+      if (ain) out.push(scr(a));
+      if (ain !== bin) { const t = (NEAR - a[2]) / (b[2] - a[2]); out.push(scr([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, NEAR])); }
+    }
+    return out;
+  }
+  const pathPoly = (c, s) => { c.beginPath(); c.moveTo(s[0][0], s[0][1]); for (let i = 1; i < s.length; i++) c.lineTo(s[i][0], s[i][1]); c.closePath(); };
+
+  // ---------- static geometry ----------
+  const N = 120, TH = Array.from({ length: N + 1 }, (_, i) => i / N * Math.PI * 2);
+  const { P: PROF, kinds: KINDS } = profile();
+  const R = rng(7), CROWD = ['#FFF0D7', '#CD2A2D', '#0E5A2C', '#1C3B83', '#E2600F', '#d9c7a6', '#2c3a2e', '#8A2412', '#f2e2c2'];
+  const quads = [];
+  for (let i = 0; i < N; i++) {
+    const a0 = TH[i], a1 = TH[i + 1];
+    for (let k = 1; k < PROF.length; k++) {
+      const [o0, y0] = PROF[k - 1], [o1, y1] = PROF[k], kind = KINDS[k - 1];
+      const q = { pts: [ell(a0, o0, y0), ell(a1, o0, y0), ell(a1, o1, y1), ell(a0, o1, y1)], kind, a: (a0 + a1) / 2, dots: null };
+      const mid = ell(q.a, (o0 + o1) / 2, (y0 + y1) / 2); q.c = mid;
+      q.n = kind === 'riser' || kind === 'facade' || kind === 'back' ? norm([-Math.cos(q.a) / (A + o0), 0, -Math.sin(q.a) / (B + o0)]) : [0, 1, 0];
+      if (kind.startsWith('tread')) {
+        q.dots = []; const n = 7;
+        for (let d = 0; d < n; d++) { const u = R(), v = 0.25 + R() * 0.5, th = a0 + (a1 - a0) * u; q.dots.push({ p: ell(th, o0 + (o1 - o0) * v, y0 + 0.5), c: R() < 0.16 ? null : CROWD[(R() * CROWD.length) | 0] }); }
+      }
+      quads.push(q);
+    }
+    // roof over the upper deck
+    const ro = [ell(a0, 40, 47), ell(a1, 40, 47), ell(a1, 63, 52), ell(a0, 63, 52)];
+    quads.push({ pts: ro, kind: 'roof', a: (a0 + a1) / 2, c: ell((a0 + a1) / 2, 52, 50), n: [0, 1, 0] });
+    // fence signage
+    quads.push({ pts: [ell(a0, FENCE, 0), ell(a1, FENCE, 0), ell(a1, FENCE, 1.3), ell(a0, FENCE, 1.3)], kind: 'sign', i, a: (a0 + a1) / 2, c: ell((a0 + a1) / 2, FENCE, 0.6), n: norm([-Math.cos((a0 + a1) / 2) / A, 0, -Math.sin((a0 + a1) / 2) / B]) });
+  }
+  const COLORS = { riser: '#0c110d', tread1: '#1b241d', tread2: '#19211b', tread3: '#172019', walk: '#262e27', facade: '#0f1410', back: '#0a0d0b', roof: '#1d2420' };
+
+  // fence signage strip (Movember panels use the logo)
+  const MO_LOGO = new Image(); MO_LOGO.src = ASSET('assets/movember-white.png');
+  const SIGN = document.createElement('canvas'); SIGN.width = 2400; SIGN.height = 40;
+  function drawSign() {
+    const c = SIGN.getContext('2d'); c.fillStyle = '#101611'; c.fillRect(0, 0, 2400, 40); c.font = '28px Anton'; c.textBaseline = 'middle';
+    const words = [['YAPPERS CUP', '#FFF0D7', '#CD2A2D'], ['MO', '', '#000000'], ['MUDGUTS', '#FFF0D7', '#8A2412'], ['KICKING GOALS FOR MEN\'S HEALTH', '#FFF0D7', '#101611'], ['PISSANTS', '#FFF0D7', '#1C3B83'], ['MO', '', '#000000']];
+    const lw = MO_LOGO.naturalWidth ? 34 * MO_LOGO.naturalWidth / MO_LOGO.naturalHeight : 100;
+    let x = 0, k = 0; while (x < 2400) { const [t, fg, bgc] = words[k++ % words.length];
+      if (t === 'MO') { const w = lw + 50; c.fillStyle = bgc; c.fillRect(x, 0, w, 40); if (MO_LOGO.complete && MO_LOGO.naturalWidth) c.drawImage(MO_LOGO, x + 25, 3, lw, 34); x += w; continue; }
+      const w = c.measureText(t).width + 50; c.fillStyle = bgc; c.fillRect(x, 0, w, 40); c.fillStyle = fg; c.fillText(t, x + 25, 21); x += w; }
+  }
+  drawSign();
+  MO_LOGO.onload = () => { drawSign(); drawBoard(); };
+
+  // scoreboards
+  const BOARD = document.createElement('canvas'); BOARD.width = 640; BOARD.height = 360;
+  let stats = null;
+  function drawBoard() {
+    const c = BOARD.getContext('2d'); c.fillStyle = '#070a08'; c.fillRect(0, 0, 640, 360);
+    c.fillStyle = '#CD2A2D'; c.fillRect(0, 0, 640, 70); c.fillStyle = '#FFF0D7'; c.font = '52px Anton'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('YAPPERS CUP 2026', 320, 38);
+    const taken = POSITIONS.filter(p => p.state !== 'free'), mud = taken.filter(p => p.team === 'mudguts').length, pis = taken.length - mud;
+    c.font = '40px Anton'; c.fillStyle = '#6fbf83'; c.fillText('MUDGUTS', 165, 120); c.fillStyle = '#ff8a3d'; c.fillText('PISSANTS', 475, 120);
+    c.font = '110px Anton'; c.fillStyle = '#FFF0D7'; c.fillText(String(mud), 165, 210); c.fillText(String(pis), 475, 210);
+    c.font = '30px Anton'; c.fillStyle = 'rgba(255,240,215,.55)'; c.fillText('VS', 320, 200);
+    c.font = '26px Archivo'; c.fillStyle = 'rgba(255,240,215,.75)'; c.fillText('PLAYERS SIGNED · OF 24 EACH', 320, 282);
+    c.font = '34px Anton'; c.fillStyle = '#FFF0D7'; const pt = `${money(stats ? stats.pledged : 0)} PLEDGED FOR`, tw = c.measureText(pt).width;
+    const lh = 44, lw2 = MO_LOGO.naturalWidth ? lh * MO_LOGO.naturalWidth / MO_LOGO.naturalHeight : 0, x0 = 320 - (tw + 14 + lw2) / 2;
+    c.textAlign = 'left'; c.fillText(pt, x0, 330); c.textAlign = 'center';
+    if (lw2) c.drawImage(MO_LOGO, x0 + tw + 14, 330 - lh * 0.62, lw2, lh);
+  }
+  drawBoard();
+
+  function addTowerGlow(c, s, r) {
+    const g = c.createRadialGradient(s[0], s[1], 0, s[0], s[1], r);
+    g.addColorStop(0, 'rgba(225,236,255,.42)'); g.addColorStop(0.22, 'rgba(200,218,255,.14)'); g.addColorStop(1, 'rgba(200,218,255,0)');
+    c.fillStyle = g; c.fillRect(s[0] - r, s[1] - r, r * 2, r * 2);
+  }
+
+  // ---------- render the stadium ----------
+  function renderStatic() {
+    setupCam();
+    const c = bgx; c.setTransform(DPR, 0, 0, DPR, 0, 0);
+    const sky = c.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, '#060807'); sky.addColorStop(1, '#121813'); c.fillStyle = sky; c.fillRect(0, 0, W, H);
+
+    // apron + ground
+    const ringPts = o => TH.slice(0, N).map(t => ell(t, o, 0));
+    const apron = clipPoly(ringPts(FENCE + 2)); if (apron.length > 2) { pathPoly(c, apron); c.fillStyle = '#1f4a26'; c.fill(); }
+    const field = clipPoly(ringPts(0));
+    if (field.length > 2) {
+      c.save(); pathPoly(c, field); c.clip();
+      c.fillStyle = '#2f6b33'; c.fillRect(0, 0, W, H);
+      for (let x = -A, k = 0; x < A; x += 10, k++) {             // mowing stripes
+        const s = clipPoly([[x, 0, -B - 2], [x + 10, 0, -B - 2], [x + 10, 0, B + 2], [x, 0, B + 2]]); if (s.length < 3) continue;
+        pathPoly(c, s); c.fillStyle = k % 2 ? '#2a6430' : '#357538'; c.fill();
+      }
+      const o = proj([0, 0, 0]);                                // floodlight wash
+      if (o) { const r = 120 * F / Math.max(o[2], 1); const g = c.createRadialGradient(o[0], o[1], 0, o[0], o[1], r * 1.2); g.addColorStop(0, 'rgba(255,250,225,.16)'); g.addColorStop(1, 'rgba(0,0,0,.18)'); c.fillStyle = g; c.fillRect(0, 0, W, H); }
+      c.restore();
+    }
+    // markings
+    c.strokeStyle = 'rgba(255,255,255,.82)'; c.lineCap = 'round'; c.lineJoin = 'round';
+    const line = (pts, closed, wm = 0.45) => {
+      c.beginPath(); let pen = false, wsum = 0, n = 0;
+      const seq = closed ? [...pts, pts[0]] : pts;
+      for (const p of seq) { const s = proj(p); if (!s) { pen = false; continue; } wsum += wm * F / s[2]; n++; if (!pen) { c.moveTo(s[0], s[1]); pen = true; } else c.lineTo(s[0], s[1]); }
+      if (n) { c.lineWidth = clamp(wsum / n, 0.6, 4); c.stroke(); }
+    };
+    line(TH.slice(0, N).map(t => ell(t, 0, 0.02)), true, 0.6);
+    line([[-25, 0, -25], [25, 0, -25], [25, 0, 25], [-25, 0, 25]], true);
+    const circ = (cx, cz, r, n = 40, a0 = 0, a1 = Math.PI * 2) => Array.from({ length: n + 1 }, (_, i) => { const t = a0 + (a1 - a0) * i / n; return [cx + r * Math.cos(t), 0, cz + r * Math.sin(t)]; });
+    line(circ(0, 0, 5), false); line(circ(0, 0, 1.5, 20), false);
+    line([[0, 0, -5], [0, 0, 5]], false);                 // centre-circle line runs across the ground, square to the goals
+    for (const sx of [1, -1]) {
+      const arc = circ(sx * A, 0, 50, 48, 0, Math.PI * 2).filter(p => (p[0] / A) ** 2 + (p[2] / B) ** 2 < 0.995 && Math.sign(p[0]) === sx);
+      arc.sort((p, q) => Math.atan2(p[2], -sx * (p[0] - sx * A)) - Math.atan2(q[2], -sx * (q[0] - sx * A)));
+      // painted 50m arc like the real thing: blue at the Mudguts' forward end, red at the other, edged in white
+      const col = sx > 0 ? '#2f63d6' : '#d6312c';
+      c.strokeStyle = 'rgba(255,255,255,.9)'; line(arc, false, 1.3);
+      c.strokeStyle = col; line(arc, false, 0.85);
+      for (const t of [-0.62, 0.62]) {                       // "50" markers on the arc, painted on the grass
+        const P0 = [sx * A - sx * 50 * Math.cos(t), 0, 50 * Math.sin(t)], T = [sx * Math.sin(t), 0, Math.cos(t)], Nn = [-sx * Math.cos(t), 0, Math.sin(t)];
+        const s0 = proj(P0), s1 = proj([P0[0] + T[0], 0, P0[2] + T[2]]), s2 = proj([P0[0] + Nn[0], 0, P0[2] + Nn[2]]);
+        if (!s0 || !s1 || !s2) continue;
+        c.save(); c.transform(s1[0] - s0[0], s1[1] - s0[1], s2[0] - s0[0], s2[1] - s0[1], s0[0], s0[1]);
+        c.rotate(sx > 0 ? Math.PI / 2 : -Math.PI / 2);
+        c.fillStyle = '#fff'; c.beginPath(); c.roundRect(-3.3, -2.2, 6.6, 4.4, 0.8); c.fill();
+        c.fillStyle = col; c.beginPath(); c.roundRect(-2.95, -1.85, 5.9, 3.7, 0.6); c.fill();
+        c.fillStyle = '#fff'; c.font = '3.6px Anton, Impact, sans-serif'; c.textAlign = 'left'; c.textBaseline = 'alphabetic';
+        centreText(c, '50', 0, 0);
+        c.restore();
+      }
+      c.strokeStyle = 'rgba(255,255,255,.82)';
+      line([[sx * A, 0, -3.2], [sx * (A - 9), 0, -3.2], [sx * (A - 9), 0, 3.2], [sx * A, 0, 3.2]], false);
+    }
+
+    // everything with height, back to front
+    const items = [];
+    const dir = q => [E[0] - q.c[0], E[1] - q.c[1], E[2] - q.c[2]];
+    for (const q of quads) {
+      const d = dir(q), facing = q.n[0] * d[0] + q.n[1] * d[1] + q.n[2] * d[2];
+      if (facing <= 0 && q.kind !== 'roof') continue;
+      const v = view(q.c); if (v[2] < -20) continue;
+      items.push({ z: v[2], q });
+    }
+    for (const sx of [1, -1]) for (const [pz, h] of [[-9.6, 9], [-3.2, 15], [3.2, 15], [9.6, 9]]) {
+      const b = [sx * A, 0, pz]; items.push({ z: view(b)[2] - 0.5, post: [b, [sx * A, h, pz]], h });
+    }
+    TOWER_TH.forEach((t, i) => { const base = ell(t, 61, 51), top = ell(t, 57, 92); items.push({ z: view(top)[2] - 30, tower: [base, top, t], i }); });
+    for (const t of [0, Math.PI]) {
+      const cx = ell(t, 50, 0), sx = Math.sign(cx[0]);
+      const tl = [cx[0], 66, -17], tr = [cx[0], 66, 17], bl = [cx[0], 46, -17], br = [cx[0], 46, 17];
+      items.push({ z: view([cx[0], 56, 0])[2] - 25, board: sx > 0 ? [tl, tr, bl] : [tr, tl, br], back: [cx[0] + sx * 1.5, 0, 0], sx });
+    }
+    items.sort((a, b) => b.z - a.z);
+
+    const glows = [];
+    for (const it of items) {
+      if (it.q) {
+        const q = it.q, s = clipPoly(q.pts); if (s.length < 3) continue;
+        if (q.kind === 'sign') {
+          pathPoly(c, s); c.fillStyle = '#101611'; c.fill();
+          const a = proj(q.pts[0]), b = proj(q.pts[1]), d = proj(q.pts[3]);
+          if (a && b && d) { const sw = SIGN.width / N; c.save(); pathPoly(c, s); c.clip(); c.setTransform(DPR * (b[0] - a[0]) / sw, DPR * (b[1] - a[1]) / sw, DPR * (d[0] - a[0]) / 40, DPR * (d[1] - a[1]) / 40, DPR * a[0], DPR * a[1]); c.drawImage(SIGN, q.i * sw, 0, sw + 0.6, 40, 0, 0, sw + 0.6, 40); c.restore(); c.setTransform(DPR, 0, 0, DPR, 0, 0); }
+          continue;
+        }
+        pathPoly(c, s); c.fillStyle = COLORS[q.kind] || '#1b241d'; c.fill();
+        if (q.kind === 'roof') { c.strokeStyle = 'rgba(255,240,215,.05)'; c.lineWidth = 1; c.stroke(); }
+        if (q.kind === 'facade') { c.strokeStyle = 'rgba(205,42,45,.55)'; c.lineWidth = 1; c.beginPath(); const p0 = proj(q.pts[3]), p1 = proj(q.pts[2]); if (p0 && p1) { c.moveTo(p0[0], p0[1]); c.lineTo(p1[0], p1[1]); c.stroke(); } }
+        if (q.dots) for (const dt of q.dots) {
+          if (!dt.c) continue; const p = proj(dt.p); if (!p) continue;
+          const r = clamp(0.42 * F / p[2], 0.5, 6); c.fillStyle = dt.c; c.fillRect(p[0] - r / 2, p[1] - r, r, r * 1.1);
+        }
+      } else if (it.post) {
+        const a = proj(it.post[0]), b = proj(it.post[1]); if (!a || !b) continue;
+        c.strokeStyle = '#f4ead6'; c.lineWidth = clamp(0.5 * F / a[2], 1, 6); c.beginPath(); c.moveTo(a[0], a[1]); c.lineTo(b[0], b[1]); c.stroke();
+        c.strokeStyle = it.h > 10 ? '#CD2A2D' : '#f4ead6'; c.beginPath(); const m = proj([it.post[0][0], 1.6, it.post[0][2]]); if (m) { c.moveTo(a[0], a[1]); c.lineTo(m[0], m[1]); c.stroke(); }
+      } else if (it.tower) {
+        const [base, top, t] = it.tower, a = proj(base), b = proj(top); if (!a || !b) continue;
+        const nx = -Math.cos(t), nz = -Math.sin(t), tx = -nz, tz = nx;          // panel faces the ground
+        if (nx * (E[0] - top[0]) + nz * (E[2] - top[2]) <= 0) continue;         // towers on our side of the ground are behind us
+        // pole: tapered steel with a lit edge
+        const pw = clamp(2.4 * F / a[2], 1.2, 14), pt = clamp(1.3 * F / b[2], 0.8, 8);
+        const ddx = b[0] - a[0], ddy = b[1] - a[1], dl = Math.hypot(ddx, ddy) || 1, ox = -ddy / dl, oy = ddx / dl;
+        c.fillStyle = '#262d29'; c.beginPath(); c.moveTo(a[0] - ox * pw / 2, a[1] - oy * pw / 2); c.lineTo(a[0] + ox * pw / 2, a[1] + oy * pw / 2); c.lineTo(b[0] + ox * pt / 2, b[1] + oy * pt / 2); c.lineTo(b[0] - ox * pt / 2, b[1] - oy * pt / 2); c.closePath(); c.fill();
+        c.strokeStyle = 'rgba(190,205,215,.22)'; c.lineWidth = Math.max(0.6, pt * 0.25); c.beginPath(); c.moveTo(a[0] + ox * pw * 0.3, a[1] + oy * pw * 0.3); c.lineTo(b[0] + ox * pt * 0.3, b[1] + oy * pt * 0.3); c.stroke();
+        const hp = (u, v) => [top[0] + tx * u, top[1] + v, top[2] + tz * u];
+        const facing = nx * (E[0] - top[0]) + nz * (E[2] - top[2]) > 0;
+        if (!facing) continue;
+        // head: steel frame with rows of round floodlights, like a real AFL tower
+        const panel = clipPoly([hp(-8.5, -6), hp(8.5, -6), hp(8.5, 6.5), hp(-8.5, 6.5)]);
+        if (panel.length > 2) {
+          pathPoly(c, panel); c.fillStyle = '#151a17'; c.fill();
+          const lw = clamp(0.25 * F / b[2], 0.5, 2.5);
+          c.strokeStyle = '#3a443e'; c.lineWidth = lw;
+          for (const v of [-6, -2, 2.2, 6.5]) { const p = proj(hp(-8.5, v)), q = proj(hp(8.5, v)); if (p && q) { c.beginPath(); c.moveTo(p[0], p[1]); c.lineTo(q[0], q[1]); c.stroke(); } }
+          for (let u = -8.5; u <= 8.6; u += 4.25) { const p = proj(hp(u, -6)), q = proj(hp(u, 6.5)); if (p && q) { c.beginPath(); c.moveTo(p[0], p[1]); c.lineTo(q[0], q[1]); c.stroke(); } }
+          c.strokeStyle = 'rgba(58,68,62,.6)';
+          for (let u = -8.5; u < 8.5; u += 4.25) for (const [v0, v1] of [[-6, -2], [2.2, 6.5]]) { const p = proj(hp(u, v0)), q = proj(hp(u + 4.25, v1)); if (p && q) { c.beginPath(); c.moveTo(p[0], p[1]); c.lineTo(q[0], q[1]); c.stroke(); } }
+          const lamps = [];
+          for (const v of [4.3, 0.1, -4]) for (let k = 0; k < 6; k++) { const u = -6.75 + k * 2.7, p = proj(hp(u, v)); if (p) lamps.push(p); }
+          for (const p of lamps) {
+            const r = clamp(1.15 * F / p[2], 0.6, 9);
+            c.fillStyle = '#0b0e0c'; c.beginPath(); c.arc(p[0], p[1], r * 1.18, 0, Math.PI * 2); c.fill();
+            const lg = c.createRadialGradient(p[0] - r * 0.2, p[1] - r * 0.2, 0, p[0], p[1], r);
+            lg.addColorStop(0, '#ffffff'); lg.addColorStop(0.6, '#eef4ff'); lg.addColorStop(1, '#b9cdf2');
+            c.fillStyle = lg; c.beginPath(); c.arc(p[0], p[1], r, 0, Math.PI * 2); c.fill();
+          }
+          glows.push([proj(hp(0, 0.2)), facing, lamps, [proj(hp(-8.5, -6)), proj(hp(8.5, -6))]]);
+        }
+      } else if (it.board) {
+        const [p0, p1, p2] = it.board.map(proj); if (!p0 || !p1 || !p2) continue;
+        const facing = -it.sx * (E[0] - it.back[0]) > 0 || Math.abs(E[0]) < Math.abs(it.back[0]);
+        if (!facing) continue;
+        const pB = proj([it.back[0], 46, 0]); const corner = [p0, p1, [p1[0] + p2[0] - p0[0], p1[1] + p2[1] - p0[1]], p2];
+        c.fillStyle = '#050605'; pathPoly(c, corner.map(p => [p[0], p[1]])); c.fill();
+        c.save(); c.setTransform(DPR * (p1[0] - p0[0]) / 640, DPR * (p1[1] - p0[1]) / 640, DPR * (p2[0] - p0[0]) / 360, DPR * (p2[1] - p0[1]) / 360, DPR * p0[0], DPR * p0[1]); c.drawImage(BOARD, 0, 0); c.restore();
+        c.setTransform(DPR, 0, 0, DPR, 0, 0);
+        void pB;
+      }
+    }
+    c.globalCompositeOperation = 'lighter';
+    const fieldC = proj([0, 0, 0]);
+    for (const [p, , lamps, edge] of glows) {
+      if (!p) continue;
+      // soft light beams pouring down onto the ground
+      if (fieldC && edge && edge[0] && edge[1]) {
+        const spread = clamp(70 * F / Math.max(fieldC[2], 1), 30, 900);
+        const bg = c.createLinearGradient(p[0], p[1], fieldC[0], fieldC[1]);
+        bg.addColorStop(0, 'rgba(190,210,255,.16)'); bg.addColorStop(0.6, 'rgba(190,210,255,.04)'); bg.addColorStop(1, 'rgba(190,210,255,0)');
+        c.fillStyle = bg; c.beginPath(); c.moveTo(edge[0][0], edge[0][1]); c.lineTo(edge[1][0], edge[1][1]); c.lineTo(fieldC[0] + spread, fieldC[1]); c.lineTo(fieldC[0] - spread, fieldC[1]); c.closePath(); c.fill();
+      }
+      addTowerGlow(c, p, clamp(55 * F / p[2], 24, 320));
+      for (const q of lamps || []) {                        // each lamp blooms
+        const r = clamp(4.2 * F / q[2], 3, 40), lg = c.createRadialGradient(q[0], q[1], 0, q[0], q[1], r);
+        lg.addColorStop(0, 'rgba(235,242,255,.55)'); lg.addColorStop(0.35, 'rgba(200,220,255,.16)'); lg.addColorStop(1, 'rgba(200,220,255,0)');
+        c.fillStyle = lg; c.fillRect(q[0] - r, q[1] - r, r * 2, r * 2);
+      }
+    }
+    c.globalCompositeOperation = 'source-over';
+    // vignette
+    const v = c.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.35, W / 2, H / 2, Math.max(W, H) * 0.75);
+    v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,.45)'); c.fillStyle = v; c.fillRect(0, 0, W, H);
+  }
+
+  // ---------- players (markers) ----------
+  function guernsey(c, cx, cy, h, T, alpha) {
+    const u = h;
+    const shape = () => {
+      c.beginPath();
+      c.moveTo(cx - 0.15 * u, cy - 0.5 * u); c.quadraticCurveTo(cx, cy - 0.36 * u, cx + 0.15 * u, cy - 0.5 * u);
+      c.lineTo(cx + 0.3 * u, cy - 0.46 * u); c.lineTo(cx + 0.37 * u, cy - 0.38 * u);
+      c.quadraticCurveTo(cx + 0.24 * u, cy - 0.22 * u, cx + 0.3 * u, cy - 0.02 * u); c.lineTo(cx + 0.32 * u, cy + 0.5 * u);
+      c.lineTo(cx - 0.32 * u, cy + 0.5 * u); c.lineTo(cx - 0.3 * u, cy - 0.02 * u);
+      c.quadraticCurveTo(cx - 0.24 * u, cy - 0.22 * u, cx - 0.37 * u, cy - 0.38 * u); c.lineTo(cx - 0.3 * u, cy - 0.46 * u); c.closePath();
+    };
+    c.save(); c.globalAlpha = alpha;
+    shape(); c.fillStyle = T.body; c.fill();
+    c.save(); shape(); c.clip(); c.fillStyle = T.yoke;
+    if (T.s > 0) { c.beginPath(); c.moveTo(cx - 0.5 * u, cy - 0.6 * u); c.lineTo(cx + 0.5 * u, cy - 0.6 * u); c.lineTo(cx + 0.5 * u, cy - 0.22 * u); c.lineTo(cx, cy + 0.08 * u); c.lineTo(cx - 0.5 * u, cy - 0.22 * u); c.closePath(); c.fill(); }
+    else { c.fillRect(cx - 0.075 * u, cy - 0.6 * u, 0.15 * u, 1.2 * u); }
+    c.restore();
+    shape(); c.lineWidth = Math.max(1.2, u * 0.035); c.strokeStyle = '#0b0f0c'; c.stroke();
+    c.restore();
+  }
+  function pill(c, x, y, text, bgc, fg, size) {
+    c.font = `${size}px Anton`; const w = c.measureText(text).width + size * 0.9, h = size * 1.45;
+    c.fillStyle = bgc; c.beginPath(); c.roundRect(x - w / 2, y - h / 2, w, h, h / 2); c.fill();
+    c.fillStyle = fg; centreText(c, text, x, y);
+    return w;
+  }
+  // player headshots, loaded once and drawn as a head on the guernsey
+  const faces = new Map();
+  const face = url => {
+    if (!url) return null;
+    let f = faces.get(url);
+    if (!f) { f = new Image(); f.decoding = 'async'; f.onload = () => { dirty = true; }; f.src = url; faces.set(url, f); }
+    return f.complete && f.naturalWidth ? f : null;
+  };
+  let hits = [], hover = null, picked = null, curTeam = null, mode = 'team', T0 = performance.now();
+  function renderMarkers(now) {
+    hits = [];
+    if (!curTeam) return;
+    const both = curTeam === 'both';
+    // in the match-ups view each Pissant stands on their Mudguts opponent's spot, so pairs line up exactly
+    // (rover and ruck rover spread a little wider so their pairs don't crowd the ruck)
+    const at = p => { const q = both && p.team === 'pissants' && p.opp ? p.opp : p; return both && (q.code === 'RR' || q.code === 'R') ? { x: q.x * 1.9, z: q.z } : q; };
+    const c = ctx, list = POSITIONS.filter(p => both || p.team === curTeam).map(p => ({ p, s: proj([at(p).x, 0, at(p).z]) })).filter(o => o.s).sort((a, b) => b.s[2] - a.s[2]);
+    const pulse = (Math.sin((now - T0) / 420) + 1) / 2, labels = [], boxes = [];
+    for (const { p, s: s0 } of list) {
+      const T = TEAMS[p.team];
+      const k = F / s0[2], h = clamp(6.4 * k, (both ? 24 : 28), (both ? 84 : 96)), sel = picked === p, hov = hover === p;
+      // match-ups: the two opponents stand side by side on their shared spot, Mudguts on the left
+      const sx = both && p.opp ? (p.team === 'mudguts' ? -1 : 1) * h * 0.4 : 0, s = [s0[0] + sx, s0[1], s0[2]];
+      const lift = clamp(1.2 * k, 3, 12), cx = s[0], cy = s[1] - h * 0.5 - lift;
+      // shadow + ring on the grass
+      const rx = clamp(2.6 * k, 6, 40), ry = rx * Math.max(0.25, Math.sin(cam.pitch));
+      c.fillStyle = 'rgba(0,0,0,.35)'; c.beginPath(); c.ellipse(s[0], s[1], rx * 0.8, ry * 0.8, 0, 0, Math.PI * 2); c.fill();
+      if (p.state === 'free') { c.strokeStyle = sel ? '#FFF0D7' : `rgba(255,240,215,${0.35 + pulse * 0.5})`; c.lineWidth = sel ? 3 : 1.8; c.beginPath(); c.ellipse(s[0], s[1], rx * (1 + pulse * 0.35), ry * (1 + pulse * 0.35), 0, 0, Math.PI * 2); c.stroke(); }
+      if (sel) { c.strokeStyle = '#CD2A2D'; c.lineWidth = 3; c.beginPath(); c.ellipse(s[0], s[1], rx * 1.15, ry * 1.15, 0, 0, Math.PI * 2); c.stroke(); }
+      const scale = sel ? 1.18 : hov ? 1.1 : 1, hh = h * scale;
+      guernsey(c, cx, s[1] - hh * 0.5 - lift, hh, T, p.state === 'held' ? 0.55 : 1);
+      // code on the chest
+      c.font = `${Math.round(hh * (short(p).length > 2 ? 0.22 : 0.28))}px Anton`; c.fillStyle = '#FFF0D7'; c.textAlign = 'center'; c.textBaseline = 'middle';
+      c.globalAlpha = p.state === 'held' ? 0.7 : 1; centreText(c, short(p), cx, s[1] - hh * 0.38 - lift); c.globalAlpha = 1;
+      let top = s[1] - hh - lift;
+      const fimg = p.state !== 'free' ? face(p.photo) : null;
+      if (fimg) {
+        const hr = hh * 0.27, hy = top - hr * 0.5;
+        c.save(); c.globalAlpha = p.state === 'held' ? 0.7 : 1;
+        c.beginPath(); c.arc(cx, hy, hr + Math.max(1.5, hh * 0.035), 0, Math.PI * 2); c.fillStyle = '#FFF0D7'; c.fill();
+        c.beginPath(); c.arc(cx, hy, hr, 0, Math.PI * 2); c.clip(); c.drawImage(fimg, cx - hr, hy - hr, hr * 2, hr * 2);
+        c.restore(); top = hy - hr - 3;
+      }
+      const below = both && p.opp && p.team === 'pissants', py = below ? s[1] + clamp(hh * 0.22, 10, 16) : top - 9;
+      boxes.push({ x0: cx - hh * 0.4, x1: cx + hh * 0.4, y0: top, y1: s[1] - lift });
+      if (both || p.state === 'taken') {
+        const free = p.state === 'free', size = free ? clamp(hh * 0.17, 9, 12) : both ? clamp(hh * 0.19, 9, 14) : clamp(hh * 0.2, 10, 15);
+        c.font = `${size}px Anton`; const text = free ? 'OPEN' : p.who, w = c.measureText(text).width + size * 0.9, ph = size * 1.45;
+        // bench players have no opponent: put their name out to the side, away from the stack of jumpers
+        const side = (both ? !p.opp : p.code[0] === 'I') ? (cx < W / 2 ? -1 : 1) : 0;
+        const lx = side ? cx + side * (hh * 0.42 + w / 2 + 4) : cx, ly = side ? s[1] - hh * 0.5 - lift : both ? py : top - 9;
+        labels.push({ x: lx, y: ly, w, h: ph, text, size, bg: free ? 'rgba(16,22,17,.85)' : !both || p.team === 'mudguts' ? '#FFF0D7' : '#FFE3CC', fg: free ? 'rgba(255,240,215,.7)' : '#101611', side, ow: hh * 0.84 + 8, dir: below ? 1 : -1 });
+      }
+      else if (p.state === 'taken') pill(c, cx, top - 9, p.who, '#FFF0D7', '#101611', clamp(hh * 0.2, 10, 15));
+      else if (p.state === 'held') pill(c, cx, top - 9, 'RESERVED', 'rgba(16,22,17,.85)', 'rgba(255,240,215,.8)', clamp(hh * 0.18, 9, 13));
+      else if (sel || hov || h > 44) pill(c, cx, top - 9, money(PRICE[p.tier]), 'rgba(16,22,17,.85)', '#FFF0D7', clamp(hh * 0.18, 9, 13));
+      hits.push({ p, x0: cx - hh * 0.4, x1: cx + hh * 0.4, y0: top - 16, y1: s[1] + (both ? 24 : 4) });
+    }
+    placeLabels(c, labels, boxes);
+  }
+  // match-ups: names are drawn last and nudged so none sits on a jumper or another name
+  function placeLabels(c, labels, boxes) {
+    const placed = [], hitsAny = r => r.x0 < 2 || r.x1 > W - 2 || boxes.concat(placed).some(b => r.x0 < b.x1 - 1 && r.x1 > b.x0 + 1 && r.y0 < b.y1 - 1 && r.y1 > b.y0 + 1);
+    const rect = (l, dx, dy) => ({ x0: l.x + dx - l.w / 2 - 2, x1: l.x + dx + l.w / 2 + 2, y0: l.y + dy - l.h / 2 - 1, y1: l.y + dy + l.h / 2 + 1 });
+    for (const l of labels) {
+      const st = l.h * 0.5, tries = [[0, 0]];
+      for (let i = 1; i <= 8; i++) {
+        if (l.side) tries.push([0, -i * st], [0, i * st], [l.side * i * st, 0], [-l.side * (l.w + l.ow), (i - 1) * st]);
+        else tries.push([-i * st, 0], [i * st, 0], [0, l.dir * i * st * 0.6], [-i * st, l.dir * i * st * 0.6], [i * st, l.dir * i * st * 0.6]);
+      }
+      let best = tries.find(([dx, dy]) => !hitsAny(rect(l, dx, dy))) || [0, 0];
+      const r = rect(l, best[0], best[1]); placed.push(r);
+      pill(c, l.x + best[0], l.y + best[1], l.text, l.bg, l.fg, l.size);
+    }
+  }
+
+  // ---------- loop ----------
+  let dirty = true, anim = null, idle = true, lastInput = 0, alive = true;
+  function resize() {
+    W = root.clientWidth; H = root.clientHeight; DPR = Math.min(devicePixelRatio || 1, matchMedia('(pointer: coarse)').matches ? 1.75 : 2);
+    for (const cv of [canvas, bg]) { cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR); }
+    canvas.style.width = W + 'px'; canvas.style.height = H + 'px'; dirty = true;
+  }
+  window.addEventListener('resize', () => { resize(); placeTools(); }); resize();
+  function frame(now) {
+    if (!alive) return;
+    if (document.hidden || photoBusy) { requestAnimationFrame(frame); return; }   // free the phone up while the photo picker or shrinking runs
+    if (anim) {
+      const t = clamp((now - anim.t0) / anim.dur, 0, 1), e = ease(t);
+      for (const k in anim.to) cam[k] = lerp(anim.from[k], anim.to[k], e);
+      dirty = true; if (t >= 1) { const d = anim.done; anim = null; d && d(); }
+    } else if (idle && mode === 'team' && now - lastInput > 1500) { cam.yaw += 0.0009; dirty = true; }
+    if (dirty) { renderStatic(); dirty = false; }
+    ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.drawImage(bg, 0, 0);
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0); renderMarkers(now);
+    requestAnimationFrame(frame);
+  }
+  function fly(to, dur = 1400, done) {
+    const from = { ...cam }; if ('yaw' in to) { let dy = to.yaw - from.yaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy)); to = { ...to, yaw: from.yaw + dy }; }
+    anim = { from, to, t0: performance.now(), dur, done };
+  }
+  // each team attacks towards the bottom of a phone screen (and to the right on a wide one)
+  const homeYaw = () => (portrait() ? Math.PI / 2 : 0) + (curTeam === 'pissants' ? Math.PI : 0);
+  const fitD = () => { const t = Math.tan(FOV / 2), a = W / H, need = portrait() ? Math.max(118 / t, 96 / (t * a)) : Math.max(92 / t, 128 / (t * a)); return need * 1.05; };
+
+  // ---------- input ----------
+  // keep the camera high above the ground so the stands never swing in front of the players
+  const PITCH_MIN = 0.95, PITCH_MAX = 1.45;
+  const zoomRange = () => mode === 'team' ? [fitD() * 0.9, fitD() * 1.3] : [Math.min(110, fitD() * 0.55), fitD() * 1.05];
+  let drag = null; const pts = new Map();
+  canvas.addEventListener('pointerdown', e => { canvas.setPointerCapture(e.pointerId); pts.set(e.pointerId, [e.clientX, e.clientY]); drag = { x: e.clientX, y: e.clientY, moved: 0, yaw: cam.yaw, pitch: cam.pitch, d: cam.d, pinch: pts.size === 2 ? dist() : 0 }; lastInput = performance.now(); idle = false; anim = null; });
+  const dist = () => { const [a, b] = [...pts.values()]; return Math.hypot(a[0] - b[0], a[1] - b[1]); };
+  canvas.addEventListener('pointermove', e => {
+    const r = canvas.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top;
+    if (!drag) { const h = hitAt(mx, my); if (h !== hover) { hover = h; canvas.style.cursor = h ? 'pointer' : 'grab'; showTip(h, mx, my); } else if (h) showTip(h, mx, my); return; }
+    pts.set(e.pointerId, [e.clientX, e.clientY]);
+    if (pts.size === 2) { if (!drag.pinch) drag.pinch = dist(); cam.d = clamp(drag.d * drag.pinch / dist(), ...zoomRange()); drag.moved = 99; dirty = true; return; }
+    const dx = e.clientX - drag.x, dy = e.clientY - drag.y; drag.moved = Math.max(drag.moved, Math.hypot(dx, dy));
+    if (drag.moved > 5) { cam.yaw = drag.yaw - dx * 0.006; cam.pitch = clamp(drag.pitch + dy * 0.004, PITCH_MIN, PITCH_MAX); dirty = true; canvas.style.cursor = 'grabbing'; }
+  });
+  const up = e => {
+    pts.delete(e.pointerId); if (!drag) return;
+    const r = canvas.getBoundingClientRect();
+    if (drag.moved <= 5 && pts.size === 0) { const h = hitAt(e.clientX - r.left, e.clientY - r.top); if (h) (curTeam === 'both' ? matchupSheet(h) : select(h)); }
+    if (pts.size === 0) { drag = null; canvas.style.cursor = 'grab'; }
+  };
+  canvas.addEventListener('pointerup', up); canvas.addEventListener('pointercancel', up);
+  canvas.addEventListener('wheel', e => { e.preventDefault(); anim = null; cam.d = clamp(cam.d * Math.exp(e.deltaY * 0.0012), ...zoomRange()); dirty = true; idle = false; }, { passive: false });
+  function hitAt(x, y) { for (let i = hits.length - 1; i >= 0; i--) { const h = hits[i]; if (x >= h.x0 && x <= h.x1 && y >= h.y0 && y <= h.y1) return h.p; } return null; }
+  const tip = $('.yg-tip');
+  function showTip(p, x, y) {
+    if (!p || matchMedia('(pointer: coarse)').matches) { tip.hidden = true; return; }
+    tip.hidden = false; tip.style.left = x + 'px'; tip.style.top = y + 'px';
+    if (curTeam === 'both') { tip.innerHTML = `<b>${TEAMS[p.team].name} · ${esc(p.label)}</b><span>${esc(p.who || 'Open')}${p.opp ? ` v ${esc(p.opp.who || 'Open')} (${esc(p.opp.label)})` : ''}</span>`; return; }
+    tip.innerHTML = `<b>${esc(p.label)}</b><span>${p.state === 'taken' ? esc(p.who) : p.state === 'held' ? 'Reserved' : money(PRICE[p.tier])}</span>`;
+  }
+
+  // ---------- data ----------
+  async function load() {
+    try {
+      const b = await rpc('yc_board');
+      for (const p of POSITIONS) { p.state = 'free'; p.who = ''; p.photo = ''; }
+      for (const r of b.positions || []) { const p = POSITIONS.find(q => q.id === r.id); if (p) { p.state = r.status === 'confirmed' ? 'taken' : 'held'; p.who = r.name; p.photo = r.photo || ''; } }
+      stats = { raised: b.raised || 0, pledged: b.pledged || 0 };
+    } catch (e) { console.warn('yc board', e); }
+    drawBoard(); dirty = true; setStats(); if (mode === 'list') listView();
+    if (mode === 'team') for (const el of root.querySelectorAll('.yg-tm[data-team]')) { const id = el.dataset.team, f = el.querySelector('.f'); if (f) f.textContent = `${POSITIONS.filter(p => p.team === id && p.state === 'free').length} spots left`; }
+    if (mode === 'field' && curTeam && curTeam !== 'both') $('.yg-k').textContent = `${TEAMS[curTeam].name} · ${POSITIONS.filter(p => p.team === curTeam && p.state === 'free').length} spots left`;
+  }
+  function setStats() {
+    const n = POSITIONS.filter(p => p.state !== 'free').length;
+    $('.yg-stats').innerHTML = `<b>${n}</b> of ${POSITIONS.length} positions filled${stats ? ` · <b>${money(stats.pledged)}</b> pledged for Movember` : ''}`;
+  }
+  setStats(); load(); const poll = setInterval(load, 30000);
+
+  // ---------- flow ----------
+  function setHead(k, t, s) { $('.yg-k').textContent = k; $('.yg-t').textContent = t; $('.yg-s').innerHTML = s || ''; }
+  const sheet = $('.yg-sheet');
+  function showSheet(html) { sheet.innerHTML = html; sheet.hidden = false; sheet.scrollTop = 0; root.classList.add('sheet-open'); }
+  function hideSheet() { sheet.hidden = true; sheet.innerHTML = ''; root.classList.remove('sheet-open'); }
+
+  function teamPicker() {
+    mode = 'team'; curTeam = null; picked = null; hideSheet(); idle = true; $('.yg-crest').hidden = true;
+    { const lb = $('.yg-tools [data-a="list"]'); if (lb) lb.hidden = false; }
+    $('.yg-tools').hidden = true; $('.yg-legend').hidden = true;
+    setHead('Yappers Cup · Sunday 29 November', 'Choose your team', `Then pick your spot on the ground. Every position is a donation to Movember.`);
+    const pick = $('.yg-pick'); pick.hidden = false;
+    const free = id => POSITIONS.filter(p => p.team === id && p.state === 'free').length;
+    pick.innerHTML = Object.entries(TEAMS).map(([id, T]) => `<button type="button" class="yg-tm" data-team="${id}" style="--tc:${T.ui}"><img src="${T.shield}" alt=""><span class="n">${T.name}</span><span class="l">${T.line}</span><span class="f">${free(id)} spots left</span></button>`).join('<span class="yg-vs">vs</span>')
+      + `<button type="button" class="yg-chip yg-mu" data-a="matchups">See the match-ups</button>`;
+    fly({ tx: 0, tz: 0, d: fitD() * 1.15, pitch: 0.95, yaw: cam.yaw }, 1600);
+  }
+  // on desktop the team/list buttons sit under the heading: place them just below it so they never overlap
+  function placeTools() {
+    const t = $('.yg-tools'), h = $('.yg-head'); if (!t || !h) return;
+    if (matchMedia('(max-width: 720px)').matches) { t.style.top = ''; return; }
+    const rb = root.getBoundingClientRect(), hb = h.getBoundingClientRect();
+    t.style.top = Math.round(hb.bottom - rb.top + 16) + 'px';
+  }
+  function chooseTeam(id) {
+    const lb = $('.yg-tools [data-a="list"]'); if (lb) lb.hidden = false;
+    curTeam = id; mode = 'field'; picked = null; idle = false; hideSheet();
+    const T = TEAMS[id]; $('.yg-pick').hidden = true; $('.yg-tools').hidden = false; $('.yg-legend').hidden = false;
+    const other = id === 'mudguts' ? 'pissants' : 'mudguts';
+    const crest = $('.yg-crest'); crest.src = T.shield; crest.alt = T.name; crest.hidden = false; crest.classList.remove('in'); void crest.offsetWidth; crest.classList.add('in');
+    $('.yg-team').innerHTML = `<img src="${T.shield}" alt="">${T.name}<em>Switch to ${TEAMS[other].name}</em>`;
+    setHead(`${T.name} · ${POSITIONS.filter(p => p.team === id && p.state === 'free').length} spots left`, 'Pick your position', 'Tap a guernsey on the ground. Drag to look around.');
+    placeTools();
+    fly({ tx: 0, tz: 0, d: fitD() * 0.92, pitch: 1.08, yaw: homeYaw() }, 1500);
+  }
+  // tapping a player in the match-ups view shows the head-to-head
+  function matchupSheet(p) {
+    const m = p.team === 'mudguts' ? p : p.opp, q = p.team === 'mudguts' ? p.opp : p;
+    const side = (x, id) => x ? `<div class="yg-mu-p"><img src="${TEAMS[x.team].shield}" alt="">${x.photo ? `<img class="yg-face sm" src="${esc(x.photo)}" alt="">` : ''}<b>${esc(x.who || 'Open')}</b><span>${TEAMS[x.team].name} · ${esc(x.label)}</span></div>` : `<div class="yg-mu-p"><img src="${TEAMS[id].shield}" alt=""><b>No direct opponent</b></div>`;
+    const bench = p.code[0] === 'I';
+    showSheet(`<p class="yg-sk">${bench ? 'On the bench' : 'Head to head'}</p>
+      <div class="yg-mu-row">${bench ? side(p) : `${side(m, 'mudguts')}<span class="yg-vs">vs</span>${side(q, 'pissants')}`}</div>
+      <div class="yg-btns"><button type="button" class="yg-btn ghost" data-a="mu-back">Back to the match-ups</button></div>`);
+  }
+  function showMatchups() {
+    curTeam = 'both'; mode = 'field'; picked = null; idle = false; hideSheet();
+    $('.yg-pick').hidden = true; $('.yg-legend').hidden = true; $('.yg-crest').hidden = true;
+    $('.yg-tools').hidden = false; $('.yg-tools [data-a="list"]').hidden = true;
+    $('.yg-team').innerHTML = `Mudguts vs Pissants<em>Back to the teams</em>`;
+    setHead('Sunday 29 November · Gosch\'s Paddock', 'The match-ups', `Who's lined up on who. Mudguts on the left of each pair, attacking ${portrait() ? 'down' : 'right'}. Tap a pair for the head to head.`);
+    placeTools();
+    fly({ tx: 0, tz: 0, d: fitD() * 0.92, pitch: 1.08, yaw: homeYaw() }, 1500);
+  }
+  function select(p) {
+    picked = p; mode = 'pos';
+    const s = PRICE[p.tier], line = p.code[0] === 'I' ? 'On the bench' : p.line;
+    // frame the guernsey where the sheet won't cover it: left of centre on desktop, top half on a phone
+    const d = portrait() ? 125 : 150, y = cam.yaw, mobile = W <= 720;
+    const right = [Math.cos(y), -Math.sin(y)], toward = [Math.sin(y), Math.cos(y)];
+    const off = mobile ? [toward[0] * d * 0.42, toward[1] * d * 0.42] : [right[0] * d * 0.26, right[1] * d * 0.26];
+    fly({ tx: p.x + off[0], tz: p.z + off[1], d, pitch: 0.98 }, 1100);
+    if (p.state !== 'free') {
+      showSheet(`<p class="yg-sk">${TEAMS[p.team].name} · ${esc(line)}</p>${p.photo ? `<img class="yg-face" src="${esc(p.photo)}" alt="${esc(p.who)}">` : ''}<h3>${esc(p.label)}</h3>
+        <p class="yg-note">${p.state === 'taken' ? `<b>${esc(p.who)}</b> has this spot locked in.` : `This spot is reserved for <b>${esc(p.who)}</b> while they finish paying.`} Pick another guernsey.</p>
+        <div class="yg-btns"><button type="button" class="yg-btn ghost" data-a="field">Back to the ground</button></div>`);
+      return;
+    }
+    showSheet(`<p class="yg-sk">${TEAMS[p.team].name} · ${esc(line)}</p><h3>${esc(p.label)}</h3>
+      <p class="yg-blurb">${esc(blurbFor(p.code))}</p>
+      <div class="yg-price"><b>${money(s)}</b><span>same for every position · all proceeds go to Movember</span></div>
+      <ol class="yg-steps"><li><b>Add your details</b> and accept the terms.</li><li><b>Pay securely</b> by card, Apple Pay or Google Pay.</li><li><b>Your name goes straight on the team sheet.</b></li></ol>
+      <div class="yg-btns"><button type="button" class="yg-btn" data-a="claim">Claim ${esc(p.label.toLowerCase())}</button><button type="button" class="yg-btn ghost" data-a="field">Back</button></div>`);
+  }
+  function claimForm(p) {
+    const min = PRICE[p.tier], opts = [min, min * 2, min * 4];
+    showSheet(`<p class="yg-sk">${TEAMS[p.team].name} · ${esc(p.label)}</p><h3>Lock in your spot</h3>
+      <form class="yg-form" novalidate>
+        <div class="yg-photo"><span class="yg-ph" aria-hidden="true">+</span><div><b>Add a photo <small>(optional)</small></b><p>A headshot so everyone can put a face to the name. It shows on the team sheet.</p><label class="yg-ph-btn"><span>Take or choose photo</span><input type="file" name="photo" accept="image/*" hidden></label></div></div>
+        <label>Name<input name="full" autocomplete="name" maxlength="120" required></label>
+        <div class="yg-row"><label>Email<input name="email" type="email" autocomplete="email" required></label><label>Mobile<input name="mobile" type="tel" autocomplete="tel" maxlength="40"></label></div>
+        <label>Your entry <small style="opacity:.7;font-weight:400">(all proceeds to Movember)</small><span class="yg-amts" role="radiogroup">${opts.map((v, i) => `<button type="button" role="radio" aria-checked="${i === 0}" data-v="${v}" class="${i === 0 ? 'on' : ''}">${money(v)}</button>`).join('')}<span class="yg-other">Other $<input name="amount" type="number" inputmode="numeric" min="${min}" step="1" value="${min}"></span></span></label>
+        <label class="yg-terms"><input type="checkbox" name="terms" required><span>I've read and accept the <a href="${TERMS_URL}" target="_blank" rel="noopener">terms &amp; conditions</a>, including that I take part at my own risk.</span></label>
+        <p class="yg-err" role="alert"></p>
+        <div class="yg-btns"><button type="submit" class="yg-btn">Pay ${money(min)}</button><button type="button" class="yg-btn ghost" data-a="back">Back</button></div>
+      </form>`);
+    const f = sheet.querySelector('form'), amt = f.elements.amount;
+    f.querySelectorAll('.yg-amts button').forEach(b => b.onclick = () => { f.querySelectorAll('.yg-amts button').forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-checked', String(x === b)); }); amt.value = b.dataset.v; });
+    amt.oninput = () => f.querySelectorAll('.yg-amts button').forEach(x => { const on = x.dataset.v === amt.value; x.classList.toggle('on', on); x.setAttribute('aria-checked', String(on)); });
+    const payBtn = f.querySelector('[type=submit]'), setPay = () => { payBtn.textContent = `Pay ${money(Math.max(min, Math.round(+amt.value || 0)))}`; };
+    f.addEventListener('click', () => setTimeout(setPay)); amt.addEventListener('input', setPay);
+    f.elements.full.focus({ preventScroll: true });
+    let photoData = null;
+    const ph = f.querySelector('.yg-ph'), phBtn = f.querySelector('.yg-ph-btn span');
+    f.elements.photo.onchange = async () => {
+      const file = f.elements.photo.files[0]; if (!file) return;
+      const pb = f.querySelector('[type=submit]'), err = f.querySelector('.yg-err');
+      phBtn.textContent = 'Preparing photo…'; pb.disabled = true; err.textContent = '';
+      try { photoData = await withTimeout(squarePhoto(file), 20000); ph.style.backgroundImage = `url(${photoData})`; ph.textContent = ''; ph.classList.add('has'); phBtn.textContent = 'Change photo'; }
+      catch (_) { photoData = null; phBtn.textContent = 'Take or choose photo'; err.textContent = 'That photo didn\'t work. Try another, or skip it.'; }
+      finally { pb.disabled = false; f.elements.photo.value = ''; }
+    };
+    f.onsubmit = async e => {
+      e.preventDefault(); const err = f.querySelector('.yg-err'), btn = f.querySelector('[type=submit]'); err.textContent = '';
+      const body = { p_position: p.id, p_name: f.elements.full.value, p_full_name: f.elements.full.value, p_email: f.elements.email.value, p_mobile: f.elements.mobile.value, p_amount: Math.round(+amt.value || 0), p_terms: f.elements.terms.checked, p_terms_version: TERMS_VERSION };
+      if (!body.p_full_name.trim()) return void (err.textContent = 'Add your name.');
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.p_email.trim())) return void (err.textContent = 'Add a valid email for your receipt.');
+      if (body.p_amount < min) return void (err.textContent = `Every position starts at ${money(min)}.`);
+      if (!body.p_terms) return void (err.textContent = 'Tick the box to accept the terms and conditions.');
+      btn.disabled = true; btn.textContent = 'Opening secure checkout…';
+      try {
+        const c = await pay({ action: 'checkout', claim: body }).catch(() => ({ ok: false, error: 'not_configured' }));
+        if (c.ok && c.url) {
+          if (photoData && c.token) { btn.textContent = 'Saving your photo…'; await Promise.race([pay({ action: 'photo', position: p.id, token: c.token, image: photoData }), wait(8000)]).catch(() => {}); }
+          try { sessionStorage.setItem('yc-pay', JSON.stringify({ pos: p.id, token: c.token || '' })); } catch (_) {}
+          location.href = c.url; return;
+        }
+        if (c.error !== 'not_configured') { err.textContent = c.error || 'That didn\'t go through. Try again.'; btn.disabled = false; setPay(); if (/grabbed/.test(c.error || '')) load(); return; }
+        // card payments not switched on yet: fall back to reserving and donating on Movember
+        btn.textContent = 'Reserving…';
+        const r = await rpc('yc_claim', body);
+        if (!r.ok) { err.textContent = r.error || 'That didn\'t go through. Try again.'; btn.disabled = false; setPay(); if (/grabbed/.test(r.error || '')) load(); return; }
+        p.state = 'held'; p.who = r.name; if (stats) stats.pledged += body.p_amount; drawBoard(); dirty = true; setStats();
+        showSheet(`<p class="yg-sk">Spot reserved · ${TEAMS[p.team].name} · ${esc(p.label)}</p><h3>One last step</h3>
+          <p class="yg-note">Donate <b>${money(body.p_amount)}</b> on the Yappers Cup Movember page using <b>${esc(body.p_email.trim())}</b>. Once it comes through, <b>${esc(r.name)}</b> goes on the team sheet. We'll keep it reserved for 24 hours.</p>
+          <div class="yg-btns"><a class="yg-btn" href="${DONATE_URL}" target="_blank" rel="noopener">Donate to Movember</a><button type="button" class="yg-btn ghost" data-a="field">Done</button></div>`);
+      } catch (x) { err.textContent = 'That didn\'t go through. Check your connection and try again.'; btn.disabled = false; setPay(); }
+    };
+  }
+  async function photoSheet(pos, token, fromLink = false) {
+    showSheet(`<p class="yg-sk">Team sheet photo</p><h3>One sec…</h3>`);
+    const info = await pay({ action: 'photo', position: pos, token }).catch(() => ({ ok: false }));
+    if (!info.ok) {
+      showSheet(`<p class="yg-sk">Team sheet photo</p><h3>That link isn't working</h3><p class="yg-note">${esc(info.error || 'Check your connection and try again.')} Email hello@yapperscup.com and we'll sort it.</p><div class="yg-btns"><button type="button" class="yg-btn" data-a="field">Back to the ground</button></div>`);
+      return;
+    }
+    const P = POSITIONS.find(q => q.id === info.position), T = TEAMS[info.team];
+    if (fromLink) { if (curTeam !== info.team) chooseTeam(info.team); if (P) setTimeout(() => fly({ tx: P.x, tz: P.z, d: portrait() ? 125 : 150, pitch: 0.98 }, 1200), 300); }
+    const render = photo => {
+      showSheet(`<p class="yg-sk">${T.name} · ${esc(P ? P.label : info.pos)} · ${esc(info.name)}</p><h3>${photo ? 'Your team sheet photo' : 'Add your photo'}</h3>
+        <p class="yg-note">${photo ? 'Looking sharp. It\'s up on the ground for everyone to see.' : `Put a face to the name, ${esc(info.first || 'legend')}. A clear headshot works best.`}</p>
+        <div class="yg-photo big"><span class="yg-ph${photo ? ' has' : ''}" style="${photo ? `background-image:url('${esc(photo)}')` : ''}">${photo ? '' : '+'}</span></div>
+        <p class="yg-err" role="alert"></p>
+        <div class="yg-btns"><label class="yg-btn">${photo ? 'Change photo' : 'Take or choose photo'}<input type="file" accept="image/*" hidden></label>${photo ? '<button type="button" class="yg-btn ghost" data-x="remove">Remove</button>' : ''}<button type="button" class="yg-btn ghost" data-a="field">${photo ? 'Done' : 'Skip for now'}</button></div>`);
+      const inp = sheet.querySelector('input[type=file]'), err = sheet.querySelector('.yg-err');
+      inp.onchange = async () => {
+        const file = inp.files[0]; if (!file) return;
+        err.textContent = 'Uploading…';
+        try {
+          const r = await pay({ action: 'photo', position: pos, token, image: await withTimeout(squarePhoto(file), 20000) });
+          if (!r.ok) { err.textContent = r.error || 'Couldn\'t save that photo. Try again.'; return; }
+          if (P) P.photo = r.photo; dirty = true; render(r.photo);
+        } catch (_) { err.textContent = 'That photo didn\'t work. Try another.'; }
+      };
+      const rm = sheet.querySelector('[data-x=remove]');
+      if (rm) rm.onclick = async () => { const r = await pay({ action: 'photo', position: pos, token, remove: true }).catch(() => ({ ok: false })); if (r.ok) { if (P) P.photo = ''; dirty = true; render(null); } };
+    };
+    render(info.photo);
+  }
+  function listView() {
+    mode = 'list'; const T = TEAMS[curTeam];
+    showSheet(`<p class="yg-sk">${T.name} · team sheet</p><h3>All positions</h3>` + LINES.map(([line, list]) => `<div class="yg-line"><p>${line}</p>${list.map(([code]) => {
+      const p = POSITIONS.find(q => q.id === `${curTeam}-${code}`);
+      return `<button type="button" class="yg-li ${p.state}" data-pos="${p.id}" ${p.state === 'free' ? '' : 'aria-disabled="true"'}><span class="yg-li-l">${p.photo && p.state !== 'free' ? `<img class="yg-av" src="${esc(p.photo)}" alt="" loading="lazy">` : ''}${esc(p.label)}</span><em>${p.state === 'taken' ? esc(p.who) : p.state === 'held' ? 'Reserved' : money(PRICE[p.tier])}</em></button>`;
+    }).join('')}</div>`).join('') + `<div class="yg-btns"><button type="button" class="yg-btn ghost" data-a="field">Back to the ground</button></div>`);
+  }
+  function backToField() {
+    picked = null; mode = 'field'; hideSheet();
+    fly({ tx: 0, tz: 0, d: fitD() * 0.92, pitch: 1.08 }, 1100);
+  }
+
+  root.addEventListener('click', e => {
+    const b = e.target.closest('[data-a],[data-team],[data-pos]'); if (!b) return;
+    if (b.dataset.team) return b.dataset.team === 'both' ? showMatchups() : chooseTeam(b.dataset.team);
+    if (b.dataset.pos) { const p = POSITIONS.find(q => q.id === b.dataset.pos); if (p && p.state === 'free') { select(p); } return; }
+    const a = b.dataset.a;
+    if (a === 'close') close();
+    else if (a === 'switch') { if (curTeam === 'both') teamPicker(); else chooseTeam(curTeam === 'mudguts' ? 'pissants' : 'mudguts'); }
+    else if (a === 'matchups' || a === 'mu-back') { if (a === 'mu-back') { hideSheet(); return; } showMatchups(); }
+    else if (a === 'list') listView();
+    else if (a === 'field') backToField();
+    else if (a === 'claim' && picked) claimForm(picked);
+    else if (a === 'back' && picked) select(picked);
+  });
+  const onKey = e => { if (e.key === 'Escape') { if (!sheet.hidden && mode !== 'team') backToField(); else close(); } };
+  document.addEventListener('keydown', onKey);
+  function close() {
+    alive = false; clearInterval(poll); window.removeEventListener('resize', resize); document.removeEventListener('keydown', onKey);
+    root.classList.add('out'); setTimeout(() => { root.remove(); document.documentElement.classList.remove('yg-open'); onClose && onClose(); }, 280);
+  }
+
+  cam.yaw = homeYaw() - 0.6; cam.d = fitD() * 1.6; cam.pitch = 0.95;
+  requestAnimationFrame(frame);
+  const qs = new URLSearchParams(location.search), paidId = qs.get('paid'), cancelled = qs.has('cancelled'), photoQ = /^([a-z]+-[A-Z0-9]+)\.([0-9a-f-]{36})$/i.exec(qs.get('photo') || '');
+  if (paidId || cancelled || qs.has('photo')) history.replaceState(null, '', location.pathname + location.hash);
+  if (paidId) {
+    teamPicker();
+    showSheet(`<p class="yg-sk">Payment received</p><h3>Locking you in…</h3><p class="yg-note">Hang tight while we put your name on the team sheet.</p>`);
+    let saved = {}; try { saved = JSON.parse(sessionStorage.getItem('yc-pay') || '{}') || {}; } catch (_) {}
+    const tryConfirm = async (n) => {
+      const r = await pay({ action: 'confirm', session: paidId }).catch(() => ({ ok: false }));
+      if (r.ok) {
+        await load(); const T = TEAMS[r.team], pos = POSITIONS.find(q => q.id === r.position);
+        curTeam = r.team; chooseTeam(r.team); if (pos) setTimeout(() => fly({ tx: pos.x, tz: pos.z, d: portrait() ? 125 : 150, pitch: 0.98 }, 1200), 300);
+        showSheet(`<p class="yg-sk">You're in · ${T.name}</p><h3>${esc(r.name)}, ${esc(pos ? pos.label : r.pos)}</h3>
+          <p class="yg-note">Your name's on the team sheet. Stripe has emailed your receipt. See you at Gosch's Paddock on Sunday 29 November, 12:30pm for a 1pm bounce.</p>
+          <div class="yg-btns"><button type="button" class="yg-btn" data-a="field">See the team sheet</button>${saved.token && saved.pos === r.position ? `<button type="button" class="yg-btn ghost" data-x="photo">${pos && pos.photo ? 'Change your photo' : 'Add your photo'}</button>` : ''}</div>`);
+        const pb = sheet.querySelector('[data-x=photo]'); if (pb) pb.onclick = () => photoSheet(r.position, saved.token);
+      } else if (n < 4) setTimeout(() => tryConfirm(n + 1), 1500);
+      else showSheet(`<p class="yg-sk">Payment received</p><h3>Nearly there</h3><p class="yg-note">Your payment went through but the team sheet is taking a moment to update. Refresh in a minute, or email hello@yapperscup.com if your name isn't up.</p><div class="yg-btns"><button type="button" class="yg-btn" data-a="field">Back to the ground</button></div>`);
+    };
+    tryConfirm(0);
+  } else if (photoQ) {
+    const [, pos, token] = photoQ, tm = pos.split('-')[0];
+    if (TEAMS[tm]) { curTeam = tm; chooseTeam(tm); }
+    await load();
+    photoSheet(pos, token, true);
+  } else {
+    if (cancelled) { try { sessionStorage.removeItem('yc-pay'); } catch (_) {} }
+    if (team === 'both') setTimeout(showMatchups, 50);
+    else if (team && TEAMS[team]) { setTimeout(() => chooseTeam(team), 50); } else teamPicker();
+    if (cancelled) setTimeout(() => showSheet(`<p class="yg-sk">Payment cancelled</p><h3>No worries</h3><p class="yg-note">You weren't charged. Your spot is held for a few more minutes if you want to try again, then it opens back up.</p><div class="yg-btns"><button type="button" class="yg-btn" data-a="field">Back to the ground</button></div>`), 400);
+  }
+  pay({ action: 'reconcile' }).then(r => { if (r && r.done) load(); }).catch(() => {});
+  void badge;
+  return { close };
+}
