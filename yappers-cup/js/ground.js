@@ -54,7 +54,9 @@ for (const [line, list] of LINES) for (const [code, label, x, z] of list) {
   }
 }
 // opponents who line up on the same spot (full forward on full back, wing on wing...)
-for (const p of POSITIONS) p.opp = POSITIONS.find(q => q.team !== p.team && Math.hypot(q.x - p.x, q.z - p.z) < 6) || null;
+// the centre square pairs by role (ruck on ruck, centre on centre, rover on rover); everyone else by where they stand
+const ROLE_PAIR = ['C', 'RK', 'RR', 'R'];
+for (const p of POSITIONS) p.opp = POSITIONS.find(q => q.team !== p.team && (ROLE_PAIR.includes(p.code) ? q.code === p.code : Math.hypot(q.x - p.x, q.z - p.z) < 6)) || null;
 const short = p => p.code[0] === 'I' ? 'INT' : p.code.replace(/^(HBF|HFF|BP|FP)[LR]$/, '$1').replace(/^W[LR]$/, 'W');
 const money = n => '$' + Math.round(n).toLocaleString('en-AU');
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -447,7 +449,10 @@ export async function openGround({ team, onClose } = {}) {
     hits = [];
     if (!curTeam) return;
     const both = curTeam === 'both';
-    const c = ctx, list = POSITIONS.filter(p => both || p.team === curTeam).map(p => ({ p, s: proj([p.x, 0, p.z]) })).filter(o => o.s).sort((a, b) => b.s[2] - a.s[2]);
+    // in the match-ups view each Pissant stands on their Mudguts opponent's spot, so pairs line up exactly
+    // (rover and ruck rover spread a little wider so their pairs don't crowd the ruck)
+    const at = p => { const q = both && p.team === 'pissants' && p.opp ? p.opp : p; return both && (q.code === 'RR' || q.code === 'R') ? { x: q.x * 1.9, z: q.z } : q; };
+    const c = ctx, list = POSITIONS.filter(p => both || p.team === curTeam).map(p => ({ p, s: proj([at(p).x, 0, at(p).z]) })).filter(o => o.s).sort((a, b) => b.s[2] - a.s[2]);
     const pulse = (Math.sin((now - T0) / 420) + 1) / 2;
     for (const { p, s: s0 } of list) {
       const T = TEAMS[p.team];
