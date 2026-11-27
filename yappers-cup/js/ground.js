@@ -53,6 +53,8 @@ for (const [line, list] of LINES) for (const [code, label, x, z] of list) {
     POSITIONS.push({ id: `${id}-${code}`, team: id, code, label, line, x: wx, z: wz, tier: bench ? 'bench' : KEY_POS.includes(code) ? 'key' : 'field', state: 'free', who: '', photo: '' });
   }
 }
+// opponents who line up on the same spot (full forward on full back, wing on wing...)
+for (const p of POSITIONS) p.opp = POSITIONS.find(q => q.team !== p.team && Math.hypot(q.x - p.x, q.z - p.z) < 6) || null;
 const short = p => p.code[0] === 'I' ? 'INT' : p.code.replace(/^(HBF|HFF|BP|FP)[LR]$/, '$1').replace(/^W[LR]$/, 'W');
 const money = n => '$' + Math.round(n).toLocaleString('en-AU');
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -444,10 +446,14 @@ export async function openGround({ team, onClose } = {}) {
   function renderMarkers(now) {
     hits = [];
     if (!curTeam) return;
-    const c = ctx, list = POSITIONS.filter(p => p.team === curTeam).map(p => ({ p, s: proj([p.x, 0, p.z]) })).filter(o => o.s).sort((a, b) => b.s[2] - a.s[2]);
-    const T = TEAMS[curTeam], pulse = (Math.sin((now - T0) / 420) + 1) / 2;
-    for (const { p, s } of list) {
-      const k = F / s[2], h = clamp(6.4 * k, 28, 96), sel = picked === p, hov = hover === p;
+    const both = curTeam === 'both';
+    const c = ctx, list = POSITIONS.filter(p => both || p.team === curTeam).map(p => ({ p, s: proj([p.x, 0, p.z]) })).filter(o => o.s).sort((a, b) => b.s[2] - a.s[2]);
+    const pulse = (Math.sin((now - T0) / 420) + 1) / 2;
+    for (const { p, s: s0 } of list) {
+      const T = TEAMS[p.team];
+      const k = F / s0[2], h = clamp(6.4 * k, (both ? 24 : 28), (both ? 84 : 96)), sel = picked === p, hov = hover === p;
+      // match-ups: the two opponents stand side by side on their shared spot, Mudguts on the left
+      const sx = both && p.opp ? (p.team === 'mudguts' ? -1 : 1) * h * 0.4 : 0, s = [s0[0] + sx, s0[1], s0[2]];
       const lift = clamp(1.2 * k, 3, 12), cx = s[0], cy = s[1] - h * 0.5 - lift;
       // shadow + ring on the grass
       const rx = clamp(2.6 * k, 6, 40), ry = rx * Math.max(0.25, Math.sin(cam.pitch));
@@ -468,10 +474,12 @@ export async function openGround({ team, onClose } = {}) {
         c.beginPath(); c.arc(cx, hy, hr, 0, Math.PI * 2); c.clip(); c.drawImage(fimg, cx - hr, hy - hr, hr * 2, hr * 2);
         c.restore(); top = hy - hr - 3;
       }
-      if (p.state === 'taken') pill(c, cx, top - 9, p.who, '#FFF0D7', '#101611', clamp(hh * 0.2, 10, 15));
+      const below = both && p.opp && p.team === 'pissants', py = below ? s[1] + clamp(hh * 0.22, 10, 16) : top - 9;
+      if (both) { if (p.state !== 'free') pill(c, cx, py, p.who, p.team === 'mudguts' ? '#FFF0D7' : '#FFE3CC', '#101611', clamp(hh * 0.19, 9, 14)); else pill(c, cx, py, 'OPEN', 'rgba(16,22,17,.85)', 'rgba(255,240,215,.7)', clamp(hh * 0.17, 9, 12)); }
+      else if (p.state === 'taken') pill(c, cx, top - 9, p.who, '#FFF0D7', '#101611', clamp(hh * 0.2, 10, 15));
       else if (p.state === 'held') pill(c, cx, top - 9, 'RESERVED', 'rgba(16,22,17,.85)', 'rgba(255,240,215,.8)', clamp(hh * 0.18, 9, 13));
       else if (sel || hov || h > 44) pill(c, cx, top - 9, money(PRICE[p.tier]), 'rgba(16,22,17,.85)', '#FFF0D7', clamp(hh * 0.18, 9, 13));
-      hits.push({ p, x0: cx - hh * 0.4, x1: cx + hh * 0.4, y0: top - 16, y1: s[1] + 4 });
+      hits.push({ p, x0: cx - hh * 0.4, x1: cx + hh * 0.4, y0: top - 16, y1: s[1] + (both ? 24 : 4) });
     }
   }
 
@@ -522,7 +530,7 @@ export async function openGround({ team, onClose } = {}) {
   const up = e => {
     pts.delete(e.pointerId); if (!drag) return;
     const r = canvas.getBoundingClientRect();
-    if (drag.moved <= 5 && pts.size === 0) { const h = hitAt(e.clientX - r.left, e.clientY - r.top); if (h) select(h); }
+    if (drag.moved <= 5 && pts.size === 0) { const h = hitAt(e.clientX - r.left, e.clientY - r.top); if (h) (curTeam === 'both' ? matchupSheet(h) : select(h)); }
     if (pts.size === 0) { drag = null; canvas.style.cursor = 'grab'; }
   };
   canvas.addEventListener('pointerup', up); canvas.addEventListener('pointercancel', up);
@@ -532,6 +540,7 @@ export async function openGround({ team, onClose } = {}) {
   function showTip(p, x, y) {
     if (!p || matchMedia('(pointer: coarse)').matches) { tip.hidden = true; return; }
     tip.hidden = false; tip.style.left = x + 'px'; tip.style.top = y + 'px';
+    if (curTeam === 'both') { tip.innerHTML = `<b>${TEAMS[p.team].name} · ${esc(p.label)}</b><span>${esc(p.who || 'Open')}${p.opp ? ` v ${esc(p.opp.who || 'Open')} (${esc(p.opp.label)})` : ''}</span>`; return; }
     tip.innerHTML = `<b>${esc(p.label)}</b><span>${p.state === 'taken' ? esc(p.who) : p.state === 'held' ? 'Reserved' : money(PRICE[p.tier])}</span>`;
   }
 
@@ -545,7 +554,7 @@ export async function openGround({ team, onClose } = {}) {
     } catch (e) { console.warn('yc board', e); }
     drawBoard(); dirty = true; setStats(); if (mode === 'list') listView();
     if (mode === 'team') for (const el of root.querySelectorAll('.yg-tm[data-team]')) { const id = el.dataset.team, f = el.querySelector('.f'); if (f) f.textContent = `${POSITIONS.filter(p => p.team === id && p.state === 'free').length} spots left`; }
-    if (mode === 'field' && curTeam) $('.yg-k').textContent = `${TEAMS[curTeam].name} · ${POSITIONS.filter(p => p.team === curTeam && p.state === 'free').length} spots left`;
+    if (mode === 'field' && curTeam && curTeam !== 'both') $('.yg-k').textContent = `${TEAMS[curTeam].name} · ${POSITIONS.filter(p => p.team === curTeam && p.state === 'free').length} spots left`;
   }
   function setStats() {
     const n = POSITIONS.filter(p => p.state !== 'free').length;
@@ -561,11 +570,13 @@ export async function openGround({ team, onClose } = {}) {
 
   function teamPicker() {
     mode = 'team'; curTeam = null; picked = null; hideSheet(); idle = true; $('.yg-crest').hidden = true;
+    { const lb = $('.yg-tools [data-a="list"]'); if (lb) lb.hidden = false; }
     $('.yg-tools').hidden = true; $('.yg-legend').hidden = true;
     setHead('Yappers Cup · Sunday 29 November', 'Choose your team', `Then pick your spot on the ground. Every position is a donation to Movember.`);
     const pick = $('.yg-pick'); pick.hidden = false;
     const free = id => POSITIONS.filter(p => p.team === id && p.state === 'free').length;
-    pick.innerHTML = Object.entries(TEAMS).map(([id, T]) => `<button type="button" class="yg-tm" data-team="${id}" style="--tc:${T.ui}"><img src="${T.shield}" alt=""><span class="n">${T.name}</span><span class="l">${T.line}</span><span class="f">${free(id)} spots left</span></button>`).join('<span class="yg-vs">vs</span>');
+    pick.innerHTML = Object.entries(TEAMS).map(([id, T]) => `<button type="button" class="yg-tm" data-team="${id}" style="--tc:${T.ui}"><img src="${T.shield}" alt=""><span class="n">${T.name}</span><span class="l">${T.line}</span><span class="f">${free(id)} spots left</span></button>`).join('<span class="yg-vs">vs</span>')
+      + `<button type="button" class="yg-chip yg-mu" data-a="matchups">See the match-ups</button>`;
     fly({ tx: 0, tz: 0, d: fitD() * 1.15, pitch: 0.95, yaw: cam.yaw }, 1600);
   }
   // on desktop the team/list buttons sit under the heading: place them just below it so they never overlap
@@ -576,12 +587,31 @@ export async function openGround({ team, onClose } = {}) {
     t.style.top = Math.round(hb.bottom - rb.top + 16) + 'px';
   }
   function chooseTeam(id) {
+    const lb = $('.yg-tools [data-a="list"]'); if (lb) lb.hidden = false;
     curTeam = id; mode = 'field'; picked = null; idle = false; hideSheet();
     const T = TEAMS[id]; $('.yg-pick').hidden = true; $('.yg-tools').hidden = false; $('.yg-legend').hidden = false;
     const other = id === 'mudguts' ? 'pissants' : 'mudguts';
     const crest = $('.yg-crest'); crest.src = T.shield; crest.alt = T.name; crest.hidden = false; crest.classList.remove('in'); void crest.offsetWidth; crest.classList.add('in');
     $('.yg-team').innerHTML = `<img src="${T.shield}" alt="">${T.name}<em>Switch to ${TEAMS[other].name}</em>`;
     setHead(`${T.name} · ${POSITIONS.filter(p => p.team === id && p.state === 'free').length} spots left`, 'Pick your position', 'Tap a guernsey on the ground. Drag to look around.');
+    placeTools();
+    fly({ tx: 0, tz: 0, d: fitD() * 0.92, pitch: 1.08, yaw: homeYaw() }, 1500);
+  }
+  // tapping a player in the match-ups view shows the head-to-head
+  function matchupSheet(p) {
+    const m = p.team === 'mudguts' ? p : p.opp, q = p.team === 'mudguts' ? p.opp : p;
+    const side = (x, id) => x ? `<div class="yg-mu-p"><img src="${TEAMS[x.team].shield}" alt="">${x.photo ? `<img class="yg-face sm" src="${esc(x.photo)}" alt="">` : ''}<b>${esc(x.who || 'Open')}</b><span>${TEAMS[x.team].name} · ${esc(x.label)}</span></div>` : `<div class="yg-mu-p"><img src="${TEAMS[id].shield}" alt=""><b>No direct opponent</b></div>`;
+    const bench = p.code[0] === 'I';
+    showSheet(`<p class="yg-sk">${bench ? 'On the bench' : 'Head to head'}</p>
+      <div class="yg-mu-row">${bench ? side(p) : `${side(m, 'mudguts')}<span class="yg-vs">vs</span>${side(q, 'pissants')}`}</div>
+      <div class="yg-btns"><button type="button" class="yg-btn ghost" data-a="mu-back">Back to the match-ups</button></div>`);
+  }
+  function showMatchups() {
+    curTeam = 'both'; mode = 'field'; picked = null; idle = false; hideSheet();
+    $('.yg-pick').hidden = true; $('.yg-legend').hidden = true; $('.yg-crest').hidden = true;
+    $('.yg-tools').hidden = false; $('.yg-tools [data-a="list"]').hidden = true;
+    $('.yg-team').innerHTML = `Mudguts vs Pissants<em>Back to the teams</em>`;
+    setHead('Sunday 29 November · Gosch\'s Paddock', 'The match-ups', `Who's lined up on who. Mudguts on the left of each pair, attacking ${portrait() ? 'down' : 'right'}. Tap a pair for the head to head.`);
     placeTools();
     fly({ tx: 0, tz: 0, d: fitD() * 0.92, pitch: 1.08, yaw: homeYaw() }, 1500);
   }
@@ -704,11 +734,12 @@ export async function openGround({ team, onClose } = {}) {
 
   root.addEventListener('click', e => {
     const b = e.target.closest('[data-a],[data-team],[data-pos]'); if (!b) return;
-    if (b.dataset.team) return chooseTeam(b.dataset.team);
+    if (b.dataset.team) return b.dataset.team === 'both' ? showMatchups() : chooseTeam(b.dataset.team);
     if (b.dataset.pos) { const p = POSITIONS.find(q => q.id === b.dataset.pos); if (p && p.state === 'free') { select(p); } return; }
     const a = b.dataset.a;
     if (a === 'close') close();
-    else if (a === 'switch') chooseTeam(curTeam === 'mudguts' ? 'pissants' : 'mudguts');
+    else if (a === 'switch') { if (curTeam === 'both') teamPicker(); else chooseTeam(curTeam === 'mudguts' ? 'pissants' : 'mudguts'); }
+    else if (a === 'matchups' || a === 'mu-back') { if (a === 'mu-back') { hideSheet(); return; } showMatchups(); }
     else if (a === 'list') listView();
     else if (a === 'field') backToField();
     else if (a === 'claim' && picked) claimForm(picked);
@@ -749,7 +780,8 @@ export async function openGround({ team, onClose } = {}) {
     photoSheet(pos, token, true);
   } else {
     if (cancelled) { try { sessionStorage.removeItem('yc-pay'); } catch (_) {} }
-    if (team && TEAMS[team]) { setTimeout(() => chooseTeam(team), 50); } else teamPicker();
+    if (team === 'both') setTimeout(showMatchups, 50);
+    else if (team && TEAMS[team]) { setTimeout(() => chooseTeam(team), 50); } else teamPicker();
     if (cancelled) setTimeout(() => showSheet(`<p class="yg-sk">Payment cancelled</p><h3>No worries</h3><p class="yg-note">You weren't charged. Your spot is held for a few more minutes if you want to try again, then it opens back up.</p><div class="yg-btns"><button type="button" class="yg-btn" data-a="field">Back to the ground</button></div>`), 400);
   }
   pay({ action: 'reconcile' }).then(r => { if (r && r.done) load(); }).catch(() => {});

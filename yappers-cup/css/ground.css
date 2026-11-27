@@ -127,3 +127,13 @@ label.yg-btn { cursor: pointer; }
 .yg-face { display: block; width: 96px; height: 96px; border-radius: 50%; object-fit: cover; margin: 8px 0 12px; border: 3px solid var(--ink); }
 .yg-li-l { display: flex; align-items: center; gap: 10px; }
 .yg-av { width: 28px; height: 28px; flex: 0 0 28px; border-radius: 50%; object-fit: cover; }
+
+/* match-ups button under the team picker */
+.yg-pick .yg-mu { white-space: nowrap; flex: 0 0 auto; position: absolute; top: calc(100% + 10px); left: 50%; transform: translateX(-50%); }
+@media (max-width: 720px) { .yg-pick .yg-mu { position: static; transform: none; align-self: center; margin-top: 4px; } }
+.yg-mu-row { display: flex; align-items: center; justify-content: center; gap: 14px; margin: 10px 0 18px; text-align: center; }
+.yg-mu-p { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; }
+.yg-mu-p > img:first-child { height: 64px; width: auto; }
+.yg-mu-p b { font-family: var(--display); font-weight: 400; font-size: 24px; text-transform: uppercase; line-height: 1.05; }
+.yg-mu-p span { font-size: 13px; opacity: .75; }
+.yg-face.sm { width: 56px; height: 56px; margin: 4px 0; }

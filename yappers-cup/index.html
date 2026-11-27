@@ -529,6 +529,7 @@
   }
   document.addEventListener('click', e => { const a = e.target.closest('[data-ground]'); if (!a) return; e.preventDefault(); history.replaceState(null,'','#ground'); enter(a.dataset.team); });
   if (location.hash === '#ground') enter();
+  if (location.hash === '#matchups') enter('both');
   import('./js/footy.js').then(m => m.startFooty()).catch(() => {});
   {
     const sec = document.getElementById('kick');
